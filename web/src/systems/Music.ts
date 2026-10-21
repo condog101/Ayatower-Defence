@@ -2,10 +2,10 @@ import { ZZFX } from 'zzfx';
 import { Audio } from './Audio';
 
 /**
- * Procedural boom-bap. Drum and bass hits are rendered once with ZzFX's sample
- * builder, wrapped in AudioBuffers and scheduled on the AudioContext clock with
- * a short lookahead (the usual two-clocks pattern), so there is no extra
- * dependency and no audio files.
+ * Procedural war drums over a Hijaz-scale bass line (the flattened second and raised third that
+ * sound "Persian" to most ears). Drum and bass hits are rendered once with ZzFX's sample builder,
+ * wrapped in AudioBuffers and scheduled on the AudioContext clock with a short lookahead (the usual
+ * two-clocks pattern), so there is no extra dependency and no audio files.
  */
 export type Track = 'title' | 'game' | 'boss';
 
@@ -35,33 +35,37 @@ interface Pattern {
 }
 
 // 32 steps = two bars of 16ths. x = full hit, o = soft hit, . = rest.
+// Bass notes are semitones from A1 on the Hijaz scale: 0 1 4 5 7 8 10 (12).
 const PATTERNS: Record<Track, Pattern> = {
+  // slow, stately: a frame drum and a walking Hijaz bass
   title: {
-    bpm: 92,
-    swing: 0.08,
-    kick: 'x.........x.....x.......x.x.....',
-    snare: '....x.......x.......x.......x...',
-    hat: 'x.o.x.o.x.o.x.o.x.o.x.o.x.o.x.o.',
+    bpm: 84,
+    swing: 0.06,
+    kick: 'x.......x.....x.x.......x.......',
+    snare: '....o.......x.......o.......x...',
+    hat: 'x...x.o.x...x.o.x...x.o.x...x.o.',
     hatOpen: '..............x...............x.',
-    bass: [[0, 0, 3], [6, 7, 2], [8, 5, 2], [11, 3, 2], [14, 0, 1], [16, 0, 3], [22, -2, 2], [24, -2, 2], [27, 3, 1], [29, 5, 1], [30, 7, 2]],
+    bass: [[0, 0, 3], [4, 1, 2], [6, 4, 2], [8, 5, 3], [12, 4, 2], [14, 1, 2], [16, 0, 3], [20, 1, 2], [22, 4, 2], [24, 7, 3], [28, 5, 2], [30, 4, 2]],
   },
+  // the march: a 6/8-ish lope over a busier bass
   game: {
-    bpm: 92,
-    swing: 0.14,
-    kick: 'x..x..x...x.x...x..x..x...x...x.',
+    bpm: 96,
+    swing: 0.12,
+    kick: 'x..x..x...x..x..x..x..x...x..x..',
     snare: '....x.......x.......x.......x..o',
-    hat: 'xoxoxoxoxoxoxoxoxoxoxoxoxoxoxoxo',
+    hat: 'x.oxx.oxx.oxx.oxx.oxx.oxx.oxx.ox',
     hatOpen: '......x.......x.......x.......x.',
-    bass: [[0, 0, 2], [3, 0, 1], [6, 7, 2], [8, 5, 2], [11, 3, 2], [14, 0, 1], [16, 0, 2], [19, 0, 1], [22, -2, 2], [24, -2, 2], [27, 3, 1], [29, 5, 1], [30, 7, 2]],
+    bass: [[0, 0, 2], [3, 0, 1], [6, 1, 2], [8, 4, 2], [11, 5, 2], [14, 4, 1], [16, 0, 2], [19, 0, 1], [22, 1, 2], [24, 4, 2], [26, 7, 1], [28, 8, 2], [30, 7, 2]],
   },
+  // the Eye arrives: double-time drums, the bass stamping on the flat second
   boss: {
-    bpm: 100,
-    swing: 0.05,
+    bpm: 108,
+    swing: 0.04,
     kick: 'x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.xx',
     snare: '....x.......x.......x.......x.xx',
     hat: 'xoxoxoxoxoxoxoxoxoxoxoxoxoxoxoxo',
     hatOpen: '......x.......x.......x.......x.',
-    bass: [[0, 0, 2], [2, 0, 1], [4, 0, 2], [6, 0, 1], [8, 3, 2], [10, 3, 1], [12, 5, 2], [14, 6, 2], [16, 0, 2], [18, 0, 1], [20, 0, 2], [22, 0, 1], [24, -2, 2], [26, -2, 1], [28, -4, 2], [30, -5, 2]],
+    bass: [[0, 0, 2], [2, 1, 1], [4, 0, 2], [6, 1, 1], [8, 4, 2], [10, 5, 1], [12, 4, 2], [14, 1, 2], [16, 0, 2], [18, 1, 1], [20, 0, 2], [22, 1, 1], [24, 8, 2], [26, 7, 1], [28, 5, 2], [30, 4, 2]],
   },
 };
 
