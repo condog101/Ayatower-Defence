@@ -1,0 +1,20 @@
+name = "ayatower-defence"
+main = "worker/src/index.ts"
+compatibility_date = "2026-08-01"
+
+[assets]
+directory = "web/dist"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+run_worker_first = ["/api/*"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "ayatower-db"
+database_id = "ce88b585-b1b1-45b5-ab65-4374b236749d"
+migrations_dir = "worker/migrations"
+
+[vars]
+# Extra origin allowed to call /api cross-origin (e.g. a custom domain). Empty = same-origin only.
+# http://localhost:5173 and http://127.0.0.1:5173 (Vite dev) are always allowed.
+ALLOWED_ORIGIN = ""

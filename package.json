@@ -1,0 +1,32 @@
+{
+  "name": "ayatower-defence",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "mkdir -p web/dist && concurrently -k -n web,api -c cyan,magenta \"vite\" \"wrangler dev --port 8787\"",
+    "dev:web": "vite",
+    "dev:api": "mkdir -p web/dist && wrangler dev --port 8787",
+    "build": "tsc --noEmit -p web && tsc --noEmit -p worker && vite build",
+    "preview": "npm run build && wrangler dev",
+    "deploy": "npm run build && wrangler deploy",
+    "db:migrate:local": "wrangler d1 migrations apply ayatower-db --local",
+    "db:migrate:remote": "wrangler d1 migrations apply ayatower-db --remote",
+    "sprites": "python3 tools/sprites/gen.py",
+    "test": "vitest run",
+    "test:py": "python3 tools/sprites/test_gen.py"
+  },
+  "dependencies": {
+    "phaser": "^3.90.0",
+    "zzfx": "^1.4.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261019.1",
+    "concurrently": "^10.0.6",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.7",
+    "wrangler": "^4.151.2",
+    "vitest": "^4.1.12",
+    "@cloudflare/vitest-pool-workers": "^0.23.0"
+  }
+}
