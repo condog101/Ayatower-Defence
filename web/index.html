@@ -15,20 +15,26 @@
         src: url('/assets/fonts/PressStart2P-Regular.ttf') format('truetype');
         font-display: block;
       }
+      /* Safe-area insets for the layout code (systems/Layout.ts reads these). */
+      :root {
+        --sat: env(safe-area-inset-top, 0px);
+        --sar: env(safe-area-inset-right, 0px);
+        --sab: env(safe-area-inset-bottom, 0px);
+        --sal: env(safe-area-inset-left, 0px);
+      }
       html, body {
         margin: 0;
         height: 100%;
-        background: #000000;
+        /* deep water, so anything showing past the canvas reads as sea, not a black bar */
+        background: #0d2a33;
         overflow: hidden;
         font-family: 'Press Start 2P', monospace;
       }
-      /* Inset by the safe areas so the canvas (HUD, arrow pad) stays out from under the notch and home bar. */
+      /* Full-bleed: the canvas fills the screen at its exact aspect; the game keeps its controls
+         inside the safe area itself (layout/compute.ts). */
       #game {
         position: fixed;
-        top: env(safe-area-inset-top);
-        right: env(safe-area-inset-right);
-        bottom: env(safe-area-inset-bottom);
-        left: env(safe-area-inset-left);
+        inset: 0;
       }
       canvas { image-rendering: pixelated; }
       html, body, #game, canvas {

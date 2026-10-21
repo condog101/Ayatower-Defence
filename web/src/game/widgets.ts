@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
-import { DEPTH, SLOP } from '../data/balance';
+import { DEPTH, L } from '../data/balance';
+import type { Rect } from '../layout/compute';
 import { Audio } from '../systems/Audio';
-import { TOUCH } from '../systems/Device';
 import { COLORS, FONT, uiSize } from '../systems/UI';
 
 export interface Button {
@@ -32,7 +32,7 @@ export function button(
     .text(w / 2, h / 2 + 1, label, { fontFamily: FONT, fontSize: `${uiSize(size)}px`, color: COLORS.text, align: 'center', lineSpacing: 4 })
     .setOrigin(0.5);
   const root = scene.add.container(x, y, [bg, text]).setDepth(depth);
-  const pad = TOUCH ? SLOP : 0;
+  const pad = L.slop;
   bg.setInteractive(new Phaser.Geom.Rectangle(-pad, -pad, w + 2 * pad, h + 2 * pad), Phaser.Geom.Rectangle.Contains);
   let highlight = false;
   const b: Button = {
@@ -70,6 +70,11 @@ export function button(
     onClick();
   });
   return b;
+}
+
+/** A button filling a layout rect. */
+export function rectButton(scene: Phaser.Scene, r: Rect, label: string, onClick: () => void, size = 8, depth = DEPTH.hud): Button {
+  return button(scene, r.x, r.y, r.w, r.h, label, onClick, size, depth);
 }
 
 /** Small left-aligned text. */

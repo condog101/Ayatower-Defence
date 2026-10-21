@@ -1,11 +1,11 @@
 import Phaser from 'phaser';
 import { sanitizeProgress } from '../../../shared/progress';
-import { HEIGHT, OX, PX, WIDTH } from '../data/balance';
+import { CX, HEIGHT, OX, PX, WIDTH } from '../data/balance';
 import { api, ApiError } from '../net/api';
 import { syncProgress } from '../net/sync';
 import { TOUCH } from '../systems/Device';
 import { Save } from '../systems/Save';
-import { COLORS, panel, text } from '../systems/UI';
+import { COLORS, designFrame, panel, text } from '../systems/UI';
 
 /**
  * Callsign + PIN form. Phaser has no text input, so this drives an HTML form
@@ -17,11 +17,12 @@ export class LoginScene extends Phaser.Scene {
   }
 
   create() {
-    this.add.tileSprite(0, 0, WIDTH, HEIGHT, 'tiles', 0).setOrigin(0).setTileScale(PX).setAlpha(0.4);
+    designFrame(this);
+    this.add.tileSprite(0, 0, WIDTH, HEIGHT, 'tiles', 0).setOrigin(0).setTileScale(PX).setScrollFactor(0).setAlpha(0.4);
     // On phones the form is its own card (heading included); on desktop it sits inside this panel.
     if (!TOUCH) {
       panel(this, OX + 220, 60, 520, 420);
-      text(this, WIDTH / 2, 100, 'JOIN THE GUARD', 24, COLORS.gold);
+      text(this, CX, 100, 'JOIN THE GUARD', 24, COLORS.gold);
     }
 
     const form = document.getElementById('login') as HTMLFormElement;

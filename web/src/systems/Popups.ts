@@ -8,8 +8,6 @@ import { COLORS, FONT, panel, text } from './UI';
 // Desktop only: on touch, story moments freeze the game and show full-screen instead (Game.openStory).
 const W = 440;
 const H = 156;
-const REST_X = MAP_X + MAP_W - W - 8;
-const REST_Y = MAP_Y + 8;
 
 /** Who is on the line: portrait sheet (frames 0 rest, 1-2 talk, 3 blink, 4 hype) and banner. */
 export interface Speaker {
@@ -52,9 +50,13 @@ export class Popups {
   private last: Shown | null = null;
   private replyTimer: Phaser.Time.TimerEvent | null = null;
 
+  /** Where the card rests: the top-right corner of the map (read from the current layout). */
+  private restX: number;
+
   constructor(private scene: Phaser.Scene) {
     const s = scene;
-    this.root = s.add.container(WIDTH + 10, REST_Y).setDepth(DEPTH.popup);
+    this.restX = MAP_X + MAP_W - W - 8;
+    this.root = s.add.container(WIDTH + 10, MAP_Y + 8).setDepth(DEPTH.popup);
     this.root.add(panel(s, 0, 0, W, H));
     this.banner = text(s, 14, 18, '', 8, COLORS.red, 0).setOrigin(0, 0.5);
     this.root.add(this.banner);
@@ -113,7 +115,7 @@ export class Popups {
     this.body.setText('');
     this.typing = true;
     Audio.play('incoming');
-    this.scene.tweens.add({ targets: this.root, x: REST_X, duration: 350, ease: 'Back.easeOut' });
+    this.scene.tweens.add({ targets: this.root, x: this.restX, duration: 350, ease: 'Back.easeOut' });
     this.scene.tweens.add({ targets: this.banner, alpha: 0.3, yoyo: true, repeat: 5, duration: 180 });
   }
 

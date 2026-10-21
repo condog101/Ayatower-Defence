@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { LEVEL_COUNT } from '../../../shared/progress';
-import { HEIGHT, PX, WIDTH } from '../data/balance';
+import { CX, HEIGHT, L, OX, OY, PX, WIDTH } from '../data/balance';
 import { LEVELS } from '../data/levels';
 import { api } from '../net/api';
 import { Audio } from '../systems/Audio';
@@ -8,12 +8,12 @@ import { byInput, TOUCH } from '../systems/Device';
 import { Music } from '../systems/Music';
 import { newRun } from '../systems/Run';
 import { Save } from '../systems/Save';
-import { COLORS, menu, panel, text } from '../systems/UI';
+import { COLORS, designFrame, menu, panel, text } from '../systems/UI';
 
 type View = 'main' | 'levels' | 'settings' | 'credits';
 
+/** Design-frame coordinates (960x540 at OX, scrolled to sit centred; see designFrame). */
 const SEA_Y = 300;
-const MENU_X = WIDTH - 250;
 
 export class TitleScene extends Phaser.Scene {
   private layer!: Phaser.GameObjects.Container;
@@ -27,11 +27,14 @@ export class TitleScene extends Phaser.Scene {
 
   create(data: { view?: View }) {
     this.cameras.main.setBackgroundColor('#0b0a08');
+    designFrame(this);
     // Dusk sky over the Strait: the logo top-left, the fleet sailing past, the menu on the right.
-    const sky = this.add.graphics();
-    sky.fillGradientStyle(0x1a0f2e, 0x1a0f2e, 0x7a3c2e, 0x7a3c2e, 1).fillRect(0, 0, WIDTH, SEA_Y);
-    this.water = this.add.tileSprite(0, SEA_Y, WIDTH, HEIGHT - SEA_Y, 'tiles', 0).setOrigin(0).setTileScale(PX);
-    this.add.rectangle(0, SEA_Y, WIDTH, 2, 0xb88c1e).setOrigin(0);
+    // Sky and sea are screen-fixed so they fill the whole canvas whatever its shape.
+    const seaY = OY + SEA_Y;
+    const sky = this.add.graphics().setScrollFactor(0);
+    sky.fillGradientStyle(0x1a0f2e, 0x1a0f2e, 0x7a3c2e, 0x7a3c2e, 1).fillRect(0, 0, WIDTH, seaY);
+    this.water = this.add.tileSprite(0, seaY, WIDTH, HEIGHT - seaY, 'tiles', 0).setOrigin(0).setTileScale(PX).setScrollFactor(0);
+    this.add.rectangle(0, seaY, WIDTH, 2, 0xb88c1e).setOrigin(0).setScrollFactor(0);
     this.fleet = [];
     const ships: [string, number, number][] = [['carrier', 360, 0.5], ['burke', 400, 0.7], ['frigate', 430, 0.8], ['rhib', 460, 1.1]];
     ships.forEach(([key, y, sp], i) => {
@@ -39,13 +42,13 @@ export class TitleScene extends Phaser.Scene {
       this.tweens.add({ targets: s, x: WIDTH + 200, duration: 30000 / sp, repeat: -1, delay: i * 1500 });
       this.fleet.push(s);
     });
-    this.add.image(24, 16, 'title_logo').setOrigin(0).setScale(1.5);
-    this.add.sprite(36, 196, 'aya', 4).setOrigin(0).setScale(1.25).setCrop(0, 0, 64, 56);
-    this.add.sprite(136, 196, 'don', 2).setOrigin(0).setScale(1.25).setCrop(0, 0, 64, 56);
-    text(this, 76, 286, 'THE GREY\nTURBAN', 8, COLORS.gold);
-    text(this, 126, 230, 'VS', 8, COLORS.text);
-    text(this, 176, 280, 'BIG DON', 8, COLORS.red);
-    this.add.image(WIDTH - 20, HEIGHT - 20, 'advisory').setOrigin(1).setScale(2);
+    this.add.image(OX + 24, 16, 'title_logo').setOrigin(0).setScale(1.5);
+    this.add.sprite(OX + 36, 196, 'aya', 4).setOrigin(0).setScale(1.25).setCrop(0, 0, 64, 56);
+    this.add.sprite(OX + 136, 196, 'don', 2).setOrigin(0).setScale(1.25).setCrop(0, 0, 64, 56);
+    text(this, OX + 76, 286, 'THE GREY\nTURBAN', 8, COLORS.gold);
+    text(this, OX + 126, 230, 'VS', 8, COLORS.text);
+    text(this, OX + 176, 280, 'BIG DON', 8, COLORS.red);
+    this.add.image(L.safe.x + L.safe.w - 20, HEIGHT - 20, 'advisory').setOrigin(1).setScale(2).setScrollFactor(0);
     this.layer = this.add.container(0, 0);
     this.cameras.main.fadeIn(300);
     Music.play('title');
@@ -66,7 +69,8 @@ export class TitleScene extends Phaser.Scene {
     this.clear();
     const p = Save.progress;
     const who = Save.session ? `GUARD: ${Save.session.callsign}` : 'NOT IN THE GUARD (PROGRESS SAVED ON THIS DEVICE)';
-    this.layer.add(text(this, WIDTH / 2, HEIGHT - 12, who, 8, COLORS.dim));
+    this.layer.add(text(this, WIDTH / 2, HEIGHT - 14, who, 8, COLORS.dim).setScrollFactor(0));
+    const MENU_X = OX + 710;
     if (view === 'main') {
       const cont = p.highestLevel;
       this.layer.add(panel(this, MENU_X - 130, 20, 360, 280));
@@ -89,8 +93,8 @@ export class TitleScene extends Phaser.Scene {
         ),
       );
     } else if (view === 'levels') {
-      this.layer.add(panel(this, WIDTH / 2 - 330, 40, 660, 440));
-      this.layer.add(text(this, WIDTH / 2, 66, 'THE STRAIT', 16, COLORS.gold));
+      this.layer.add(panel(this, OX + 150, 40, 660, 440));
+      this.layer.add(text(this, CX, 66, 'THE STRAIT', 16, COLORS.gold));
       const items = LEVELS.map((l) => {
         const best = p.levelBest[String(l.n)];
         const unlocked = l.n <= p.highestLevel;
@@ -101,34 +105,34 @@ export class TitleScene extends Phaser.Scene {
         };
       });
       items.push({ label: 'BACK', action: () => this.show('main'), enabled: true });
-      this.currentMenu = menu(this, WIDTH / 2, 104, items, 32);
+      this.currentMenu = menu(this, CX, 104, items, 32);
     } else if (view === 'settings') {
       const s = p.settings;
       const vol = Math.round(s.sfx * 10);
       const mus = Math.round(s.music * 10);
       const bar = (n: number) => `< ${'#'.repeat(n).padEnd(10, '.')} >`;
-      this.layer.add(panel(this, WIDTH / 2 - 320, 150, 640, 230));
-      this.layer.add(text(this, WIDTH / 2, 176, 'WAR COUNCIL', 16, COLORS.gold));
-      this.currentMenu = menu(this, WIDTH / 2, 220, [
+      this.layer.add(panel(this, OX + 160, 150, 640, 230));
+      this.layer.add(text(this, CX, 176, 'WAR COUNCIL', 16, COLORS.gold));
+      this.currentMenu = menu(this, CX, 220, [
         { label: `SFX VOLUME    ${bar(vol)}`, action: () => this.setVolume((vol + 2) % 12) },
         { label: `MUSIC VOLUME  ${bar(mus)}`, action: () => this.setMusicVolume((mus + 2) % 12) },
         { label: `SCREEN SHAKE  ${s.shake ? 'ON' : 'OFF'}`, action: () => this.toggleShake() },
         { label: 'BACK', action: () => this.show('main') },
       ]);
-      this.layer.add(text(this, WIDTH / 2, 350, byInput('ENTER/CLICK TO CHANGE', 'TAP TO CHANGE'), 8, COLORS.dim));
+      this.layer.add(text(this, CX, 350, byInput('ENTER/CLICK TO CHANGE', 'TAP TO CHANGE'), 8, COLORS.dim));
     } else {
-      this.layer.add(panel(this, WIDTH / 2 - 320, 60, 640, 400));
+      this.layer.add(panel(this, OX + 160, 60, 640, 400));
       this.layer.add(
         text(
           this,
-          WIDTH / 2,
+          CX,
           230,
           'AYATOWER DEFENCE: YOU SHAH-LL NOT PASS!\n\nA GAME BY CONNOR\nCODE: CLAUDE   ART: GENERATED + LIBRESPRITE\nFONT: PRESS START 2P (OFL)   SFX + MUSIC: ZZFX\n\nBIG DON IS A PARODY OF DONALD TRUMP.\nTHE GREY TURBAN IS A CARICATURE OF AN AYATOLLAH.\nEVERY LINE IS FICTIONAL SATIRE, NOT A REAL QUOTE.\nTHE SHIPS, PLANES AND WEAPONS ARE LOOSELY BASED ON\nREAL ONES; THEIR NUMBERS ARE GAME NUMBERS.\nNO WIZARDS WERE HARMED. SOME WERE MILDLY INCONVENIENCED.',
           8,
           COLORS.text,
         ),
       );
-      this.currentMenu = menu(this, WIDTH / 2, 420, [{ label: 'BACK', action: () => this.show('main') }]);
+      this.currentMenu = menu(this, CX, 420, [{ label: 'BACK', action: () => this.show('main') }]);
     }
   }
 

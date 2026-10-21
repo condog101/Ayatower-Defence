@@ -1,16 +1,13 @@
 import Phaser from 'phaser';
-import { DEPTH, HEIGHT, MAP_W, MAP_X, POPUP } from '../data/balance';
+import { DEPTH, L, POPUP } from '../data/balance';
 import { pickQuote, renderLine, type QuoteTag, type Who } from '../data/quotes';
 import { Audio } from './Audio';
 import { TOUCH } from './Device';
 import { rand } from './Random';
 import { COLORS, FONT } from './UI';
 
-const BAR_H = TOUCH ? 30 : 22;
-const BAR_X = MAP_X;
-const BAR_W = MAP_W;
-const BAR_Y = HEIGHT - BAR_H;
-const TAG_W = TOUCH ? 186 : 124;
+const BAR_H = TOUCH ? 26 : 22;
+const TAG_W = TOUCH ? 200 : 124;
 const TEXT_PX = TOUCH ? 12 : 8;
 /** Scroll speed, px/s. */
 const SPEED = TOUCH ? 130 : 105;
@@ -37,8 +34,17 @@ export class Ticker {
   /** The latest line, for the pause screen. */
   last: { who: Who; text: string } | null = null;
 
+  private x0: number;
+  private x1: number;
+
   constructor(private scene: Phaser.Scene) {
     const s = scene;
+    // In the bottom strip, under the map: it never covers the last row.
+    const BAR_X = L.map.x;
+    const BAR_W = L.map.w;
+    const BAR_Y = L.bottom.y + 2;
+    this.x0 = BAR_X + TAG_W;
+    this.x1 = BAR_X + BAR_W;
     const left = BAR_X + TAG_W;
     const bg = s.add.rectangle(BAR_X, BAR_Y, BAR_W, BAR_H, 0x000000, 0.78).setOrigin(0);
     const rule = s.add.rectangle(BAR_X, BAR_Y, BAR_W, 1, 0xffd84a).setOrigin(0);
@@ -80,7 +86,7 @@ export class Ticker {
     this.last = { who, text: rendered };
     this.tag.setFillStyle(v.color);
     this.tagText.setText(v.tag);
-    this.line.setText(`${v.name}: ${rendered}`).setX(BAR_X + BAR_W);
+    this.line.setText(`${v.name}: ${rendered}`).setX(this.x1);
     this.fade(1);
     Audio.play('blip', { volume: 0.25, pitch: who === 'don' ? 0.8 : 0.6 });
     const bleeps = (text.match(/\{[^}]*\}/g) ?? []).length;
@@ -102,7 +108,7 @@ export class Ticker {
       return;
     }
     this.line.x -= (SPEED * dtMs) / 1000;
-    if (this.line.x + this.line.width < BAR_X + TAG_W) {
+    if (this.line.x + this.line.width < this.x0) {
       const next = this.pending.shift();
       if (next) this.start(next.who, next.text);
       else {

@@ -1,16 +1,17 @@
 import Phaser from 'phaser';
-import { HEIGHT, OX, PX, WIDTH } from '../data/balance';
+import { CX, HEIGHT, OX, PX, WIDTH } from '../data/balance';
 import { renderLine, type Who } from '../data/quotes';
 import type { InputText, Tweet } from '../data/story';
 import { Audio } from '../systems/Audio';
 import { byInput, TOUCH } from '../systems/Device';
-import { COLORS, FONT, onContinue, panel, text } from '../systems/UI';
+import { COLORS, designFrame, FONT, onContinue, panel, text } from '../systems/UI';
 
-const PANEL_X = OX + 130;
+// Set in create() from the current layout.
+let PANEL_X = 0;
+let LEFT = 0;
 const PANEL_Y = 80;
 const PANEL_W = 700;
 const PANEL_H = 372;
-const LEFT = PANEL_X + 24;
 
 export interface BriefingData {
   cards: Tweet[];
@@ -39,9 +40,12 @@ export class BriefingScene extends Phaser.Scene {
   }
 
   create() {
-    this.add.tileSprite(0, 0, WIDTH, HEIGHT, 'tiles', 0).setOrigin(0).setTileScale(PX).setAlpha(0.5);
+    PANEL_X = OX + 130;
+    LEFT = PANEL_X + 24;
+    designFrame(this);
+    this.add.tileSprite(0, 0, WIDTH, HEIGHT, 'tiles', 0).setOrigin(0).setTileScale(PX).setScrollFactor(0).setAlpha(0.5);
     panel(this, PANEL_X, PANEL_Y, PANEL_W, PANEL_H);
-    const go = text(this, WIDTH / 2, PANEL_Y + PANEL_H + 34, byInput('PRESS ANY KEY', 'TAP'), 16, COLORS.gold);
+    const go = text(this, CX, PANEL_Y + PANEL_H + 34, byInput('PRESS ANY KEY', 'TAP'), 16, COLORS.gold);
     this.tweens.add({ targets: go, alpha: 0.2, yoyo: true, repeat: -1, duration: 500 });
     this.card = this.add.container(0, 0);
     this.cameras.main.fadeIn(250);

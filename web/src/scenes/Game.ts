@@ -1,10 +1,10 @@
 import Phaser from 'phaser';
 import { levelClearBonus } from '../../../shared/scoring';
-import { DEPTH, HEIGHT, MAP_H, MAP_W, MAP_X, MAP_Y, OX, SIDE_X, WIDTH } from '../data/balance';
+import { DEPTH, HEIGHT, L, MAP_H, MAP_W, MAP_X, MAP_Y, OX, WIDTH } from '../data/balance';
 import { ENEMIES } from '../data/enemies';
 import { getLevel } from '../data/levels';
 import { TOWERS } from '../data/towers';
-import { Abilities, ABILITY_Y } from '../game/Abilities';
+import { Abilities } from '../game/Abilities';
 import { Dialogue } from '../game/Dialogue';
 import { EnemyView } from '../game/EnemyView';
 import { HUD } from '../game/HUD';
@@ -12,10 +12,10 @@ import { Input } from '../game/Input';
 import { MapView } from '../game/MapView';
 import { Placement } from '../game/Placement';
 import { ProjectileView } from '../game/ProjectileView';
-import { SHOP_BOTTOM, Shop } from '../game/Shop';
+import { LeftBar } from '../game/LeftBar';
+import { Shop, towerTip } from '../game/Shop';
 import { TowerPanel } from '../game/TowerPanel';
 import { TowerView } from '../game/TowerView';
-import { button, type Button } from '../game/widgets';
 import { FATWA, STAFF } from '../sim/abilities';
 import { Sim } from '../sim/sim';
 import type { AbilityKey, LevelDef, SimEvent, Tower, TowerKey } from '../sim/types';
@@ -26,7 +26,8 @@ import { Music } from '../systems/Music';
 import { Popups, SPEAKERS, type Shown } from '../systems/Popups';
 import type { RunState } from '../systems/Run';
 import { Ticker } from '../systems/Ticker';
-import { COLORS, FONT, menu, text } from '../systems/UI';
+import { LAYOUT_CHANGED } from '../systems/Layout';
+import { COLORS, FONT, menu, panel, text, uiSize } from '../systems/UI';
 
 export interface LevelResult {
   run: RunState;
@@ -73,8 +74,12 @@ export class GameScene extends Phaser.Scene {
   private popups!: Popups;
   private ticker!: Ticker;
   private dialogue!: Dialogue;
-  private startBtn!: Button;
-  private info!: Phaser.GameObjects.Text;
+  private leftBar!: LeftBar;
+  private hint!: Phaser.GameObjects.Text;
+  /** Desktop: the shop card under the pointer, shown on the hint line. */
+  private hoverKey: TowerKey | null = null;
+  private resumed = false;
+  private wasPaused = false;
   private aim!: Phaser.GameObjects.Graphics;
   private speed = 1;
   private acc = 0;
@@ -90,11 +95,17 @@ export class GameScene extends Phaser.Scene {
     super('Game');
   }
 
-  init(data: { run: RunState }) {
+  /**
+   * `sim` (with `resume`) is passed when the scene rebuilds itself for a new screen layout: the
+   * battle carries on with the same simulation, only the views are recreated.
+   */
+  init(data: { run: RunState; sim?: Sim; speed?: number; resume?: boolean; paused?: boolean }) {
     this.run = data.run;
     this.level = getLevel(this.run.level);
-    this.sim = new Sim(this.level, TOWERS, ENEMIES);
-    this.speed = 1;
+    this.sim = data.sim ?? new Sim(this.level, TOWERS, ENEMIES);
+    this.speed = data.speed ?? 1;
+    this.resumed = !!data.resume;
+    this.wasPaused = !!data.paused;
     this.acc = 0;
     this.paused = false;
     this.ended = false;
@@ -102,6 +113,7 @@ export class GameScene extends Phaser.Scene {
     this.pauseMenu = null;
     this.story = null;
     this.lastStory = null;
+    this.hoverKey = null;
   }
 
   create() {
@@ -112,31 +124,50 @@ export class GameScene extends Phaser.Scene {
     this.enemyView = new EnemyView(this);
     this.fx = new Fx(this);
     this.aim = this.add.graphics().setDepth(DEPTH.ghost);
-    this.hud = new HUD(this, { speed: () => this.cycleSpeed(), auto: () => this.toggleAuto(), pause: () => this.togglePause() });
-    this.shop = new Shop(this, sim, { down: (k, p) => this.cardDown(k, p) });
+    this.strips();
+    this.hud = new HUD(this, `${this.level.n}. ${this.level.name}`);
+    this.leftBar = new LeftBar(this, {
+      start: () => this.startWave(),
+      speed: () => this.cycleSpeed(),
+      auto: () => this.toggleAuto(),
+      pause: () => this.togglePause(),
+    });
+    this.abilities = new Abilities(this, sim, (k) => this.arm(k));
+    this.shop = new Shop(this, sim, {
+      down: (k, p) => this.cardDown(k, p),
+      hover: (k) => {
+        this.hoverKey = k;
+        this.setInfo();
+      },
+    });
     this.panel = new TowerPanel(this, sim, {
       upgrade: (t) => this.upgrade(t),
       sell: (t) => this.sell(t),
       target: (t) => this.retarget(t),
       close: () => this.deselect(),
     });
-    this.abilities = new Abilities(this, sim, (k) => this.arm(k));
     this.placement = new Placement(this, sim, () => this.commit(), () => this.cancelPlacement());
-    this.startBtn = button(this, SIDE_X + 3, SHOP_BOTTOM + 4, 154, 36, '', () => this.startWave(), 8);
-    this.info = this.add
-      .text(SIDE_X + 6, ABILITY_Y + 58, '', { fontFamily: FONT, fontSize: '8px', color: COLORS.dim, lineSpacing: 3, wordWrap: { width: 150 } })
+    // The hint line sits in the bottom strip under the ticker, clear of the map.
+    this.hint = this.add
+      .text(L.map.x + 2, L.bottom.y + (L.touch ? 32 : 30), '', {
+        fontFamily: FONT,
+        fontSize: `${uiSize(8)}px`,
+        color: COLORS.dim,
+        wordWrap: { width: L.map.w - 4 },
+      })
       .setOrigin(0)
       .setDepth(DEPTH.hud);
     this.input_ = new Input(this, {
       mapDown: (x, y, right) => this.mapDown(x, y, right),
-      move: (x, y, dragging) => this.pointerMove(x, y, dragging),
+      mapDrag: (x, y) => this.drawAim(x, y, true),
+      mapUp: (x, y) => this.mapUp(x, y),
+      move: (x, y) => this.pointerMove(x, y),
+      drag: (x, y) => this.drag(x, y),
       dragEnd: (x, y) => this.dragEnd(x, y),
-      cardTap: () => undefined,
     });
     this.popups = new Popups(this);
     this.ticker = new Ticker(this);
     this.dialogue = new Dialogue(this, sim, this.run, this.ticker, { story: (aya, don) => this.storyMoment(aya, don) });
-    this.dialogue.start();
     this.keys();
 
     // Touch only: a backgrounded phone comes back to the pause screen.
@@ -144,13 +175,38 @@ export class GameScene extends Phaser.Scene {
       if (TOUCH && !this.paused && !this.ended) this.togglePause();
     };
     this.game.events.on(Phaser.Core.Events.HIDDEN, onHidden);
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.game.events.off(Phaser.Core.Events.HIDDEN, onHidden));
+    // A new screen layout (rotation, fullscreen): rebuild the views around the same battle.
+    const relayout = () => {
+      if (this.ended) return;
+      this.scene.restart({ run: this.run, sim: this.sim, speed: this.speed, resume: true, paused: this.paused });
+    };
+    this.events.on(LAYOUT_CHANGED, relayout);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.game.events.off(Phaser.Core.Events.HIDDEN, onHidden);
+      this.events.off(LAYOUT_CHANGED, relayout);
+    });
 
-    Music.play('game');
-    this.cameras.main.fadeIn(400);
-    const banner = text(this, MAP_X + MAP_W / 2, MAP_Y + MAP_H / 2 - 40, `LEVEL ${this.level.n}\n${this.level.name}`, 16, COLORS.gold).setDepth(DEPTH.hud);
-    this.tweens.add({ targets: banner, alpha: 0, delay: 1600, duration: 600, onComplete: () => banner.destroy() });
+    if (this.resumed) {
+      if (this.wasPaused) this.togglePause();
+    } else {
+      this.dialogue.start();
+      Music.play('game');
+      this.cameras.main.fadeIn(400);
+      const banner = text(this, MAP_X + MAP_W / 2, MAP_Y + MAP_H / 2 - 40, `LEVEL ${this.level.n}\n${this.level.name}`, 16, COLORS.gold).setDepth(DEPTH.hud);
+      this.tweens.add({ targets: banner, alpha: 0, delay: 1600, duration: 600, onComplete: () => banner.destroy() });
+    }
     this.setInfo();
+  }
+
+  /** Stone-slab backdrops for the side strips and dark bands top and bottom, so margins read as UI. */
+  private strips() {
+    const d = DEPTH.hud - 3;
+    this.add.rectangle(0, L.bottom.y, L.W, Math.min(L.bottom.h, 60), 0x0b0a08, 0.9).setOrigin(0).setDepth(d);
+    this.add.rectangle(0, L.bottom.y, L.W, 1, 0xb88c1e).setOrigin(0).setDepth(d);
+    for (const r of [L.left, L.right]) {
+      if (r.w < 8) continue;
+      panel(this, r.x, r.y, r.w, r.h).setDepth(d).setAlpha(0.96);
+    }
   }
 
   private keys() {
@@ -227,27 +283,40 @@ export class GameScene extends Phaser.Scene {
       this.cancelPlacement();
       return;
     }
-    this.placement.begin(key, TOUCH ? 'tap' : 'hover');
+    this.placement.begin(key, 'hover');
     this.input_.trackCard(p);
     this.map.showPlacement(TOWERS[key], (c, r) => !!this.sim.towerAt(c, r));
     this.shop.selected = key;
-    this.shop.showTip(key);
+    // On touch a plain tap on a card goes straight to tap-mode (details + PLACE in the right strip);
+    // a drag that follows simply switches to drag mode.
+    if (TOUCH) {
+      this.placement.setMode('tap');
+      this.shop.setVisible(false);
+    }
     this.setInfo();
   }
 
-  private pointerMove(x: number, y: number, dragging: boolean) {
-    if (this.placement.active) {
-      if (dragging && this.placement.mode !== 'drag') this.placement.mode = 'drag';
-      if (dragging || this.placement.mode === 'hover') this.placement.moveTo(x, y);
-    }
-    this.drawAim(x, y);
+  private pointerMove(x: number, y: number) {
+    if (this.placement.active && this.placement.mode === 'hover') this.placement.moveTo(x, y);
+    this.drawAim(x, y, false);
+  }
+
+  private drag(x: number, y: number) {
+    if (!this.placement.active) return;
+    if (this.placement.mode !== 'drag') this.placement.setMode('drag');
+    this.placement.moveTo(x, y, true);
   }
 
   private dragEnd(x: number, y: number) {
     if (!this.placement.active) return;
-    this.placement.moveTo(x, y);
-    if (this.placement.valid()) this.commit(false);
-    else this.cancelPlacement();
+    this.placement.moveTo(x, y, true);
+    if (this.placement.valid()) {
+      this.commit(false);
+      return;
+    }
+    // An invalid drop keeps the ghost where it landed: tap another cell, or CANCEL.
+    this.placement.setMode(TOUCH ? 'tap' : 'hover');
+    this.setInfo();
   }
 
   private mapDown(x: number, y: number, right: boolean) {
@@ -259,9 +328,9 @@ export class GameScene extends Phaser.Scene {
       return;
     }
     if (this.abilities.armed) {
-      const k = this.abilities.armed;
-      if (this.sim.ability(k, x - MAP_X, y - MAP_Y)) this.disarm();
-      else if (k === 'fatwa') this.fx.floatText(x, y - 10, 'NO TARGET', COLORS.red);
+      // Desktop casts on click; touch aims while the finger is down and casts on release.
+      if (TOUCH) this.drawAim(x, y, true);
+      else this.cast(x, y);
       return;
     }
     if (this.placement.active) {
@@ -277,6 +346,20 @@ export class GameScene extends Phaser.Scene {
     const t = cell ? this.sim.towerAt(cell[0], cell[1]) : undefined;
     if (t) this.select(t);
     else this.deselect();
+  }
+
+  private mapUp(x: number, y: number) {
+    if (TOUCH && this.abilities.armed && !this.paused && !this.ended) this.cast(x, y);
+  }
+
+  private cast(x: number, y: number) {
+    const k = this.abilities.armed;
+    if (!k) return;
+    if (this.sim.ability(k, x - MAP_X, y - MAP_Y)) this.disarm();
+    else if (k === 'fatwa') {
+      this.fx.floatText(x, y - 10, 'NO TARGET', COLORS.red);
+      this.aim.clear();
+    }
   }
 
   private commit(keep = false) {
@@ -296,7 +379,7 @@ export class GameScene extends Phaser.Scene {
     this.placement.end();
     this.map.showPlacement(null, () => false);
     this.shop.selected = null;
-    this.shop.showTip(null);
+    if (!this.panel.tower) this.shop.setVisible(true);
     this.setInfo();
   }
 
@@ -350,10 +433,11 @@ export class GameScene extends Phaser.Scene {
     this.setInfo();
   }
 
-  private drawAim(x: number, y: number) {
+  /** The armed ability's area: follows the mouse on desktop, the pressed finger on touch. */
+  private drawAim(x: number, y: number, pressed: boolean) {
     this.aim.clear();
     const k = this.abilities.armed;
-    if (!k || TOUCH || !Input.onMap(x, y)) return;
+    if (!k || (TOUCH && !pressed) || !Input.onMap(x, y)) return;
     const r = k === 'staff' ? STAFF.radius : FATWA.pick;
     const c = k === 'staff' ? 0xffffff : 0xff4a4a;
     this.aim.fillStyle(c, 0.08).fillCircle(x, y, r);
@@ -362,14 +446,16 @@ export class GameScene extends Phaser.Scene {
 
   private setInfo() {
     let s: string;
-    if (this.abilities?.armed === 'staff') s = byInput('CLICK THE MAP: STAFF SLAM STUNS ALL NEARBY', 'TAP THE MAP: STAFF SLAM STUNS ALL NEARBY');
-    else if (this.abilities?.armed === 'fatwa') s = byInput('CLICK A SHIP TO ISSUE THE FATWA', 'TAP A SHIP TO ISSUE THE FATWA');
+    const armed = this.abilities?.armed;
+    if (armed === 'staff') s = byInput('CLICK THE MAP: THE STAFF STUNS EVERYTHING NEARBY', 'PRESS THE MAP, AIM, LET GO: THE STAFF STUNS EVERYTHING NEARBY');
+    else if (armed === 'fatwa') s = byInput('CLICK A SHIP TO ISSUE THE FATWA', 'PRESS A SHIP, LET GO TO ISSUE THE FATWA');
     else if (this.placement?.active)
-      s = this.placement.mode === 'tap' ? 'TAP A HATCHED SPOT, THEN PLACE' : 'CLICK A HATCHED SPOT. SHIFT KEEPS PLACING. ESC CANCELS';
-    else if (this.panel?.tower) s = byInput('U UPGRADE  X SELL  T TARGET', 'UPGRADE, SELL OR RETARGET');
-    else if (this.sim.wave === 0) s = byInput('BUILD, THEN SPACE TO START THE FIRST WAVE', 'BUILD, THEN START THE FIRST WAVE');
-    else s = byInput('F SPEED  A AUTO  1/2 ABILITIES', 'DRAG A CARD ONTO THE MAP TO BUILD');
-    this.info?.setText(s);
+      s = this.placement.mode === 'tap' ? 'TAP A HATCHED SPOT, THEN PLACE (OR DRAG THE CARD)' : 'CLICK A HATCHED SPOT. SHIFT KEEPS PLACING. ESC CANCELS';
+    else if (this.hoverKey) s = towerTip(this.hoverKey);
+    else if (this.panel?.tower) s = byInput('U UPGRADE  X SELL  T TARGET  ESC CLOSE', 'UPGRADE, SELL OR RETARGET. X CLOSES');
+    else if (this.sim.wave === 0) s = byInput('BUILD, THEN START THE FIRST WAVE (SPACE)', 'DRAG A CARD ONTO THE MAP, THEN START THE FIRST WAVE');
+    else s = byInput('SPACE WAVE  F SPEED  A AUTO  1/2 ABILITIES  P PAUSE', 'TAP A TOWER TO UPGRADE IT');
+    this.hint?.setText(s);
   }
 
   // ---- Sim events ----
@@ -686,25 +772,13 @@ export class GameScene extends Phaser.Scene {
     this.enemyView.render(this.sim.enemies);
     this.towerView.render(this.sim.towers);
     this.projView.render(this.sim.projectiles);
-    this.hud.update(this.sim, this.speed);
+    this.hud.update(this.sim);
+    this.leftBar.update(this.sim, this.speed);
     this.shop.update();
     this.abilities.update();
     if (this.panel.tower) this.panel.refresh();
-    this.updateStartButton();
     this.ticker.update(dt);
     this.popups.update(dt);
     this.dialogue.idle(this.input_.idleMs);
-  }
-
-  private updateStartButton() {
-    const sim = this.sim;
-    if (sim.wave >= sim.totalWaves || sim.over) {
-      this.startBtn.setLabel(sim.phase === 'won' ? 'HELD!' : 'LAST WAVE').setEnabled(false);
-    } else if (sim.phase === 'build') {
-      this.startBtn.setLabel(byInput(`START WAVE ${sim.wave + 1}\n[SPACE]`, `START WAVE ${sim.wave + 1}`)).setEnabled(true).setHighlight(true);
-    } else {
-      const can = sim.canStartWave();
-      this.startBtn.setLabel(can ? `SEND WAVE ${sim.wave + 1} EARLY` : `WAVE ${sim.wave} INCOMING`).setEnabled(can).setHighlight(false);
-    }
   }
 }

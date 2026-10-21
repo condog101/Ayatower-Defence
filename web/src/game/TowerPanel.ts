@@ -1,10 +1,10 @@
 import Phaser from 'phaser';
-import { DEPTH, HUD_H, SIDE_X } from '../data/balance';
+import { DEPTH, L } from '../data/balance';
 import type { Sim } from '../sim/sim';
 import type { Tower } from '../sim/types';
 import { COLORS, FONT, uiSize } from '../systems/UI';
 import { TowerView } from './TowerView';
-import { button, type Button } from './widgets';
+import { rectButton, type Button } from './widgets';
 
 export interface PanelActions {
   upgrade(t: Tower): void;
@@ -13,21 +13,17 @@ export interface PanelActions {
   close(): void;
 }
 
-const W = 154;
-
 function stats(t: Tower): string {
   const tier = t.def.tiers[t.tier];
   if (t.def.role === 'support') return tier.blurb;
   const rate = 60 / Math.max(1, tier.cooldown / t.buff.rate);
   const dmg = Math.round(tier.damage * t.buff.dmg * 10) / 10;
   const shots = tier.multishot ? ` x${tier.multishot}` : '';
-  const lines = [`DMG ${dmg}${shots}  ${tier.dmgKind.toUpperCase()}`, `RANGE ${Math.round(tier.range * t.buff.range)}`, `RATE ${rate.toFixed(1)}/S`, `KILLS ${t.kills}`];
   const hits = [tier.hitsSea ? 'SEA' : '', tier.hitsAir ? 'AIR' : ''].filter(Boolean).join('+');
-  lines.push(`HITS ${hits}`);
-  return lines.join('\n');
+  return [`DMG ${dmg}${shots}`, tier.dmgKind.toUpperCase(), `RANGE ${Math.round(tier.range * t.buff.range)}`, `RATE ${rate.toFixed(1)}/S`, `HITS ${hits}`, `KILLS ${t.kills}`].join('\n');
 }
 
-/** The selected tower: what it is, its stats, UPGRADE / SELL / TARGET. Replaces the shop grid. */
+/** The selected tower in the right strip: what it is, its stats, UPGRADE / SELL / TARGET. Replaces the shop. */
 export class TowerPanel {
   private root: Phaser.GameObjects.Container;
   private name: Phaser.GameObjects.Text;
@@ -37,6 +33,7 @@ export class TowerPanel {
   private upgradeBtn: Button;
   private sellBtn: Button;
   private targetBtn: Button;
+  private buttons: Button[];
   tower: Tower | null = null;
 
   constructor(
@@ -45,30 +42,24 @@ export class TowerPanel {
     actions: PanelActions,
   ) {
     const s = scene;
-    const x = SIDE_X + 3;
-    const y = HUD_H + 4;
-    const txt = (yy: number, size: number, color: string) =>
-      s.add.text(6, yy, '', { fontFamily: FONT, fontSize: `${uiSize(size)}px`, color, lineSpacing: 5, wordWrap: { width: W - 12 } }).setOrigin(0);
-    const bg = s.add.rectangle(0, 0, W, 348, 0x14110d, 1).setOrigin(0).setStrokeStyle(2, 0xb88c1e);
-    this.name = txt(8, 8, COLORS.gold).setWordWrapWidth(W - 40);
-    this.tierText = txt(36, 8, COLORS.text);
-    this.icon = s.add.container(W / 2, 92);
-    this.statsText = txt(124, 8, COLORS.dim);
-    const by = 222;
-    const btn = (yy: number, h: number, label: string, fn: () => void) => {
-      const b = button(s, x + 6, y + yy, W - 12, h, label, () => this.tower && fn(), 8, DEPTH.hud + 1);
-      return b;
-    };
-    this.upgradeBtn = btn(by, 40, '', () => actions.upgrade(this.tower!));
-    this.sellBtn = btn(by + 46, 30, '', () => actions.sell(this.tower!));
-    this.targetBtn = btn(by + 82, 30, '', () => actions.target(this.tower!));
-    const close = button(s, x + W - 26, y + 4, 22, 22, 'X', () => actions.close(), 8, DEPTH.hud + 1);
-    this.root = s.add.container(x, y, [bg, this.name, this.tierText, this.icon, this.statsText]).setDepth(DEPTH.hud);
+    const side = L.game.side;
+    const wrap = side.w - 8;
+    const txt = (y: number, size: number, color: string, w = wrap) =>
+      s.add.text(4, y, '', { fontFamily: FONT, fontSize: `${uiSize(size)}px`, color, lineSpacing: 4, wordWrap: { width: w } }).setOrigin(0);
+    const bg = s.add.rectangle(0, 0, side.w, side.h, 0x14110d, 1).setOrigin(0).setStrokeStyle(2, 0xb88c1e);
+    this.name = txt(6, 8, COLORS.gold, wrap - L.game.close.w);
+    this.tierText = txt(L.touch ? 56 : 40, 8, COLORS.text);
+    this.icon = s.add.container(side.w / 2, L.touch ? 136 : 104);
+    this.statsText = txt(L.touch ? 166 : 132, 8, COLORS.dim);
+    const [b0, b1, b2] = L.game.sideButtons;
+    this.upgradeBtn = rectButton(s, b0, '', () => this.tower && actions.upgrade(this.tower), 8, DEPTH.hud + 1);
+    this.sellBtn = rectButton(s, b1, '', () => this.tower && actions.sell(this.tower), 8, DEPTH.hud + 1);
+    this.targetBtn = rectButton(s, b2, '', () => this.tower && actions.target(this.tower), 8, DEPTH.hud + 1);
+    const close = rectButton(s, L.game.close, 'X', () => actions.close(), 10, DEPTH.hud + 1);
+    this.root = s.add.container(side.x, side.y, [bg, this.name, this.tierText, this.icon, this.statsText]).setDepth(DEPTH.hud);
     this.buttons = [this.upgradeBtn, this.sellBtn, this.targetBtn, close];
     this.show(null);
   }
-
-  private buttons: Button[];
 
   show(t: Tower | null) {
     this.tower = t;
@@ -93,8 +84,8 @@ export class TowerPanel {
     this.statsText.setText(stats(t));
     const cost = this.sim.upgradeCost(t);
     if (cost === null) this.upgradeBtn.setLabel('MAX TIER').setEnabled(false);
-    else this.upgradeBtn.setLabel(`UPGRADE ${cost}\n${t.def.tiers[t.tier + 1].name}`).setEnabled(this.sim.cash >= cost);
+    else this.upgradeBtn.setLabel(`UPGRADE\n${cost}`).setEnabled(this.sim.cash >= cost);
     this.sellBtn.setLabel(`SELL +${this.sim.sellValue(t)}`);
-    this.targetBtn.setLabel(`TARGET: ${t.targeting.toUpperCase()}`);
+    this.targetBtn.setLabel(`TARGET\n${t.targeting.toUpperCase()}`);
   }
 }

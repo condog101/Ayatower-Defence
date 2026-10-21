@@ -1,6 +1,8 @@
 import Phaser from 'phaser';
 import { Audio } from './Audio';
+import { OY } from '../data/balance';
 import { TOUCH } from './Device';
+import { LAYOUT_CHANGED } from './Layout';
 
 export const FONT = '"Press Start 2P"';
 
@@ -14,9 +16,22 @@ export const COLORS = {
   navy: 0x0d1b33,
 };
 
-/** Phones draw the 540 px canvas at roughly 0.7x, so small text gets 2 px more on touch. */
+/** Phones draw the canvas at roughly 0.65x, so on touch small text is at least 12 px (8 and 10 -> 12, 12 -> 14). */
 export function uiSize(size: number): number {
-  return TOUCH && size < 16 ? size + 2 : size;
+  if (!TOUCH || size >= 16) return size;
+  return size <= 10 ? 12 : size + 2;
+}
+
+/**
+ * Menu scenes are designed in a 960x540 frame at (OX, ...): scroll the camera so the frame sits
+ * centred vertically on the (taller) canvas, and rebuild the scene when the screen layout changes.
+ * Full-screen backdrops should use setScrollFactor(0).
+ */
+export function designFrame(scene: Phaser.Scene) {
+  scene.cameras.main.setScroll(0, -OY);
+  const restart = () => scene.scene.restart(scene.sys.settings.data);
+  scene.events.on(LAYOUT_CHANGED, restart);
+  scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => scene.events.off(LAYOUT_CHANGED, restart));
 }
 
 export function text(

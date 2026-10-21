@@ -1,13 +1,13 @@
 import Phaser from 'phaser';
 import { LEVEL_COUNT } from '../../../shared/progress';
-import { HEIGHT, OX, PX, WIDTH } from '../data/balance';
+import { CX, HEIGHT, OX, PX, WIDTH } from '../data/balance';
 import { LEVELS } from '../data/levels';
 import { ENDING } from '../data/story';
 import { syncProgress } from '../net/sync';
 import { Audio } from '../systems/Audio';
 import { byInput } from '../systems/Device';
 import { Save } from '../systems/Save';
-import { COLORS, onContinue, panel, text } from '../systems/UI';
+import { COLORS, designFrame, onContinue, panel, text } from '../systems/UI';
 import type { LevelResult } from './Game';
 
 /** Cosmetic verdict stamped on a cleared level. */
@@ -34,10 +34,11 @@ export class LevelClearScene extends Phaser.Scene {
     });
     void syncProgress();
 
-    this.add.tileSprite(0, 0, WIDTH, HEIGHT, 'tiles', 0).setOrigin(0).setTileScale(PX).setAlpha(0.5);
+    designFrame(this);
+    this.add.tileSprite(0, 0, WIDTH, HEIGHT, 'tiles', 0).setOrigin(0).setTileScale(PX).setScrollFactor(0).setAlpha(0.5);
     panel(this, OX + 190, 70, 580, 380);
-    text(this, WIDTH / 2, 110, 'THE STRAIT HOLDS', 24, COLORS.gold);
-    text(this, WIDTH / 2, 140, `LEVEL ${lvl}: ${getName(lvl)}`, 8, COLORS.dim);
+    text(this, CX, 110, 'THE STRAIT HOLDS', 24, COLORS.gold);
+    text(this, CX, 140, `LEVEL ${lvl}: ${getName(lvl)}`, 8, COLORS.dim);
     const lines = [
       `SHIPS SUNK         ${String(r.killScore).padStart(7)}`,
       `WAVE BOUNTIES      ${String(r.waveScore).padStart(7)}`,
@@ -50,17 +51,17 @@ export class LevelClearScene extends Phaser.Scene {
     ];
     lines.forEach((l, i) =>
       this.time.delayedCall(220 * (i + 1), () => {
-        text(this, WIDTH / 2 - 128, 178 + i * 24, l, 8, i >= 6 ? COLORS.gold : COLORS.text, 0).setOrigin(0, 0.5);
+        text(this, CX - 128, 178 + i * 24, l, 8, i >= 6 ? COLORS.gold : COLORS.text, 0).setOrigin(0, 0.5);
         if (l) Audio.play('blip');
       }),
     );
     const stamp = verdict(r);
     this.time.delayedCall(220 * (lines.length + 1), () => {
-      const t = text(this, WIDTH / 2, 386, `* ${stamp} *`, 16, stamp === 'SCRAPED THROUGH' ? COLORS.red : COLORS.gold).setScale(2).setAlpha(0);
+      const t = text(this, CX, 386, `* ${stamp} *`, 16, stamp === 'SCRAPED THROUGH' ? COLORS.red : COLORS.gold).setScale(2).setAlpha(0);
       this.tweens.add({ targets: t, scale: 1, alpha: 1, duration: 220, ease: 'Back.easeOut' });
       Audio.play('upgrade');
     });
-    const prompt = text(this, WIDTH / 2, 424, finished ? byInput('PRESS ANY KEY', 'TAP TO CONTINUE') : byInput('PRESS ANY KEY FOR THE NEXT LEVEL', 'TAP FOR THE NEXT LEVEL'), 8, COLORS.gold);
+    const prompt = text(this, CX, 424, finished ? byInput('PRESS ANY KEY', 'TAP TO CONTINUE') : byInput('PRESS ANY KEY FOR THE NEXT LEVEL', 'TAP FOR THE NEXT LEVEL'), 8, COLORS.gold);
     this.tweens.add({ targets: prompt, alpha: 0.2, yoyo: true, repeat: -1, duration: 500 });
     this.cameras.main.fadeIn(250);
     onContinue(

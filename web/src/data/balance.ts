@@ -1,46 +1,41 @@
 // Phaser-side layout numbers. Gameplay numbers live in the Phaser-free sim (web/src/sim) and the data
 // tables (towers.ts, enemies.ts, levels.ts); nothing under sim/ or data/ may import this file, because
 // Device.ts reads `location` at import and the sim is tested headless in workerd.
+//
+// The layout is recomputed when the screen changes (rotation, fullscreen, resize): these are live ES
+// module bindings, so read them where they're used (create(), constructors), never copy them into
+// module-level constants.
 
-import { MAP_H, MAP_W } from '../sim/const';
+import { computeLayout, MAP_H, MAP_W, type Layout } from '../layout/compute';
 import { TOUCH } from '../systems/Device';
 
-export const HEIGHT = 540;
+export { MAP_H, MAP_W };
 
-/**
- * Canvas width. Desktop is 960x540 (16:9). Phones are wider than 16:9, so on touch the canvas
- * widens to the screen's landscape aspect (inside the safe area) instead of letterboxing.
- */
-function gameWidth(): number {
-  if (!TOUCH || typeof document === 'undefined') return 960;
-  const el = document.getElementById('game');
-  if (!el) return 960;
-  const w = el.clientWidth;
-  const h = el.clientHeight;
-  if (!(w > 0 && h > 0)) return 960;
-  // Long side over short side: a phone held in portrait at load still sizes for landscape play.
-  const aspect = Math.max(w, h) / Math.min(w, h);
-  return Math.min(1280, Math.max(960, Math.round((HEIGHT * aspect) / 2) * 2));
+/** The current layout (systems/Layout.ts measures the screen and calls setLayout). */
+export let L: Layout = computeLayout(1920, 1080, undefined, TOUCH);
+export let WIDTH = L.W;
+export let HEIGHT = L.H;
+/** Where the 960x540 design frame of the menu scenes sits. */
+export let OX = L.ox;
+export let OY = L.oy;
+/** Horizontal centre of the design frame. */
+export let CX = L.ox + 480;
+export let MAP_X = L.map.x;
+export let MAP_Y = L.map.y;
+
+export function setLayout(next: Layout) {
+  L = next;
+  WIDTH = next.W;
+  HEIGHT = next.H;
+  OX = next.ox;
+  OY = next.oy;
+  CX = next.ox + 480;
+  MAP_X = next.map.x;
+  MAP_Y = next.map.y;
 }
 
-export const WIDTH = gameWidth();
-/** How far a 960-wide layout shifts right to sit centred on the canvas. */
-export const OX = (WIDTH - 960) / 2;
 /** Every sprite is drawn at this integer scale. */
 export const PX = 2;
-
-/** HUD strip along the top. */
-export const HUD_H = 28;
-/** The 800x512 map sits under the HUD strip, left of the shop. */
-export const MAP_X = OX;
-export const MAP_Y = HUD_H;
-export { MAP_H, MAP_W };
-/** Shop sidebar, right of the map. */
-export const SIDE_X = OX + MAP_W;
-export const SIDE_W = 160;
-
-/** Touch targets get this much slop on every side so every control is at least 44 px. */
-export const SLOP = 8;
 
 export const POPUP = {
   minGapMs: 30_000,

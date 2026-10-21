@@ -1,12 +1,12 @@
 import Phaser from 'phaser';
-import { HEIGHT, OX, PX, WIDTH } from '../data/balance';
+import { CX, HEIGHT, OX, PX, WIDTH } from '../data/balance';
 import { pickQuote, renderLine } from '../data/quotes';
 import { submitRun, syncProgress } from '../net/sync';
 import { Audio } from '../systems/Audio';
 import { Music } from '../systems/Music';
 import { newRun, type RunState } from '../systems/Run';
 import { Save } from '../systems/Save';
-import { COLORS, menu, panel, text } from '../systems/UI';
+import { COLORS, designFrame, menu, panel, text } from '../systems/UI';
 
 export class GameOverScene extends Phaser.Scene {
   constructor() {
@@ -18,11 +18,12 @@ export class GameOverScene extends Phaser.Scene {
     Save.update((p) => (p.bestRun = Math.max(p.bestRun, run.score)));
     void syncProgress();
 
-    this.add.tileSprite(0, 0, WIDTH, HEIGHT, 'tiles', 0).setOrigin(0).setTileScale(PX).setAlpha(0.4);
+    designFrame(this);
+    this.add.tileSprite(0, 0, WIDTH, HEIGHT, 'tiles', 0).setOrigin(0).setTileScale(PX).setScrollFactor(0).setAlpha(0.4);
     panel(this, OX + 140, 50, 680, 440);
-    text(this, WIDTH / 2, 92, victory ? 'YOU SHAH-LL NOT PASS!' : 'THE EYE HAS PASSED', 24, victory ? COLORS.gold : COLORS.red);
+    text(this, CX, 92, victory ? 'YOU SHAH-LL NOT PASS!' : 'THE EYE HAS PASSED', 24, victory ? COLORS.gold : COLORS.red);
     if (victory) {
-      text(this, WIDTH / 2, 128, 'THE STRAIT HELD. BIG DON CALLS IT THE GREATEST RETREAT IN HISTORY.', 8, COLORS.green);
+      text(this, CX, 128, 'THE STRAIT HELD. BIG DON CALLS IT THE GREATEST RETREAT IN HISTORY.', 8, COLORS.green);
       Audio.play('clear');
     } else {
       Audio.play('death');
@@ -30,7 +31,7 @@ export class GameOverScene extends Phaser.Scene {
     this.time.delayedCall(victory ? 1200 : 350, () => Music.stop());
     const mins = Math.floor(run.playMs / 60000);
     const secs = Math.floor((run.playMs % 60000) / 1000);
-    text(this, WIDTH / 2, 176, `FINAL SCORE  ${run.score}\n\nLEVEL ${run.level}   SHIPS SUNK ${run.kills}   PASSED ${run.leaks}   TIME ${mins}:${String(secs).padStart(2, '0')}`, 8);
+    text(this, CX, 176, `FINAL SCORE  ${run.score}\n\nLEVEL ${run.level}   SHIPS SUNK ${run.kills}   PASSED ${run.leaks}   TIME ${mins}:${String(secs).padStart(2, '0')}`, 8);
 
     // The loser of the exchange gets the last word.
     const who = victory ? 'don' : 'aya';
@@ -41,7 +42,7 @@ export class GameOverScene extends Phaser.Scene {
     this.time.delayedCall(3000, () => portrait.setFrame(victory ? 0 : 4));
     this.add.image(OX + 156, 478, 'advisory').setOrigin(0, 1).setScale(1.5);
 
-    const status = text(this, WIDTH / 2, 370, Save.session ? 'ENTERING IT IN THE CHARTS...' : 'JOIN THE GUARD TO POST SCORES TO THE CHARTS', 8, COLORS.dim);
+    const status = text(this, CX, 370, Save.session ? 'ENTERING IT IN THE CHARTS...' : 'JOIN THE GUARD TO POST SCORES TO THE CHARTS', 8, COLORS.dim);
     if (Save.session) {
       void submitRun({
         score: run.score,
@@ -54,7 +55,7 @@ export class GameOverScene extends Phaser.Scene {
 
     menu(
       this,
-      WIDTH / 2,
+      CX,
       410,
       [
         // Retry the level you fell on (no briefing deck again).
