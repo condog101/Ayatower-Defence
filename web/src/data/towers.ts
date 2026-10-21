@@ -9,7 +9,7 @@ export const TOWERS: Record<TowerKey, TowerDef> = {
     key: 'boats', name: 'SPEEDBOAT PIER', basis: 'IRGC Boghammar fast-attack boats', index: 0, aimed: true,
     pro: 'Cheap, fast firing', con: 'Bullets bounce off armour', placement: 'land', role: 'attack', unlockLevel: 1,
     tiers: [
-      { name: 'TWIN DSHK', cost: 180, range: 110, cooldown: sec(0.32), damage: 1, dmgKind: 'bullet', projectile: 'shot', speed: 420, hitsSea: true, hitsAir: false, blurb: 'Two heavy machine guns on a speedboat.' },
+      { name: 'TWIN DSHK', cost: 180, range: 110, cooldown: sec(0.22), damage: 1, dmgKind: 'bullet', projectile: 'shot', speed: 420, hitsSea: true, hitsAir: false, blurb: 'Two heavy machine guns on a speedboat.' },
       { name: '107MM ROCKETS', cost: 160, range: 120, cooldown: sec(0.6), damage: 2, dmgKind: 'explosive', projectile: 'shot', speed: 300, splash: 18, hitsSea: true, hitsAir: false, blurb: 'Rocket rack: small blasts that crack armour.' },
       { name: 'SWARM', cost: 300, range: 130, cooldown: sec(0.45), damage: 2, dmgKind: 'explosive', projectile: 'shot', speed: 320, splash: 18, multishot: 3, hitsSea: true, hitsAir: false, blurb: 'The whole pier sorties: three targets at once.' },
     ],

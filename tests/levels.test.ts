@@ -34,8 +34,8 @@ function threat(level: LevelDef): number {
 }
 
 describe('levels', () => {
-  it('are numbered in order up to the campaign length', () => {
-    expect(LEVELS.length).toBeLessThanOrEqual(LEVEL_COUNT);
+  it('are the ten campaign levels, in order', () => {
+    expect(LEVELS.length).toBe(LEVEL_COUNT);
     LEVELS.forEach((l, i) => expect(l.n).toBe(i + 1));
   });
 

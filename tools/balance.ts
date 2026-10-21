@@ -10,8 +10,13 @@ const only = Number(process.argv[2] ?? 0);
 for (const level of LEVELS) {
   if (only && level.n !== only) continue;
   const r = runBuild(level, TOWERS, ENEMIES);
+  const idle = runBuild(level, TOWERS, ENEMIES, []);
+  const towers = r.sim.towers.map((t) => `${t.def.key}${t.tier + 1}@${t.c},${t.r}`).join(' ');
   console.log(
-    `L${level.n} ${r.sim.phase.padEnd(4)} wave ${r.sim.wave}/${level.waves.length} lives ${r.sim.lives} leaks ${r.sim.leaks} cash ${r.sim.cash} score ${r.sim.score} kills ${r.sim.kills} ticks ${r.sim.tick} skipped ${r.skipped}`,
+    `L${level.n} ${r.sim.phase.padEnd(4)} wave ${r.sim.wave}/${level.waves.length} lives ${r.sim.lives} leaks ${r.sim.leaks} cash ${r.sim.cash} score ${r.sim.score} skipped ${r.skipped} | idle ${idle.sim.phase} w${idle.sim.wave}`,
   );
-  if (process.env.VERBOSE) for (const l of r.log) console.log('   ', l);
+  if (process.env.VERBOSE) {
+    console.log('   ', towers);
+    for (const l of r.log) console.log('   ', l);
+  }
 }

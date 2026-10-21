@@ -41,6 +41,8 @@ export type TowerKey =
 export interface EnemyDef {
   key: EnemyKey;
   name: string;
+  /** One word for the HUD's wave preview. */
+  short: string;
   layer: Layer;
   hp: number;
   /** Multiple of BASE_SPEED px/s. */
@@ -183,6 +185,8 @@ export interface Enemy extends Status {
   alive: boolean;
   revealed: boolean;
   wave: number;
+  /** 0 for wave spawns, parent's + 1 for children and boss launches (bounty halves per generation). */
+  gen: number;
   spawnAcc: number;
   spawned: number;
 }

@@ -5,7 +5,7 @@ import type { DmgKind, Enemy, EnemyKey, Tower } from './types';
 /** Lateral spread of ships across the lane, px either side of the centre line. */
 const LATERAL = 10;
 
-export function spawnEnemy(sim: Sim, kind: EnemyKey, d: number, wave: number, lateral?: number): Enemy {
+export function spawnEnemy(sim: Sim, kind: EnemyKey, d: number, wave: number, lateral?: number, gen = 0): Enemy {
   const def = sim.enemyDefs[kind];
   const e: Enemy = {
     id: sim.nextId++,
@@ -20,6 +20,7 @@ export function spawnEnemy(sim: Sim, kind: EnemyKey, d: number, wave: number, la
     alive: true,
     revealed: !def.stealth,
     wave,
+    gen,
     spawnAcc: 0,
     spawned: 0,
     slowMult: 1,
@@ -54,7 +55,7 @@ export function stepEnemies(sim: Sim) {
     if (sp && e.spawned < sp.max && ++e.spawnAcc >= sp.everyTicks) {
       e.spawnAcc = 0;
       e.spawned++;
-      const child = spawnEnemy(sim, sp.kind, e.d + 4, e.wave);
+      const child = spawnEnemy(sim, sp.kind, e.d + 4, e.wave, undefined, e.gen + 1);
       sim.emit({ t: 'bossSpawn', id: child.id });
     }
     if (e.stunTicks > 0) {
@@ -104,7 +105,8 @@ export function damage(sim: Sim, e: Enemy, amount: number, kind: DmgKind, tower?
 
 function kill(sim: Sim, e: Enemy, tower?: Tower) {
   e.alive = false;
-  const cash = Math.round(e.def.cash * (tower ? tower.buff.bounty : 1));
+  // Bounty halves with each generation, so a destroyer's whole brood doesn't pay out like a fleet.
+  const cash = Math.floor((e.def.cash * (tower ? tower.buff.bounty : 1)) / 2 ** e.gen);
   sim.cash += cash;
   sim.score += e.def.score;
   sim.killScore += e.def.score;
@@ -114,7 +116,7 @@ function kill(sim: Sim, e: Enemy, tower?: Tower) {
   let k = 0;
   for (const c of e.def.children ?? []) {
     for (let i = 0; i < c.n; i++, k++) {
-      const child = spawnEnemy(sim, c.kind, e.d - k * 6, e.wave, e.def.big ? undefined : e.lateral);
+      const child = spawnEnemy(sim, c.kind, e.d - k * 6, e.wave, e.def.big ? undefined : e.lateral, e.gen + 1);
       // Children keep the parent's slow but not its stun.
       if (e.slowTicks > 0) {
         child.slowMult = e.slowMult;
