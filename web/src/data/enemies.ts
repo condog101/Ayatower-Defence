@@ -54,7 +54,7 @@ export const ENEMIES: Record<EnemyKey, EnemyDef> = {
     introLevel: 5, sprite: 'boss_yacht',
   },
   boss_don: {
-    key: 'boss_don', name: '"USS BIG DON" GOLDEN SUPERCARRIER', short: 'BIG DON', layer: 'sea', hp: 4000, speed: 0.4, leak: 999, cash: 800, score: 10000, radius: 40,
+    key: 'boss_don', name: '"USS SOUR-DON" GOLDEN SUPERCARRIER', short: 'SOUR-DON', layer: 'sea', hp: 4000, speed: 0.4, leak: 999, cash: 800, score: 10000, radius: 40,
     armoured: true, boss: true, big: true,
     children: [{ kind: 'carrier', n: 2 }],
     spawns: { kind: 'hornet', everyTicks: sec(5), max: 30 },

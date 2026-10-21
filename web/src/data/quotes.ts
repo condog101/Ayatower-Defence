@@ -1,4 +1,4 @@
-// The line bank. Two voices: BIG DON (a parody of Donald Trump, cast as Sauron, the Eye of
+// The line bank. Two voices: SOUR-DON THE ORANGE (a parody of Donald Trump, cast as Sauron, the Eye of
 // Mordor-a-Lago) and THE AYATOWER (the Grey Turban: an Ayatollah caricature cast as Gandalf).
 // Every line is fictional satire written for this game; none are real quotes, and the Tolkien
 // nods are parodies, not quotations. Swear words are written as {word} and ALWAYS rendered
@@ -142,7 +142,7 @@ export const QUOTES: Quote[] = [
   ]),
   ...q('aya', 'victory', [
     'None passed. Well, some passed. But the important ones did not pass.',
-    'It is over. Go home, Donald. Your hair is getting wet under that helmet.',
+    'It is over. Go home, Sour-don. Your hair is getting wet under that helmet.',
     'The Eye closes. Now, where did I leave my tea?',
   ]),
 

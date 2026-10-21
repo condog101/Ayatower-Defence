@@ -1,4 +1,4 @@
-"""Boss ships (fictional satire), facing EAST: the MAR-A-LAGO golden superyacht and USS BIG DON,
+"""Boss ships (fictional satire), facing EAST: the MAR-A-LAGO golden superyacht and USS SOUR-DON,
 a gold-and-black supercarrier with the flaming Eye painted across its flight deck and the spires
 of Barad-dur rising from its island."""
 import math
@@ -85,8 +85,8 @@ class Yacht:
         return strip([cls.frame(0), cls.frame(1)])
 
 
-class BigDon:
-    """USS BIG DON: supercarrier silhouette in gold and black, with a huge flaming Eye of Sauron
+class SourDon:
+    """USS SOUR-DON: supercarrier silhouette in gold and black, with a huge flaming Eye of Sauron
     painted across the flight deck and the black spires of Barad-dur rising from a gold island
     sponson on the starboard bow. Frame 1 flickers the flames, the eye's glow and the spire fire."""
 

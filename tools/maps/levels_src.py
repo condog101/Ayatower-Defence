@@ -227,7 +227,7 @@ META = {
         ),
     ),
     10: dict(
-        name='THE BLACK GATE OF HORMUZ', sub='The Return of the Shah-ll Not Pass', cash=1600, towers=T8, bossName='THE USS BIG DON',
+        name='THE BLACK GATE OF HORMUZ', sub='The Return of the Shah-ll Not Pass', cash=1600, towers=T8, bossName='THE USS SOUR-DON',
         brief='At the Black Gate of Hormuz the Eye itself came down two short lanes through the rock. If its great ship reaches the tower, all is lost.',
         waves=waves(
             "wave(180, rush('cyclone', 15, 1))",

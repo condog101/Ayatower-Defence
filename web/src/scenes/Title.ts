@@ -44,10 +44,10 @@ export class TitleScene extends Phaser.Scene {
     });
     this.add.image(OX + 24, 16, 'title_logo').setOrigin(0).setScale(1.5);
     this.add.sprite(OX + 36, 196, 'aya', 4).setOrigin(0).setScale(1.25).setCrop(0, 0, 64, 56);
-    this.add.sprite(OX + 136, 196, 'don', 2).setOrigin(0).setScale(1.25).setCrop(0, 0, 64, 56);
+    this.add.sprite(OX + 150, 196, 'don', 2).setOrigin(0).setScale(1.25).setCrop(0, 0, 64, 56);
     text(this, OX + 76, 286, 'THE GREY\nTURBAN', 8, COLORS.gold);
-    text(this, OX + 126, 230, 'VS', 8, COLORS.text);
-    text(this, OX + 176, 280, 'BIG DON', 8, COLORS.red);
+    text(this, OX + 133, 230, 'VS', 8, COLORS.text);
+    text(this, OX + 190, 280, 'SOUR-DON', 8, COLORS.red);
     this.add.image(L.safe.x + L.safe.w - 16, HEIGHT - 16, 'seal').setOrigin(1).setScale(2).setScrollFactor(0);
     this.layer = this.add.container(0, 0);
     this.cameras.main.fadeIn(300);
@@ -127,7 +127,7 @@ export class TitleScene extends Phaser.Scene {
           this,
           CX,
           230,
-          'AYATOWER DEFENCE: YOU SHAH-LL NOT PASS!\n\nA GAME BY CONNOR\nCODE: CLAUDE   ART: GENERATED + LIBRESPRITE\nFONT: PRESS START 2P (OFL)   SFX + MUSIC: ZZFX\n\nBIG DON IS A PARODY OF DONALD TRUMP.\nTHE GREY TURBAN IS A CARICATURE OF AN AYATOLLAH.\nEVERY LINE IS FICTIONAL SATIRE, NOT A REAL QUOTE.\nTHE SHIPS, PLANES AND WEAPONS ARE LOOSELY BASED ON\nREAL ONES; THEIR NUMBERS ARE GAME NUMBERS.\nNO WIZARDS WERE HARMED. SOME WERE MILDLY INCONVENIENCED.',
+          'AYATOWER DEFENCE: YOU SHAH-LL NOT PASS!\n\nA GAME BY CONNOR\nCODE: CLAUDE   ART: GENERATED + LIBRESPRITE\nFONT: PRESS START 2P (OFL)   SFX + MUSIC: ZZFX\n\nSOUR-DON THE ORANGE IS A PARODY OF DONALD TRUMP.\nTHE GREY TURBAN IS A CARICATURE OF AN AYATOLLAH.\nEVERY LINE IS FICTIONAL SATIRE, NOT A REAL QUOTE.\nTHE SHIPS, PLANES AND WEAPONS ARE LOOSELY BASED ON\nREAL ONES; THEIR NUMBERS ARE GAME NUMBERS.\nNO WIZARDS WERE HARMED. SOME WERE MILDLY INCONVENIENCED.',
           8,
           COLORS.text,
         ),

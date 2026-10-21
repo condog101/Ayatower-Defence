@@ -2,15 +2,15 @@
 
 Tolkien high fantasy in a 16-bit key: moss and meadow grass, slate stone, sun-bleached sand,
 parchment, black iron, ember fire, mithril blue, Mordor red, deep teal sea, a starlit night,
-plus the caricature ramps (skin, Big Don's gold hair, the Grey Turban's robe greys and white
+plus the caricature ramps (skin, Sour-don's gold hair, the Grey Turban's robe greys and white
 beard). Colours are RGBA tuples. Keep this list at 40 entries so the art stays coherent;
 LibreSprite users can load these as a palette when touching up.
 
 Ramps use x_lt / x / x_dk naming. Some entries double up on purpose:
   - smoke_lt / smoke / iron are the Grey Turban's turban + robe ramp and Mordor's black iron,
   - white is the wizard's beard and the snow on the peaks, cream the lightest parchment,
-  - gold / gold_dk / fire_yellow are Big Don's swept hair (and every bit of gaudy trim),
-  - tie is Big Don's red tie and the red of the Eye; maroon is Mordor's dried-blood red,
+  - gold / gold_dk / fire_yellow are Sour-don's swept hair (and every bit of gaudy trim),
+  - tie is Sour-don's red tie and the red of the Eye; maroon is Mordor's dried-blood red,
   - mithril_lt / mithril are runes, crystals, the wizard's staff light and magic sparks,
   - night / dusk are the starlit sky and the purple of wizardry.
 """

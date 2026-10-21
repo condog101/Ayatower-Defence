@@ -13,12 +13,12 @@ const TEXT_PX = TOUCH ? 12 : 8;
 const SPEED = TOUCH ? 130 : 105;
 
 const VOICES: Record<Who, { tag: string; name: string; color: number }> = {
-  don: { tag: '● THE EYE SEES', name: 'BIG DON', color: 0xc8102e },
+  don: { tag: '● THE EYE SEES', name: 'SOUR-DON', color: 0xc8102e },
   aya: { tag: '◆ GREY TURBAN', name: 'THE AYATOWER', color: 0x3d6b4a },
 };
 
 /**
- * Running commentary as a news ticker along the bottom of the map. Big Don's lines run under a red
+ * Running commentary as a news ticker along the bottom of the map. Sour-don's lines run under a red
  * THE EYE SEES tag, the Grey Turban's under a green one. Story beats get the slide-in card instead.
  */
 export class Ticker {

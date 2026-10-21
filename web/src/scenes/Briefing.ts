@@ -18,7 +18,7 @@ export interface BriefingData {
 
 /** Don's missives are visions in the palantir (dark glass, light text); the Ayatower's are scrolls (parchment, dark ink). */
 const LOOK: Record<Who, { frame: 'palantir' | 'scroll'; name: string; title: string; ink: string; dim: string; accent: string; replyRule: number }> = {
-  don: { frame: 'palantir', name: 'BIG DON', title: 'A VISION IN THE STONE', ink: COLORS.text, dim: '#9aa4c0', accent: COLORS.red, replyRule: 0x5a6d8c },
+  don: { frame: 'palantir', name: 'SOUR-DON THE ORANGE', title: 'A VISION IN THE STONE', ink: COLORS.text, dim: '#9aa4c0', accent: COLORS.red, replyRule: 0x5a6d8c },
   aya: { frame: 'scroll', name: 'THE AYATOWER', title: 'A SEALED SCROLL', ink: '#2a1d10', dim: '#6b5434', accent: '#7a2a18', replyRule: 0x8a6a3a },
 };
 

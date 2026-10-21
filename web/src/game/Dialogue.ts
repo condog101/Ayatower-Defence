@@ -8,7 +8,7 @@ import type { RunState } from '../systems/Run';
 import type { Ticker } from '../systems/Ticker';
 
 export interface StoryOut {
-  /** A story beat: the Grey Turban speaks and Big Don answers (card on desktop, freeze on touch). */
+  /** A story beat: the Grey Turban speaks and Sour-don answers (card on desktop, freeze on touch). */
   story(aya: string, don: string): void;
 }
 

@@ -58,6 +58,6 @@ export const LEVEL_10: LevelDef = {
     wave(440, rush('carrier', 13, 3.5), rush('lhd', 13, 3, 8)),
     boss(600, rush('boss_don', 1, 1), rush('carrier', 2, 8, 10)),
   ],
-  bossName: 'THE USS BIG DON',
+  bossName: 'THE USS SOUR-DON',
   seed: 1010,
 };

@@ -1,6 +1,6 @@
-"""Big Don, the Eye of Mordor-a-Lago: popup portrait for the villain.
+"""Sour-don the Orange, the Eye of Mordor-a-Lago: popup portrait for the villain.
 
-FICTIONAL SATIRICAL CARICATURE. Big Don is an invented cartoon villain for a parody game (a
+FICTIONAL SATIRICAL CARICATURE. Sour-don the Orange is an invented cartoon villain for a parody game (a
 Trump parody cast as Sauron); nothing here depicts or describes real events or statements.
 
 Orange tan with a pale goggle-tan around small squinty eyes, swept gold hair poking out from under

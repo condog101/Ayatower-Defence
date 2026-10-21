@@ -19,7 +19,7 @@ export interface Speaker {
 }
 
 export const SPEAKERS: Record<Who, Speaker> = {
-  don: { who: 'don', name: 'BIG DON', key: 'don', banner: '◉ A VISION IN THE STONE', color: COLORS.red },
+  don: { who: 'don', name: 'SOUR-DON', key: 'don', banner: '◉ A VISION IN THE STONE', color: COLORS.red },
   aya: { who: 'aya', name: 'THE AYATOWER', key: 'aya', banner: '◆ THE GREY TURBAN SPEAKS', color: COLORS.green },
 };
 

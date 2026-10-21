@@ -45,7 +45,7 @@ SHEETS = [
     enemies_sea.Lhd,
     enemies_sea.Carrier,
     bosses.Yacht,
-    bosses.BigDon,
+    bosses.SourDon,
     # aircraft (all face east)
     enemies_air.Reaper,
     enemies_air.Seahawk,

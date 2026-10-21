@@ -1,6 +1,6 @@
-// The plot, told between levels as missives: Big Don's visions in the palantir and the Grey
+// The plot, told between levels as missives: Sour-don the Orange's visions in the palantir and the Grey
 // Turban's sealed scrolls, each with a one-line answer from the other side; plus in-game story
-// beats. Big Don is a parody of Donald Trump cast as Sauron; the Grey Turban is an Ayatollah
+// beats. Sour-don the Orange is a parody of Donald Trump cast as Sauron; the Grey Turban is an Ayatollah
 // caricature cast as Gandalf. Everything is fictional satire, not a real statement, and the
 // Tolkien nods are parodies, not quotations. Swear words are {word} and render bleeped, as in
 // quotes.ts. Missives stay at or under 220 characters and answers at or under 120 (tests/quotes.test.ts).
@@ -27,7 +27,7 @@ export const MISSIVES: Record<number, Missive[]> = {
       who: 'don',
       text: 'HEAR ME. The Strait of Hormuz is now the Strait of MORDOR-A-LAGO. My precious fleet sails through it tomorrow. Nobody can stop it. Especially not an old man in a tower.',
       seal: 'SEEN IN THE STONE · THE EYE IS OPEN',
-      reply: { who: 'aya', text: 'You shah-ll not pass, Donald.' },
+      reply: { who: 'aya', text: 'You shah-ll not pass, Sour-don.' },
     },
     {
       who: 'don',
@@ -159,7 +159,7 @@ export const MISSIVES: Record<number, Missive[]> = {
   10: [
     {
       who: 'don',
-      text: 'FINAL DECREE. Nimitz carriers. Many. And ME, on the USS BIG DON, a golden supercarrier with towers of Barad-dur. If ONE ship reaches his tower, I win. Just one!',
+      text: 'FINAL DECREE. Nimitz carriers. Many. And ME, on the USS SOUR-DON, a golden supercarrier with towers of Barad-dur. If ONE ship reaches his tower, I win. Just one!',
       seal: 'SEEN IN THE STONE · THE EYE IS WIDE OPEN',
       reply: { who: 'aya', text: 'If it reaches my tower, it is over. So it will not reach my tower.' },
     },
@@ -178,7 +178,7 @@ export const ENDING: Missive[] = [
     who: 'don',
     text: 'We have completed the GREATEST RETREAT in the history of Middle-earth. Nobody has ever retreated this well. Many experts call it a win. I am all of the experts.',
     seal: 'THE STONE IS VERY CLOUDY',
-    reply: { who: 'aya', text: 'Safe travels, Donald. Mind the shallows on the way out.' },
+    reply: { who: 'aya', text: 'Safe travels, Sour-don. Mind the shallows on the way out.' },
   },
   {
     who: 'don',
@@ -192,7 +192,7 @@ export const ENDING: Missive[] = [
   },
 ];
 
-/** In-game story beats: the Grey Turban speaks up at a wave start (or the boss), and Big Don answers. */
+/** In-game story beats: the Grey Turban speaks up at a wave start (or the boss), and Sour-don answers. */
 export interface Beat {
   level: number;
   /** 'wave:N' fires when wave N starts; 'boss' when the boss appears. */

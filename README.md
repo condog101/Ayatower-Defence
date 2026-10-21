@@ -1,14 +1,14 @@
 # Ayatower Defence: You Shah-ll not pass!
 
 A satirical tower defence in the Strait of Hormuz. The Ayatollah is Gandalf (the **Ayatower**, the
-Grey Turban), the US Navy is Sauron's host, and **Big Don**, the Eye of Mordor-a-Lago, wants his
+Grey Turban), the US Navy is Sauron's host, and **Sour-don the Orange**, the Eye of Mordor-a-Lago, wants his
 fleet through. Place towers loosely based on Iran's coastal arsenal (speedboats, mines, drone boats,
 AA guns, Shahed drones, coastal missiles, midget subs, radar, jammers, SAMs, a propaganda minaret) to
 stop ships and aircraft sailing the lanes to your tower. Ten levels (some with two lanes or a separate air corridor), two bosses, a chiptune score, phone-first layout.
 
 Live: https://ayatower-defence.hormuz-run.workers.dev
 
-Everything in it is fictional satire: Big Don is a parody of Donald Trump and the Grey Turban a
+Everything in it is fictional satire: Sour-don the Orange is a parody of Donald Trump and the Grey Turban a
 caricature of an Ayatollah; no line is a real quote and the Tolkien nods are parodies. Ship, plane
 and weapon stats are game numbers, not real capabilities. Swearing is always bleeped.
 
