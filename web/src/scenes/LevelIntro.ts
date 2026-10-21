@@ -3,7 +3,7 @@ import { CX, HEIGHT, OX, PX, WIDTH } from '../data/balance';
 import { ENEMIES, ENEMY_KEYS } from '../data/enemies';
 import { getLevel, LEVELS } from '../data/levels';
 import { TOWERS } from '../data/towers';
-import { TWEETS } from '../data/story';
+import { MISSIVES } from '../data/story';
 import { TowerView } from '../game/TowerView';
 import { byInput } from '../systems/Device';
 import type { RunState } from '../systems/Run';
@@ -17,7 +17,7 @@ export class LevelIntroScene extends Phaser.Scene {
 
   create(data: { run: RunState; briefed?: boolean }) {
     const run = data.run;
-    const cards = TWEETS[run.level];
+    const cards = MISSIVES[run.level];
     if (!data.briefed && cards?.length) {
       this.scene.start('Briefing', { cards, next: 'LevelIntro', nextData: { run, briefed: true } });
       return;

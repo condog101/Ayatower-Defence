@@ -8,7 +8,7 @@ import { Save } from '../systems/Save';
 import { COLORS, designFrame, panel, text } from '../systems/UI';
 
 /**
- * Callsign + PIN form. Phaser has no text input, so this drives an HTML form
+ * Name + PIN form. Phaser has no text input, so this drives an HTML form
  * (#login in index.html) laid over the canvas.
  */
 export class LoginScene extends Phaser.Scene {
@@ -22,7 +22,7 @@ export class LoginScene extends Phaser.Scene {
     // On phones the form is its own card (heading included); on desktop it sits inside this panel.
     if (!TOUCH) {
       panel(this, OX + 220, 60, 520, 420);
-      text(this, CX, 100, 'JOIN THE GUARD', 24, COLORS.gold);
+      text(this, CX, 100, 'SWEAR THE OATH', 24, COLORS.gold);
     }
 
     const form = document.getElementById('login') as HTMLFormElement;
@@ -32,7 +32,7 @@ export class LoginScene extends Phaser.Scene {
     const cancel = form.querySelector<HTMLButtonElement>('[data-action=cancel]')!;
     form.hidden = false;
     form.classList.toggle('touch', TOUCH);
-    msg.textContent = 'New recruit? Pick a callsign and a 4-digit PIN, then REGISTER. Already in the Guard? SIGN IN with the same PIN.';
+    msg.textContent = 'New to the watch? Choose a name and a 4-digit PIN, then SWEAR. Sworn before? RETURN with the same PIN.';
     msg.className = 'msg';
     callsign.value = '';
     pin.value = '';
@@ -55,7 +55,7 @@ export class LoginScene extends Phaser.Scene {
       if (busy) return;
       busy = true;
       msg.className = 'msg';
-      msg.textContent = mode === 'login' ? 'Checking your papers...' : 'Swearing you in...';
+      msg.textContent = mode === 'login' ? 'Consulting the scrolls...' : 'Swearing the oath...';
       try {
         const res = await (mode === 'login' ? api.login : api.register)(callsign.value.trim(), pin.value);
         Save.setSession({ token: res.token, callsign: res.profile.callsign });

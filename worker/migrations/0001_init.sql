@@ -1,4 +1,4 @@
--- Hormuz Run: players, sessions, leaderboard runs, login rate limiting.
+-- Ayatower Defence: players, sessions, leaderboard runs, login rate limiting.
 
 CREATE TABLE players (
   id            INTEGER PRIMARY KEY AUTOINCREMENT,

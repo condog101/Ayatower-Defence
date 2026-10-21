@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { DEPTH, HEIGHT, MAP_H, MAP_W, MAP_X, MAP_Y, PX, WIDTH } from '../data/balance';
 import { COLS, ROWS, TILE } from '../sim/const';
 import { cellKind, isPlaceable, isWet, type CellKind, type Grid } from '../sim/grid';
+import type { Lane } from '../sim/path';
 import type { TowerDef } from '../sim/types';
 
 // tiles.png frames
@@ -34,6 +35,7 @@ export class MapView {
     private scene: Phaser.Scene,
     private grid: Grid,
     laneCells: [number, number][],
+    lanes: Lane[] = [],
   ) {
     const s = scene;
     this.water = s.add.tileSprite(0, 0, WIDTH, HEIGHT, 'tiles', T_WATER).setOrigin(0).setTileScale(PX).setDepth(DEPTH.water);
@@ -67,6 +69,27 @@ export class MapView {
       .setScale(PX)
       .setDepth(DEPTH.towers + 1);
     this.overlay = s.add.container(0, 0).setDepth(DEPTH.ghost - 1).setVisible(false);
+    this.drawLanes(lanes);
+  }
+
+  /** The sea lanes as a faint channel with a dashed centre line, so the routes read at a glance. */
+  private drawLanes(lanes: Lane[]) {
+    const g = this.scene.add.graphics().setDepth(DEPTH.ground + 1);
+    for (const lane of lanes) {
+      const pts: [number, number][] = [];
+      for (let d = 0; d <= lane.length; d += 8) pts.push(lane.posAt(d));
+      pts.push(lane.posAt(lane.length));
+      g.lineStyle(20, 0x7fe0e8, 0.14);
+      g.beginPath();
+      pts.forEach(([x, y], i) => (i ? g.lineTo(MAP_X + x, MAP_Y + y) : g.moveTo(MAP_X + x, MAP_Y + y)));
+      g.strokePath();
+      g.lineStyle(2, 0xd8f4f6, 0.3);
+      for (let d = 0; d < lane.length; d += 28) {
+        const [x0, y0] = lane.posAt(d);
+        const [x1, y1] = lane.posAt(Math.min(lane.length, d + 12));
+        g.lineBetween(MAP_X + x0, MAP_Y + y0, MAP_X + x1, MAP_Y + y1);
+      }
+    }
   }
 
   /** 4-bit mask of wet orthogonal neighbours (N1 E2 S4 W8); off-map counts as more land. */

@@ -118,7 +118,7 @@ export class GameScene extends Phaser.Scene {
 
   create() {
     const sim = this.sim;
-    this.map = new MapView(this, sim.grid, sim.lane.cells);
+    this.map = new MapView(this, sim.grid, sim.lanes.flatMap((l) => l.cells), sim.lanes);
     this.projView = new ProjectileView(this);
     this.towerView = new TowerView(this);
     this.enemyView = new EnemyView(this);
@@ -190,7 +190,7 @@ export class GameScene extends Phaser.Scene {
       if (this.wasPaused) this.togglePause();
     } else {
       this.dialogue.start();
-      Music.play('game');
+      Music.play(this.sim.phase === 'wave' ? 'wave' : 'build');
       this.cameras.main.fadeIn(400);
       const banner = text(this, MAP_X + MAP_W / 2, MAP_Y + MAP_H / 2 - 40, `LEVEL ${this.level.n}\n${this.level.name}`, 16, COLORS.gold).setDepth(DEPTH.hud);
       this.tweens.add({ targets: banner, alpha: 0, delay: 1600, duration: 600, onComplete: () => banner.destroy() });
@@ -500,6 +500,7 @@ export class GameScene extends Phaser.Scene {
         break;
       }
       case 'die': {
+        if (ENEMIES[ev.key].boss) Music.play(this.sim.phase === 'wave' ? 'wave' : 'build');
         const x = MAP_X + ev.x;
         const y = MAP_Y + ev.y - (ev.layer === 'air' ? 14 : 0);
         fx.explosion(x, y, ev.big);
@@ -517,10 +518,13 @@ export class GameScene extends Phaser.Scene {
         break;
       case 'waveStart':
         Audio.play('waveStart');
+        if (!this.bossAlive()) Music.play('wave');
         this.setInfo();
         break;
       case 'waveEnd':
         Audio.play('waveEnd');
+        // back to the calm between waves once nothing is left at sea
+        if (this.sim.phase === 'build') Music.play('build');
         fx.cashText(OX + 130, MAP_Y + 18, ev.reward);
         break;
       case 'tower':
@@ -566,7 +570,7 @@ export class GameScene extends Phaser.Scene {
       case 'spawn': {
         const e = this.sim.enemyById(ev.id);
         if (e?.def.boss) {
-          Audio.play('bossIntro');
+          Audio.play('bossIntro', { volume: 0.5 });
           Music.play('boss');
           const t = text(this, MAP_X + MAP_W / 2, MAP_Y + 80, this.level.bossName ?? e.def.name, 16, COLORS.red).setDepth(DEPTH.hud);
           this.tweens.add({ targets: t, alpha: 0, delay: 2200, duration: 600, onComplete: () => t.destroy() });
@@ -593,7 +597,6 @@ export class GameScene extends Phaser.Scene {
     this.run.score += sim.score + bonus;
     this.run.kills += sim.kills;
     this.run.leaks += sim.leaks;
-    Audio.play('clear');
     this.ticker.trigger('clear', true);
     const result: LevelResult = {
       run: this.run,
@@ -609,8 +612,8 @@ export class GameScene extends Phaser.Scene {
     const t = text(this, MAP_X + MAP_W / 2, MAP_Y + MAP_H / 2, 'THE STRAIT HOLDS', 24, COLORS.gold).setDepth(DEPTH.popup);
     t.setScale(0.3);
     this.tweens.add({ targets: t, scale: 1, duration: 300, ease: 'Back.easeOut' });
+    Music.play('clear', { once: true });
     this.time.delayedCall(2600, () => {
-      Music.play('title');
       this.cameras.main.fadeOut(400);
       this.time.delayedCall(450, () => this.scene.start('LevelClear', result));
     });
@@ -624,6 +627,7 @@ export class GameScene extends Phaser.Scene {
     this.run.kills += sim.kills;
     this.run.leaks += sim.leaks;
     Audio.play('death');
+    Music.play('defeat', { once: true });
     this.ticker.trigger('defeat', true);
     this.map.ayaFrame(3, 3000);
     this.fx.shake(0.015, 600);
@@ -634,6 +638,10 @@ export class GameScene extends Phaser.Scene {
       this.cameras.main.fadeOut(400);
       this.time.delayedCall(450, () => this.scene.start('GameOver', { run: this.run, victory: false }));
     });
+  }
+
+  private bossAlive(): boolean {
+    return this.sim.enemies.some((e) => e.alive && e.def.boss);
   }
 
   // ---- Story, pause ----
@@ -720,7 +728,7 @@ export class GameScene extends Phaser.Scene {
     this.tweens.add({ targets: hint, alpha: 0.3, yoyo: true, repeat: -1, duration: 500 });
     items.push(hint);
     this.story = this.add.container(0, 0, items).setDepth(DEPTH.popup + 20);
-    Audio.play('incoming');
+    Audio.play('vision');
     const bleeps = lines.reduce((n, l) => n + (l.text.match(/\*+/g) ?? []).length, 0);
     for (let k = 0; k < bleeps; k++) setTimeout(() => Audio.play('bleep', { volume: 0.6 }), 300 + k * 260);
     // The game clock is frozen, so time the tap guard on the wall clock.

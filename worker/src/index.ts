@@ -104,7 +104,7 @@ async function requirePlayer(req: Request, env: Env, now: number): Promise<{ pla
 
 function credentials(body: Record<string, unknown>): { callsign: string; pin: string } {
   const callsign = normalizeCallsign(body.callsign);
-  if (!callsign) throw new HttpError(400, 'Callsign must be 3-16 letters, numbers, spaces or underscores');
+  if (!callsign) throw new HttpError(400, 'Name must be 3-16 letters, numbers, spaces or underscores');
   if (!isValidPin(body.pin)) throw new HttpError(400, 'PIN must be exactly 4 digits');
   return { callsign, pin: body.pin };
 }
@@ -124,7 +124,7 @@ async function register(req: Request, env: Env, now: number): Promise<Response> 
   await db.bumpAttempt(env.DB, ipKey, RATE_WINDOW_MS, now);
   const salt = newSalt();
   const player = await db.createPlayer(env.DB, callsign, await hashPin(pin, salt), salt, now);
-  if (!player) throw new HttpError(409, 'That callsign is taken');
+  if (!player) throw new HttpError(409, 'That name is already sworn');
   return startSession(env, player, now);
 }
 
@@ -140,7 +140,7 @@ async function login(req: Request, env: Env, now: number): Promise<Response> {
   if (!player || !ok) {
     await db.bumpAttempt(env.DB, csKey, RATE_WINDOW_MS, now);
     await db.bumpAttempt(env.DB, ipKey, RATE_WINDOW_MS, now);
-    throw new HttpError(401, 'Wrong callsign or PIN');
+    throw new HttpError(401, 'Wrong name or PIN');
   }
   await db.resetAttempts(env.DB, csKey);
   return startSession(env, player, now);

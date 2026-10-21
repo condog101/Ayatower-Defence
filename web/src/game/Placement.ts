@@ -11,10 +11,10 @@ import { label, rectButton, type Button } from './widgets';
 export type PlaceMode = 'hover' | 'drag' | 'tap';
 
 const REASON: Record<PlaceReason, string> = {
-  cash: 'NOT ENOUGH RIALS',
-  terrain: "CAN'T BUILD THERE",
-  occupied: 'SPOT TAKEN',
-  locked: 'LOCKED',
+  cash: 'THE TREASURY IS EMPTY',
+  terrain: 'NO FOUNDATION HERE',
+  occupied: 'ALREADY HELD',
+  locked: 'NOT YET REVEALED',
   bounds: '',
 };
 

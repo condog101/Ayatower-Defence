@@ -1,199 +1,194 @@
-// The plot, told in Big Don's DECREES between levels (tweet cards) with the Grey Turban's replies,
-// plus in-game story beats. Big Don is a parody of Donald Trump cast as Sauron; the Grey Turban is
-// an Ayatollah caricature cast as Gandalf. Every post and reply is fictional satire, not a real post,
-// and the Tolkien nods are parodies, not quotations. Swear words are {word} and render bleeped, as in
-// quotes.ts. Tweets stay at or under 220 characters and replies at or under 120 (tests/quotes.test.ts).
+// The plot, told between levels as missives: Big Don's visions in the palantir and the Grey
+// Turban's sealed scrolls, each with a one-line answer from the other side; plus in-game story
+// beats. Big Don is a parody of Donald Trump cast as Sauron; the Grey Turban is an Ayatollah
+// caricature cast as Gandalf. Everything is fictional satire, not a real statement, and the
+// Tolkien nods are parodies, not quotations. Swear words are {word} and render bleeped, as in
+// quotes.ts. Missives stay at or under 220 characters and answers at or under 120 (tests/quotes.test.ts).
 
 import type { Who } from './quotes';
 
 /** Copy that differs by input scheme; resolved with byInput() at display time. */
 export type InputText = string | { desktop: string; touch: string };
 
-export interface Tweet {
-  /** Who posts it (the avatar and handle on the card). */
+export interface Missive {
+  /** Who sends it: Don's come as visions in the stone, the Ayatower's as sealed scrolls. */
   who: Who;
   text: InputText;
-  /** Gag footer under the post. */
-  stats?: string;
+  /** A line at the foot: the stone's glyphs, or the scroll's seal. */
+  seal?: string;
   /** One line back from the other side. */
   reply?: { who: Who; text: string };
 }
 
-/** Briefing cards shown before each level. Level 1's first three are the tutorial. */
-export const TWEETS: Record<number, Tweet[]> = {
+/** Missives shown before each level. Level 1's first three are the tutorial. */
+export const MISSIVES: Record<number, Missive[]> = {
   1: [
     {
       who: 'don',
-      text: 'DECREE: The Strait of Hormuz is now the STRAIT OF DON. My beautiful Navy sails through it tomorrow. Nobody can stop it. Especially not an old man in a tower. Thank you for your attention to this matter!',
-      stats: 'REPOSTS 41K   SEEN BY THE EYE',
+      text: 'HEAR ME. The Strait of Hormuz is now the Strait of MORDOR-A-LAGO. My precious fleet sails through it tomorrow. Nobody can stop it. Especially not an old man in a tower.',
+      seal: 'SEEN IN THE STONE · THE EYE IS OPEN',
       reply: { who: 'aya', text: 'You shah-ll not pass, Donald.' },
     },
     {
       who: 'don',
       text: {
-        desktop: 'They tell me the old man fights back by CLICKING a little card on the right, then CLICKING the sand. Speedboats on land, mines in the shallow water. Hatched squares only. So complicated. Sad!',
-        touch: 'They tell me the old man fights back by DRAGGING a little card from the right onto the sand. Speedboats on land, mines in the shallow water. Hatched squares only. So complicated. Sad!',
+        desktop: 'My Nazgul report the old man fights by CLICKING a little card on the right, then CLICKING the sand. Piers on land, mines in the shallow water. Hatched squares only. So complicated. Sad!',
+        touch: 'My Nazgul report the old man fights by DRAGGING a little card from the right onto the sand. Piers on land, mines in the shallow water. Hatched squares only. So complicated. Sad!',
       },
-      stats: 'REPOSTS 3   LIKES 4',
+      seal: 'SEEN IN THE STONE · BY NINE NAZGUL AND ONE INTERN',
       reply: { who: 'aya', text: 'He is not wrong, for once. Click or tap a tower you built to upgrade it, sell it or retarget it.' },
     },
     {
       who: 'don',
       text: {
-        desktop: 'And he has to press START (or SPACE) for my ships to even come! Then they kill my ships and get RIALS. Very unfair. And if he is in trouble he hits the sea with his STICK. Key 1. I checked.',
-        touch: 'And he has to press START for my ships to even come! Then they kill my ships and get RIALS. Very unfair. And if he is in trouble he taps STAFF and hits the sea with his STICK. I checked.',
+        desktop: 'And he must press START WAVE (or SPACE) before my ships even come! Each one he sinks pays him RIALS. Unfair. If he panics he strikes the sea with his STICK. Key 1. I checked.',
+        touch: 'And he must press START WAVE on the left before my ships even come! Each one he sinks pays him RIALS. Unfair. If he panics he taps STAFF and strikes the sea with his STICK. I checked.',
       },
-      stats: 'REPOSTS 12   COMMUNITY NOTE: HE DID CHECK',
-      reply: { who: 'aya', text: 'Every ship that reaches my tower costs patience. At zero, we lose. Shall we?' },
+      seal: 'THE STONE CRACKED SLIGHTLY',
+      reply: { who: 'aya', text: 'Every ship that reaches my tower costs patience. At none, we fall. Shall we?' },
     },
   ],
   2: [
     {
       who: 'don',
-      text: 'I have formed a FELLOWSHIP. Of ships. A Fellowship of Ships. Nine of them. No, ninety. Cyclones! Very fast name. They break into smaller boats when sunk. That is called a FEATURE.',
-      stats: 'REPOSTS 9K   LIKES 17K',
-      reply: { who: 'aya', text: 'A fellowship that falls apart when struck. How very on brand.' },
+      text: 'I have formed a FELLOWSHIP. Of ships. Cyclones, very fast name. When you sink one, smaller boats come out. That is called a FEATURE. They will hug his cliffs all the way round.',
+      seal: 'SEEN IN THE STONE · VERY CLEARLY',
+      reply: { who: 'aya', text: 'A fellowship that falls apart when struck. How fitting.' },
     },
     {
       who: 'aya',
-      text: 'New at the Sirik docks: the MARTYR BOAT DOCK. Build it in the shallows. Each drone boat runs up the lane into the oncoming fleet. Slow to reload. Spectacular when it lands.',
-      stats: 'POSTED FROM A ROTARY PHONE',
-      reply: { who: 'don', text: 'Boats driving AT boats. Illegal. I am making it illegal right now.' },
+      text: 'The Sirik coast is all cliff and narrows: few places to build, so choose them well. New at the docks: the black-sailed skiffs of the MARTYR DOCK. They run up the lane into the fleet.',
+      seal: 'SEALED WITH THE GREY SEAL',
+      reply: { who: 'don', text: 'Boats sailing AT boats. Illegal. I am making it illegal right now.' },
     },
   ],
   3: [
     {
       who: 'don',
-      text: 'The EYE goes airborne. MQ-9 Reapers! Beautiful drones. They fly right over his silly boats. Boats cannot shoot UP. Everybody knows that. I learned it yesterday.',
-      stats: 'REPOSTS 22K   LIKES 30K',
-      reply: { who: 'aya', text: 'Then we shall look up. The AA PIT is ready on Larak.' },
+      text: 'The EYE takes to the air. My winged Reapers fly right over his silly boats. Boats cannot shoot UP. Everybody knows that. I learned it yesterday, from a Nazgul.',
+      seal: 'SEEN IN THE STONE · FROM VERY HIGH UP',
+      reply: { who: 'aya', text: 'Then we shall look up. The AA bastion is ready on Larak.' },
     },
     {
       who: 'aya',
-      text: 'Larak-dur, he calls this island. It is called Larak. The new AA PIT only shoots aircraft, but it shoots them a great deal. Put it where the lane runs close.',
-      stats: 'POSTED BETWEEN PRAYERS',
+      text: 'Larak-dur, he calls this island. It is called Larak. The lane coils round it, so the island rim is the place for short-reach towers; its high middle suits long guns. The AA bastion strikes only the sky.',
+      seal: 'BY HAND OF A VERY OLD MAN',
     },
   ],
   4: [
     {
       who: 'don',
-      text: 'NEW SHIPS: Littoral Combat Ships. Very fast. So fast they sometimes leave without the crew. Nobody can catch them. Red soil island? I will paint it gold.',
-      stats: 'REPOSTS 15K   LIKES 26K',
-      reply: { who: 'aya', text: 'Fast ships, meet slow drones. They have all the time in the world.' },
+      text: 'NEW SHIPS: Littoral Combat Ships. So fast they sometimes leave without the crew. My orc-crews swim after them. The red island? I will paint it gold. And black.',
+      seal: 'SEEN IN THE STONE · IN A HURRY',
+      reply: { who: 'aya', text: 'Fast ships, meet patient drones.' },
     },
     {
       who: 'aya',
-      text: 'Two gifts from the red island. SHAHED RACK: long-range homing drones. EW JAMMER: no damage, but everything near it slows, and their satnav insists they are in Ohio.',
-      stats: 'POSTED BY CARRIER PIGEON',
-      reply: { who: 'don', text: 'My GPS says I am at a golf course. Nobody tell me otherwise.' },
+      text: 'Two gifts from Hormuz. The SHAHED ROOST: long-reaching homing wings. The JAMMER TENT: it wounds no one, but everything near it slows. The lane switchbacks wide; reach is everything here.',
+      seal: 'SEALED IN RED HORMUZ CLAY',
+      reply: { who: 'don', text: 'My compass says I am at Mordor-a-Lago. Nobody tell me otherwise.' },
     },
   ],
   5: [
     {
       who: 'don',
-      text: 'BIG ANNOUNCEMENT: I am coming PERSONALLY. On my yacht. The MAR-A-LAGO. All gold. Destroyers too, Arleigh Burkes, ARMOURED. Your little bullets will bounce. Ping!',
-      stats: 'REPOSTS 88K   LIKES 112K   GOLD 1',
-      reply: { who: 'aya', text: 'Bullets bounce. Missiles do not. The coastal battery is ready.' },
+      text: 'I come PERSONALLY. On my yacht, the MAR-A-LAGO. All gold. Arleigh Burkes too, plated in Mordor iron: his little bullets go ping. Two channels, so he cannot watch both. Very smart.',
+      seal: 'SEEN IN THE STONE · IN GOLD',
+      reply: { who: 'aya', text: 'Bullets bounce. Bolts from the keep do not.' },
     },
     {
       who: 'aya',
-      text: 'COASTAL MISSILES now stand above Qeshm. Expensive, slow to reload, and armour means nothing to them. Rockets, mines and drone boats crack armour too. Machine guns will not.',
-      stats: 'POSTED IN THE NARROWS',
-    },
-    {
-      who: 'don',
-      text: 'The narrows are very narrow. That is why they are called the narrows. I am sailing my yacht down them like a GOLDEN NEEDLE. Very elegant. JUST WATCH!',
-      stats: 'REPOSTS 4K',
-      reply: { who: 'aya', text: 'The golden needle. Let us see if it floats.' },
+      text: 'The KEEP OF THE GREAT BOW stands above Qeshm: costly, slow, and plate means nothing to it. The main channel and the northern creek meet before my tower; watch where they join.',
+      seal: 'SEALED IN THE NARROWS',
     },
   ],
   6: [
     {
       who: 'don',
-      text: 'You cannot see my SUBMARINES. Virginia class. Invisible. Also Seahawk helicopters, which you CAN see, but that is fine, they are beautiful. Yacht is fine. Not sunk. Resting.',
-      stats: 'REPOSTS 31K   LIKES 44K',
+      text: 'You cannot see my SUBMARINES. Wrapped in shadow, like a ring. One fleet from the south, one from the east, both into his little harbour. The yacht is fine. Resting. Underwater.',
+      seal: 'SEEN IN THE STONE · BARELY',
       reply: { who: 'aya', text: 'What cannot be seen cannot be shot. Unless you build a radar.' },
     },
     {
       who: 'aya',
-      text: 'From the Grey Havens of Bandar Abbas: the GHADIR RADAR reveals hidden hulls for every tower nearby, and the GHADIR SUB hunts their submarines from the shallows. I may also now FATWA one ship: key 2.',
-      stats: 'POSTED FROM THE HARBOUR',
-      reply: { who: 'don', text: 'A FATWA on a BOAT. The boat has rights!' },
+      text: 'From the Grey Havens of Bandar Abbas: the SEEING-STONE reveals hidden hulls to every tower near it, and the GHADIR hunts submarines from the reeds. I may now also speak a FATWA on one ship (key 2).',
+      seal: 'SEALED AT THE HARBOUR WALL',
+      reply: { who: 'don', text: 'A FATWA on a BOAT. The boat has feelings!' },
     },
   ],
   7: [
     {
       who: 'don',
-      text: 'I am building a SECOND TOWER on Hengam. The Two Towers. Mine is taller. Also: F/A-18 Super Hornets. Very fast jets. Twice as fast as anything. They will zoom right past.',
-      stats: 'REPOSTS 50K   LIKES 61K',
-      reply: { who: 'aya', text: 'Two towers, and the lane crosses itself. Even the map is confused by him.' },
+      text: 'I am raising a SECOND TOWER on Hengam. The Two Towers. Mine is taller. And Super Hornets, twice as fast as anything. They fly their own road across the sky. He will never guess where.',
+      seal: 'SEEN IN THE STONE · TWICE',
+      reply: { who: 'aya', text: 'Two towers, and his sea lane ties itself in a knot. Even the map is confused by him.' },
     },
     {
       who: 'aya',
-      text: 'The BAVAR-373 SAM SITE: long range, homing, air only. The jets are fast; give them a long gauntlet. Where the lane crosses, one tower can guard both passes.',
-      stats: 'POSTED FROM HENGAM',
+      text: 'The TWIN-BALLISTA tower: great reach, sky only. The jets keep to a straight air road over Hengam; set the sky towers along it. Where the sea lane crosses itself, one tower can hold two passes.',
+      seal: 'SEALED AT HENGAM',
     },
   ],
   8: [
     {
       who: 'don',
-      text: 'Riders of Mordor-a-Lago! Ticonderoga cruisers, armoured, and my B-2. STEALTH BOMBER. You cannot see it. It drops two Hornets when it goes down. Which it will not.',
-      stats: 'REPOSTS 70K   LIKES 90K',
-      reply: { who: 'aya', text: 'A bomber nobody can see. Then radar beside the SAMs it is.' },
+      text: 'Riders of Mordor-a-Lago! Ticonderoga cruisers, iron-plated, and my fell-beast bomber, invisible. A pincer, from the west AND the east. Very clever. I saw it in a film.',
+      seal: 'SEEN IN THE STONE · THE EYE IS VERY OPEN',
+      reply: { who: 'aya', text: 'A beast nobody can see. Then a seeing-stone on each flank it is.' },
     },
     {
       who: 'aya',
-      text: 'Bandar Lengeh raises the PROPAGANDA MINARET. Towers within earshot fire faster. Upgraded, it adds bounty and a Friday sermon that collects 100 RIALS every 30 seconds of battle.',
-      stats: 'POSTED AT FULL VOLUME',
-      reply: { who: 'don', text: 'MY posts are louder. 3 AM. Every night. You cannot compete.' },
+      text: 'Lengeh raises the MINARET OF COUNSEL. Towers in earshot fire faster; raised higher it adds bounty, and a Friday sermon that gathers 100 RIALS each 30 seconds of battle. Hold both flanks.',
+      seal: 'SEALED AT FULL VOLUME',
+      reply: { who: 'don', text: 'MY tower is louder. It screams. All night.' },
     },
   ],
   9: [
     {
       who: 'don',
-      text: 'The SIEGE begins. Wasp class assault ships. Huge. Full of helicopters and frigates. When you sink one, more come out. Like a pinata. A pinata of FREEDOM.',
-      stats: 'REPOSTS 66K   LIKES 79K',
-      reply: { who: 'aya', text: 'A floating box of more boats. Splash damage was invented for this.' },
+      text: 'The SIEGE begins. Wasp assault ships. Huge. Full of helicopters and frigates. Sink one and more come out, like a pinata. Two fleets weaving round three islands. He will get so dizzy.',
+      seal: 'SEEN IN THE STONE · WHILE SPINNING',
+      reply: { who: 'aya', text: 'A floating box of more boats. Splash damage was made for this.' },
     },
     {
       who: 'aya',
-      text: 'The Tunbs are small and the lane is long. Nothing new to build: everything we have, upgraded and placed with care. Jammers at the bends. Missiles on the straights.',
-      stats: 'POSTED FROM A VERY SMALL ISLAND',
+      text: 'The Tunbs are small and the lanes cross once between them. Nothing new to build: everything we have, raised high and set with care. Jammers at the bends, keeps on the long runs.',
+      seal: 'SEALED ON A VERY SMALL ISLAND',
     },
   ],
   10: [
     {
       who: 'don',
-      text: 'FINAL DECREE. Nimitz carriers. Many. And ME, on the USS BIG DON. Golden supercarrier. The biggest ship ever. If one ship gets through, I WIN. Just one!',
-      stats: 'REPOSTS 1.2M   LIKES 2M   THE EYE IS OPEN',
+      text: 'FINAL DECREE. Nimitz carriers. Many. And ME, on the USS BIG DON, a golden supercarrier with towers of Barad-dur. If ONE ship reaches his tower, I win. Just one!',
+      seal: 'SEEN IN THE STONE · THE EYE IS WIDE OPEN',
       reply: { who: 'aya', text: 'If it reaches my tower, it is over. So it will not reach my tower.' },
     },
     {
       who: 'aya',
-      text: 'The Black Gate of Hormuz. Short lane, solid ground, no second chances. Every tower we know, every rial we have. And the staff. Always the staff.',
-      stats: 'POSTED AT THE GATE',
+      text: 'The Black Gate of Hormuz: two short lanes through a wall of rock, and little ground to build on. Every tower we know, every rial we have. And the staff. Always the staff.',
+      seal: 'SEALED AT THE GATE',
       reply: { who: 'don', text: 'His STICK cannot stop a CARRIER. Can it? Somebody check.' },
     },
   ],
 };
 
 /** Shown after level 10, before the victory screen. */
-export const ENDING: Tweet[] = [
+export const ENDING: Missive[] = [
   {
     who: 'don',
-    text: 'We have completed the GREATEST RETREAT IN HISTORY. Nobody has ever retreated this well. Many experts are calling it a win. I am one of the experts.',
-    stats: 'REPOSTS 2   LIKES 1 (BIG DON)',
+    text: 'We have completed the GREATEST RETREAT in the history of Middle-earth. Nobody has ever retreated this well. Many experts call it a win. I am all of the experts.',
+    seal: 'THE STONE IS VERY CLOUDY',
     reply: { who: 'aya', text: 'Safe travels, Donald. Mind the shallows on the way out.' },
   },
   {
     who: 'don',
-    text: 'The Strait of Hormuz was actually a VERY BAD strait. Boring. Wet. I am buying a much better strait. Greenland has one. Probably. Thank you for your attention to this matter!',
-    stats: 'COMMUNITY NOTE: GREENLAND HAS SEVERAL',
+    text: 'The Strait of Hormuz was actually a BAD strait. Boring. Wet. I am getting a much better strait. With lava. Mordor has several. Probably.',
+    seal: 'THE STONE HAS GONE DARK',
   },
   {
     who: 'aya',
-    text: 'The Strait was never his to open, nor mine to close. It is a strait. It sits there. Thank you, Guard. Now: tea.',
-    stats: 'POSTED FROM THE TOP OF THE AYATOWER',
+    text: 'The Strait was never his to open, nor mine to close. It is a strait. It sits there. Thank you, friend. Now: tea.',
+    seal: 'SEALED FROM THE TOP OF THE AYATOWER',
   },
 ];
 
@@ -210,49 +205,49 @@ export const BEATS: Beat[] = [
   {
     level: 1,
     at: 'wave:5',
-    aya: 'Halfway, and the tower still stands. Upgrade what works before you build what does not.',
-    don: 'HALFWAY? I am already all the way. In my mind. Which is a very good mind.',
+    aya: 'Halfway, and the tower still stands. Raise what works before you build what does not.',
+    don: 'HALFWAY? I am already all the way. In my mind. Which is a very good mind. The best.',
   },
   {
     level: 3,
     at: 'wave:4',
-    aya: 'Look up. The drones care nothing for the shallows. Only the AA pit can reach them.',
-    don: 'My drones have the best view. They can see his bald spot. Under the turban. I know it.',
+    aya: 'Look up. Winged things care nothing for the shallows. Only the AA bastion can reach them.',
+    don: 'My flyers have the best view. They can see his bald spot. Under the turban. I know it.',
   },
   {
     level: 5,
     at: 'boss',
-    aya: 'There it is. Gold from bow to stern, and armoured. Bullets will not do. Missiles, mines, boats!',
-    don: 'BEHOLD! The MAR-A-LAGO! Every porthole is a mirror so I can see myself sink. I will not sink.',
+    aya: 'There it is. Gold from bow to stern, and plated. Bullets will not do. Bolts, mines, fire-boats!',
+    don: 'BEHOLD the MAR-A-LAGO! Every porthole is a mirror so I can watch myself win. I will win.',
   },
   {
     level: 6,
     at: 'wave:3',
-    aya: 'Something stirs beneath the harbour. The radar will show it. The mines will greet it.',
-    don: 'Nothing beneath. NOTHING. Definitely not a submarine called the USS Sneaky.',
+    aya: 'Something stirs beneath the harbour. The seeing-stone will show it; the mines will greet it.',
+    don: 'Nothing beneath. NOTHING. Definitely not a submarine called the Precious.',
   },
   {
     level: 7,
     at: 'wave:6',
-    aya: 'Jets. Too fast for the speedboats, too high for the mines. Let the SAMs speak.',
-    don: 'TWICE the speed of sound! Or of something. Of a horse. Very fast horse.',
+    aya: 'Jets on their sky road. Too fast for the piers, too high for the mines. Let the twin ballistae speak.',
+    don: 'TWICE the speed of sound! Or of something. Of a fell-beast. A very fast fell-beast.',
   },
   {
     level: 8,
     at: 'wave:8',
-    aya: 'A shadow with wings. The B-2 is invisible until the radar finds it. Then it is merely expensive.',
-    don: 'Two billion dollars and you cannot see it. Like my taxes. Very invisible.',
+    aya: 'A shadow with wings. The bomber is unseen until a seeing-stone finds it. Then it is merely expensive.',
+    don: 'You cannot see it. Like my taxes. Very invisible. Totally invisible.',
   },
   {
     level: 9,
     at: 'wave:10',
-    aya: 'The siege thickens. Every great ship spills smaller ones. Hold the bends and keep upgrading.',
-    don: 'He is TIRED. I can see it. He has been holding that staff since level one. Arms of spaghetti.',
+    aya: 'The siege thickens. Every great ship spills smaller ones. Hold the bends and keep raising your towers.',
+    don: 'He is TIRED. He has held that staff since the first level. Arms of spaghetti.',
   },
   {
     level: 10,
     at: 'boss',
     aya: 'So. The Eye itself comes down the Strait. One ship past me and all is lost. Everything we have!',
-    don: 'IT IS ME! On the BIGGEST ship! Gold deck, giant eye, very flattering angle. Out of my WAY!',
+    don: 'IT IS ME! On the BIGGEST ship! Gold deck, giant Eye, a very flattering angle. Out of my WAY!',
   },
 ];

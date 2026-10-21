@@ -9,7 +9,7 @@ import { COLORS, FONT, panel, text } from './UI';
 const W = 440;
 const H = 156;
 
-/** Who is on the line: portrait sheet (frames 0 rest, 1-2 talk, 3 blink, 4 hype) and banner. */
+/** Who is on the line: portrait sheet (frames 0 rest, 1-2 talk, 3 blink, 4 wrath for Don, wizardry for the Ayatower) and banner. */
 export interface Speaker {
   who: Who;
   name: string;
@@ -19,7 +19,7 @@ export interface Speaker {
 }
 
 export const SPEAKERS: Record<Who, Speaker> = {
-  don: { who: 'don', name: 'BIG DON', key: 'don', banner: '● INCOMING - THE EYE OF MORDOR-A-LAGO', color: COLORS.red },
+  don: { who: 'don', name: 'BIG DON', key: 'don', banner: '◉ A VISION IN THE STONE', color: COLORS.red },
   aya: { who: 'aya', name: 'THE AYATOWER', key: 'aya', banner: '◆ THE GREY TURBAN SPEAKS', color: COLORS.green },
 };
 
@@ -71,11 +71,11 @@ export class Popups {
   }
 
   /** `who` takes the line, cutting off whatever is showing; the other side answers with `reply` after a beat. */
-  say(who: Who, line: string, reply?: string, replyDelayMs = 2500, hype = false) {
+  say(who: Who, line: string, reply?: string, replyDelayMs = 2500, fired = false) {
     this.cutOff();
     this.replyTimer?.remove();
     this.replyTimer = null;
-    this.present(renderLine(line), SPEAKERS[who], hype ? 4 : 0);
+    this.present(renderLine(line), SPEAKERS[who], fired ? 4 : 0);
     if (reply) {
       const other: Who = who === 'aya' ? 'don' : 'aya';
       this.onDone = () => {
@@ -114,7 +114,7 @@ export class Popups {
     this.typeAcc = 0;
     this.body.setText('');
     this.typing = true;
-    Audio.play('incoming');
+    Audio.play('vision');
     this.scene.tweens.add({ targets: this.root, x: this.restX, duration: 350, ease: 'Back.easeOut' });
     this.scene.tweens.add({ targets: this.banner, alpha: 0.3, yoyo: true, repeat: 5, duration: 180 });
   }

@@ -48,7 +48,7 @@ export class TitleScene extends Phaser.Scene {
     text(this, OX + 76, 286, 'THE GREY\nTURBAN', 8, COLORS.gold);
     text(this, OX + 126, 230, 'VS', 8, COLORS.text);
     text(this, OX + 176, 280, 'BIG DON', 8, COLORS.red);
-    this.add.image(L.safe.x + L.safe.w - 20, HEIGHT - 20, 'advisory').setOrigin(1).setScale(2).setScrollFactor(0);
+    this.add.image(L.safe.x + L.safe.w - 16, HEIGHT - 16, 'seal').setOrigin(1).setScale(2).setScrollFactor(0);
     this.layer = this.add.container(0, 0);
     this.cameras.main.fadeIn(300);
     Music.play('title');
@@ -68,7 +68,7 @@ export class TitleScene extends Phaser.Scene {
   private show(view: View) {
     this.clear();
     const p = Save.progress;
-    const who = Save.session ? `GUARD: ${Save.session.callsign}` : 'NOT IN THE GUARD (PROGRESS SAVED ON THIS DEVICE)';
+    const who = Save.session ? `SWORN: ${Save.session.callsign}` : 'NO OATH SWORN (PROGRESS SAVED ON THIS DEVICE)';
     this.layer.add(text(this, WIDTH / 2, HEIGHT - 14, who, 8, COLORS.dim).setScrollFactor(0));
     const MENU_X = OX + 710;
     if (view === 'main') {
@@ -77,8 +77,8 @@ export class TitleScene extends Phaser.Scene {
       this.currentMenu = menu(this, MENU_X + 50, 56, [
         { label: cont > 1 ? `CONTINUE - LEVEL ${cont}` : 'DEFEND THE STRAIT', action: () => this.start(cont) },
         { label: 'THE STRAIT', action: () => this.show('levels') },
-        { label: 'THE CHARTS', action: () => this.scene.start('Leaderboard') },
-        { label: Save.session ? 'LEAVE THE GUARD' : 'JOIN THE GUARD', action: () => this.auth() },
+        { label: 'THE ANNALS', action: () => this.scene.start('Leaderboard') },
+        { label: Save.session ? 'BREAK THE OATH' : 'SWEAR THE OATH', action: () => this.auth() },
         { label: 'WAR COUNCIL', action: () => this.show('settings') },
         { label: 'SCROLLS', action: () => this.show('credits') },
       ], 36);

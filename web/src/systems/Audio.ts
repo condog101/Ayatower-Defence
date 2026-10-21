@@ -39,13 +39,14 @@ const DEFS = {
   bleep: [0.5, 0, 1000, 0.005, 0.25, 0.02, 0],
   blip: [0.2, 0, 1200, 0, 0.005, 0.02, 1],
   select: [0.45, 0.1, 2400, 0, 0.004, 0.03, 4, 2, 0, 0, 0, 0, 0, 1, 0, 0.2],
-  // incoming dispatch: a scrape and a chime
-  incoming: [0.5, 0.1, 880, 0.005, 0.06, 0.15, 0, 1.5, 0, 0, 220, 0.05, 0, 0.3, 0, 0, 0, 0.7],
+  // a vision in the stone: a low crystal hum under a chime
+  vision: [0.45, 0, 220, 0.08, 0.25, 0.35, 0, 1, 0, 0, 660, 0.12, 0, 0, 6, 0, 0.05, 0.6, 0.1],
   // level clear: rising fanfare (played x3)
   clear: [0.6, 0, 392, 0.03, 0.2, 0.14, 2, 1, 0, 0, 196, 0.05, 0, 0, 0, 0, 0, 0.9, 0.04],
   death: [1, 0.05, 220, 0.05, 0.55, 1.1, 1, 1, -5, 0, 0, 0, 0, 0.4, 0, 0.3, 0.2, 0.6, 0.3],
-  // YOU SHAH-LL NOT PASS: a staff hitting stone plus a bass drop
-  slam: [1.4, 0.05, 45, 0.01, 0.35, 1.2, 0, 1, -0.3, 0, 0, 0, 0, 0.8, 0, 0.3, 0.1, 0.6, 0.3],
+  // YOU SHAH-LL NOT PASS: the staff cracks the stone, then a low boom rolls out
+  slam: [1.2, 0.05, 1800, 0, 0.02, 0.12, 4, 2, -20, 0, 0, 0, 0, 2, 0, 0.6, 0, 0.5, 0.05],
+  slamBoom: [1.4, 0.05, 45, 0.02, 0.35, 1.2, 0, 1, -0.3, 0, 0, 0, 0, 0.8, 0, 0.3, 0.1, 0.6, 0.3],
 } satisfies Record<string, number[]>;
 
 export type Sfx = keyof typeof DEFS;
@@ -53,7 +54,7 @@ export type Sfx = keyof typeof DEFS;
 /** Sounds that re-fire: [count, gap ms]. Horns come in threes. */
 const REPEATS: Partial<Record<Sfx, [number, number]>> = { clear: [3, 220], bossIntro: [3, 360] };
 /** Sounds layered on top of another. */
-const LAYERS: Partial<Record<Sfx, Sfx>> = { slam: 'boatBoom' };
+const LAYERS: Partial<Record<Sfx, Sfx>> = { slam: 'slamBoom' };
 
 class AudioSystem {
   private sounds = new Map<Sfx, ZZFXSound>();

@@ -50,9 +50,13 @@ export function text(
     .setStroke('#000000', Math.max(2, size / 4));
 }
 
-/** 9-slice black-and-gold panel at 2x pixel scale. Coordinates are its top-left. */
-export function panel(scene: Phaser.Scene, x: number, y: number, w: number, h: number) {
-  return scene.add.nineslice(x, y, 'ui_panel', 0, w / 2, h / 2, 8, 8, 8, 8).setOrigin(0).setScale(2);
+/**
+ * 9-slice panel at 2x pixel scale; coordinates are its top-left. The default is the dark palantir
+ * glass (light text reads on it); 'ui_panel' is parchment and iron, 'scroll' a parchment scroll and
+ * 'button' carved stone, all of which want dark text.
+ */
+export function panel(scene: Phaser.Scene, x: number, y: number, w: number, h: number, key: 'palantir' | 'ui_panel' | 'scroll' | 'button' = 'palantir') {
+  return scene.add.nineslice(x, y, key, 0, w / 2, h / 2, 8, 8, 8, 8).setOrigin(0).setScale(2);
 }
 
 export interface MenuItem {

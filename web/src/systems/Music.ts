@@ -1,84 +1,74 @@
 import { ZZFX } from 'zzfx';
 import { Audio } from './Audio';
+import { midiToFreq, parseTrack } from './music/notation';
+import { SONGS, type SongName } from './music/songs';
+import { VOICES, createFxBus, type Voice } from './music/voices';
 
 /**
- * Procedural war drums over a Hijaz-scale bass line (the flattened second and raised third that
- * sound "Persian" to most ears). Drum and bass hits are rendered once with ZzFX's sample builder,
- * wrapped in AudioBuffers and scheduled on the AudioContext clock with a short lookahead (the usual
- * two-clocks pattern), so there is no extra dependency and no audio files.
+ * The score player. Songs (music/songs.ts) are multi-track note strings rendered live with raw
+ * oscillator voices (music/voices.ts). A setInterval tick walks the current song's 16th steps and
+ * schedules every note that starts on them ~0.25 s ahead on the AudioContext clock (the usual
+ * two-clocks pattern). One master gain does the crossfades, the pause-menu duck and the volume.
+ *
+ * Tracks: title, build (calm between waves), wave (battle), boss, clear and defeat (stingers that
+ * play once).
  */
-export type Track = 'title' | 'game' | 'boss';
+export type Track = SongName;
 
-// ZzFX parameter arrays (see Audio.ts for the field order).
-const SAMPLES = {
-  // kick: sine from 80 Hz with a slow sweep that only reaches zero after the note has decayed
-  // (a fast sweep crosses zero and bounces back up, which sounds like a spring)
-  kick: [1.3, 0, 80, 0.002, 0.05, 0.2, 0, 1, -0.5, 0, 0, 0, 0, 0, 0, 0.1, 0, 0.5, 0.08],
-  snare: [0.9, 0.05, 190, 0, 0.03, 0.17, 3, 1.2, 0, 0, 0, 0, 0, 1.4, 0, 0.3, 0, 0.5, 0.03],
-  // hats: darker, filtered noise kept well under the snare so they sit in the mix
-  hat: [0.2, 0.05, 2600, 0, 0.006, 0.03, 4, 0, 0, 0, 0, 0, 0, 2, 0, 0.1, 0, 0.6, 0.01, 0, 2400],
-  hatOpen: [0.18, 0.05, 2600, 0, 0.02, 0.11, 4, 0, 0, 0, 0, 0, 0, 2, 0, 0.1, 0, 0.5, 0.03, 0, 2400],
-  bass: [0.9, 0, 55, 0.01, 0.22, 0.12, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.7, 0.04],
-} satisfies Record<string, number[]>;
-type Voice = keyof typeof SAMPLES;
-
-interface Pattern {
-  bpm: number;
-  /** Fraction of a 16th that odd 16ths are delayed by. */
-  swing: number;
-  kick: string;
-  snare: string;
-  hat: string;
-  hatOpen: string;
-  /** [step, semitones from A1, length in steps] */
-  bass: [number, number, number][];
+interface Event {
+  voice: Voice;
+  track: number;
+  freq: number;
+  len: number;
+  vel: number;
 }
 
-// 32 steps = two bars of 16ths. x = full hit, o = soft hit, . = rest.
-// Bass notes are semitones from A1 on the Hijaz scale: 0 1 4 5 7 8 10 (12).
-const PATTERNS: Record<Track, Pattern> = {
-  // slow, stately: a frame drum and a walking Hijaz bass
-  title: {
-    bpm: 84,
-    swing: 0.06,
-    kick: 'x.......x.....x.x.......x.......',
-    snare: '....o.......x.......o.......x...',
-    hat: 'x...x.o.x...x.o.x...x.o.x...x.o.',
-    hatOpen: '..............x...............x.',
-    bass: [[0, 0, 3], [4, 1, 2], [6, 4, 2], [8, 5, 3], [12, 4, 2], [14, 1, 2], [16, 0, 3], [20, 1, 2], [22, 4, 2], [24, 7, 3], [28, 5, 2], [30, 4, 2]],
-  },
-  // the march: a 6/8-ish lope over a busier bass
-  game: {
-    bpm: 96,
-    swing: 0.12,
-    kick: 'x..x..x...x..x..x..x..x...x..x..',
-    snare: '....x.......x.......x.......x..o',
-    hat: 'x.oxx.oxx.oxx.oxx.oxx.oxx.oxx.ox',
-    hatOpen: '......x.......x.......x.......x.',
-    bass: [[0, 0, 2], [3, 0, 1], [6, 1, 2], [8, 4, 2], [11, 5, 2], [14, 4, 1], [16, 0, 2], [19, 0, 1], [22, 1, 2], [24, 4, 2], [26, 7, 1], [28, 8, 2], [30, 7, 2]],
-  },
-  // the Eye arrives: double-time drums, the bass stamping on the flat second
-  boss: {
-    bpm: 108,
-    swing: 0.04,
-    kick: 'x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.xx',
-    snare: '....x.......x.......x.......x.xx',
-    hat: 'xoxoxoxoxoxoxoxoxoxoxoxoxoxoxoxo',
-    hatOpen: '......x.......x.......x.......x.',
-    bass: [[0, 0, 2], [2, 1, 1], [4, 0, 2], [6, 1, 1], [8, 4, 2], [10, 5, 1], [12, 4, 2], [14, 1, 2], [16, 0, 2], [18, 1, 1], [20, 0, 2], [22, 1, 1], [24, 8, 2], [26, 7, 1], [28, 5, 2], [30, 4, 2]],
-  },
-};
+interface Prepared {
+  steps: number;
+  stepLen: number;
+  loop: boolean;
+  /** events[step] = notes starting on that step */
+  events: Event[][];
+  vols: number[];
+  pans: number[];
+}
 
-const STEPS = 32;
 const TICK_MS = 100;
 const LOOKAHEAD_S = 0.25;
-const MASTER = 0.45;
+/** Rendered offline, the loudest song peaks around 0.37 at unity, so there is headroom to spare. */
+const MASTER = 1;
+
+function prepare(name: SongName): Prepared {
+  const song = SONGS[name];
+  const steps = song.bars * song.stepsPerBar;
+  const events: Event[][] = Array.from({ length: steps }, () => []);
+  song.tracks.forEach((t, track) => {
+    const voice = VOICES[t.voice];
+    for (const n of parseTrack(t.notes).notes) {
+      if (n.step < steps) events[n.step].push({ voice, track, freq: midiToFreq(n.midi), len: n.len, vel: n.vel });
+    }
+  });
+  return {
+    steps,
+    stepLen: 60 / song.bpm / 4,
+    loop: song.loop,
+    events,
+    vols: song.tracks.map((t) => t.vol),
+    pans: song.tracks.map((t) => t.pan ?? 0),
+  };
+}
 
 class MusicSystem {
-  private buffers: Partial<Record<Voice, AudioBuffer>> = {};
+  private prepared = new Map<SongName, Prepared>();
   private master: GainNode | null = null;
-  private wanted: Track | null = null;
-  private current: Track | null = null;
+  private fx: AudioNode | null = null;
+  private wanted: SongName | null = null;
+  private wantedOnce = false;
+  private current: SongName | null = null;
+  /** The current song was a one-shot and has played to its end. */
+  private finished = false;
+  /** Per-track gain nodes of the song now playing. */
+  private buses: GainNode[] = [];
   private step = 0;
   private nextTime = 0;
   private volume = 0.5;
@@ -96,13 +86,17 @@ class MusicSystem {
     this.master = ctx.createGain();
     this.master.gain.value = 0;
     this.master.connect(ctx.destination);
-    for (const k of Object.keys(SAMPLES) as Voice[]) {
-      const samples = ZZFX.buildSamples(...SAMPLES[k]);
-      const buf = ctx.createBuffer(1, samples.length, ZZFX.sampleRate);
-      buf.copyToChannel(Float32Array.from(samples), 0);
-      this.buffers[k] = buf;
-    }
+    this.fx = createFxBus(ctx, this.master);
     if (!this.timer) this.timer = setInterval(() => this.tick(), TICK_MS);
+  }
+
+  private song(name: SongName): Prepared {
+    let p = this.prepared.get(name);
+    if (!p) {
+      p = prepare(name);
+      this.prepared.set(name, p);
+    }
+    return p;
   }
 
   private target(): number {
@@ -116,21 +110,29 @@ class MusicSystem {
     g.setTargetAtTime(this.target(), this.ctx.currentTime, seconds / 3);
   }
 
-  /** Switch to a pattern. Idempotent; crossfades through the master gain. */
-  play(name: Track) {
+  /**
+   * Switch songs. Idempotent for the song already playing; crossfades through the master gain.
+   * `once` (and songs with loop: false) play to the end and then go silent; playing the same
+   * stinger again after it has finished restarts it.
+   */
+  play(name: Track, opts: { once?: boolean } = {}) {
+    const song: SongName = name;
     this.ensure();
     this.ducked = false;
-    if (this.wanted === name) {
+    this.wantedOnce = !!opts.once || !SONGS[song].loop;
+    if (this.wanted === song) {
+      if (this.finished && this.current === song) this.current = null; // replay the stinger
       this.ramp(0.3);
       return;
     }
-    this.wanted = name;
-    if (this.current && !this.switching) {
+    this.wanted = song;
+    if (this.switching) return; // the pending switch picks up the new song
+    if (this.current && !this.finished) {
       this.switching = true;
       if (this.master) this.master.gain.setTargetAtTime(0, this.ctx.currentTime, 0.12);
       setTimeout(() => {
         this.switching = false;
-        this.current = null;
+        this.release();
         this.ramp(0.5);
       }, 420);
     } else {
@@ -140,12 +142,11 @@ class MusicSystem {
 
   stop() {
     this.wanted = null;
-    this.current = null;
     this.ducked = false;
     this.ramp(0.4);
   }
 
-  /** Pause menu: pull the beat down without stopping it. */
+  /** Pause menu: pull the music down without stopping it. */
   duck(on: boolean) {
     this.ducked = on;
     this.ramp(0.3);
@@ -160,57 +161,75 @@ class MusicSystem {
     return this.volume;
   }
 
+  /** Drop the current song: its buses fade out quickly and are disconnected (cutting any tails). */
+  private release() {
+    this.current = null;
+    this.finished = false;
+    if (!this.buses.length) return;
+    const old = this.buses;
+    this.buses = [];
+    const now = this.ctx.currentTime;
+    for (const g of old) {
+      g.gain.cancelScheduledValues(now);
+      g.gain.setTargetAtTime(0, now, 0.08);
+    }
+    setTimeout(() => {
+      for (const g of old) g.disconnect();
+    }, 700);
+  }
+
+  private makeBuses(p: Prepared): GainNode[] {
+    const ctx = this.ctx;
+    return p.vols.map((vol, i) => {
+      const g = ctx.createGain();
+      g.gain.value = vol;
+      if (p.pans[i] && typeof ctx.createStereoPanner === 'function') {
+        const pan = ctx.createStereoPanner();
+        pan.pan.value = p.pans[i];
+        g.connect(pan).connect(this.fx!);
+      } else {
+        g.connect(this.fx!);
+      }
+      return g;
+    });
+  }
+
   private tick() {
     if (!this.wanted || this.switching || this.volume <= 0 || this.ctx.state !== 'running') {
-      this.current = null;
+      if (this.current) this.release();
       return;
     }
     const now = this.ctx.currentTime;
     if (this.current !== this.wanted) {
+      this.release();
       this.current = this.wanted;
+      this.buses = this.makeBuses(this.song(this.current));
       this.step = 0;
       this.nextTime = now + 0.05;
     }
-    const p = PATTERNS[this.current];
-    const stepLen = 60 / p.bpm / 4;
+    if (this.finished) return;
+    const p = this.song(this.current);
+    // A throttled background tab can fall behind: skip ahead rather than fire a burst of late notes.
+    if (this.nextTime < now - 0.2) this.nextTime = now + 0.05;
+    const loop = p.loop && !this.wantedOnce;
     while (this.nextTime < now + LOOKAHEAD_S) {
-      const swing = this.step % 2 === 1 ? p.swing * stepLen : 0;
-      this.scheduleStep(p, this.step, this.nextTime + swing, stepLen);
-      this.step = (this.step + 1) % STEPS;
-      this.nextTime += stepLen;
+      if (this.step >= p.steps) {
+        if (!loop) {
+          this.finished = true;
+          return;
+        }
+        this.step = 0;
+      }
+      this.scheduleStep(p, this.step, this.nextTime);
+      this.step++;
+      this.nextTime += p.stepLen;
     }
   }
 
-  private hit(voice: Voice, at: number, gain: number, rate = 1) {
-    if (!this.master) return;
-    const buf = this.buffers[voice];
-    if (!buf) return;
-    const src = this.ctx.createBufferSource();
-    src.buffer = buf;
-    src.playbackRate.value = rate;
-    const g = this.ctx.createGain();
-    g.gain.value = gain;
-    src.connect(g);
-    g.connect(this.master);
-    src.start(at);
-  }
-
-  private scheduleStep(p: Pattern, step: number, at: number, stepLen: number) {
-    const vel = (s: string) => (s[step] === 'x' ? 1 : s[step] === 'o' ? 0.45 : 0);
-    const k = vel(p.kick);
-    const s = vel(p.snare);
-    const h = vel(p.hat);
-    const o = vel(p.hatOpen);
-    if (k) this.hit('kick', at, k);
-    if (s) this.hit('snare', at, s);
-    if (o) this.hit('hatOpen', at, o * 0.5);
-    else if (h) this.hit('hat', at, h * 0.4);
-    for (const [bs, semi, len] of p.bass) {
-      if (bs !== step) continue;
-      const rate = Math.pow(2, semi / 12);
-      this.hit('bass', at, 0.9, rate);
-      void len; // the sample's own envelope sets the note length
-      void stepLen;
+  private scheduleStep(p: Prepared, step: number, at: number) {
+    for (const e of p.events[step]) {
+      const bus = this.buses[e.track];
+      if (bus) e.voice(this.ctx, bus, e.freq, at, e.len * p.stepLen, e.vel);
     }
   }
 }

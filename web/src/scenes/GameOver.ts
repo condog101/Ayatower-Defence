@@ -24,11 +24,11 @@ export class GameOverScene extends Phaser.Scene {
     text(this, CX, 92, victory ? 'YOU SHAH-LL NOT PASS!' : 'THE EYE HAS PASSED', 24, victory ? COLORS.gold : COLORS.red);
     if (victory) {
       text(this, CX, 128, 'THE STRAIT HELD. BIG DON CALLS IT THE GREATEST RETREAT IN HISTORY.', 8, COLORS.green);
-      Audio.play('clear');
     } else {
       Audio.play('death');
     }
-    this.time.delayedCall(victory ? 1200 : 350, () => Music.stop());
+    // The defeat dirge carries over from the battle; a finished campaign gets the fanfare.
+    if (victory) Music.play('clear', { once: true });
     const mins = Math.floor(run.playMs / 60000);
     const secs = Math.floor((run.playMs % 60000) / 1000);
     text(this, CX, 176, `FINAL SCORE  ${run.score}\n\nLEVEL ${run.level}   SHIPS SUNK ${run.kills}   PASSED ${run.leaks}   TIME ${mins}:${String(secs).padStart(2, '0')}`, 8);
@@ -40,9 +40,9 @@ export class GameOverScene extends Phaser.Scene {
     if (q) text(this, OX + 292, 244, `"${renderLine(q.text)}"`, 8, COLORS.text, 0).setOrigin(0, 0).setAlign('left').setWordWrapWidth(500);
     this.time.addEvent({ delay: 110, repeat: 24, callback: () => portrait.setFrame(Phaser.Math.Between(0, 2)) });
     this.time.delayedCall(3000, () => portrait.setFrame(victory ? 0 : 4));
-    this.add.image(OX + 156, 478, 'advisory').setOrigin(0, 1).setScale(1.5);
+    this.add.image(OX + 160, 482, 'seal').setOrigin(0, 1).setScale(1.5);
 
-    const status = text(this, CX, 370, Save.session ? 'ENTERING IT IN THE CHARTS...' : 'JOIN THE GUARD TO POST SCORES TO THE CHARTS', 8, COLORS.dim);
+    const status = text(this, CX, 370, Save.session ? 'WRITING IT INTO THE ANNALS...' : 'SWEAR THE OATH TO BE WRITTEN INTO THE ANNALS', 8, COLORS.dim);
     if (Save.session) {
       void submitRun({
         score: run.score,
@@ -50,7 +50,7 @@ export class GameOverScene extends Phaser.Scene {
         levelReached: run.level,
         durationMs: Math.round(run.playMs),
         kills: run.kills,
-      }).then((res) => status.setText(res ? `CHART POSITION #${res.rank}` : 'SCORE NOT POSTED (OFFLINE?)'));
+      }).then((res) => status.setText(res ? `WRITTEN INTO THE ANNALS AT #${res.rank}` : 'THE SCRIBES DID NOT ANSWER (OFFLINE?)'));
     }
 
     menu(
