@@ -1,51 +1,53 @@
-// Score values and the plausibility bound the Worker uses to reject forged runs.
+// Score rules and the plausibility bound the Worker uses to reject forged runs.
+// The per-level tables are pasted constants so the Worker bundle stays free of game data;
+// tests/waves.test.ts regenerates them from the level definitions and prints the right values on a mismatch.
 
-export const KILL_POINTS = {
-  boat: 100,
-  boatZig: 150,
-  artillery: 300,
-  mine: 50,
-  drone: 200,
-  missile: 250,
-  battery: 400,
-  lowrider: 350,
-  boss: 5000,
-} as const;
+import { LEVEL_COUNT } from './progress';
 
-export type KillKind = keyof typeof KILL_POINTS;
+export const CLEAR_BONUS_PER_LEVEL = 1000; // multiplied by level number
+export const LIFE_BONUS = 50; // per point of PATIENCE left
+export const NO_LEAK_BONUS = 1500;
+export const MAX_LIVES = 100;
 
-export const LEVEL_CLEAR_BONUS = 1000; // multiplied by level number
-export const NO_DAMAGE_BONUS = 2000;
-export const HP_BONUS_PER_POINT = 10; // remaining hull HP at level clear
-export const MAX_HP = 100;
-
-/** Bonus awarded for clearing `level` with `hp` hull left. */
-export function levelClearBonus(level: number, hp: number, tookDamage: boolean): number {
-  return LEVEL_CLEAR_BONUS * level + (tookDamage ? 0 : NO_DAMAGE_BONUS) + Math.max(0, hp) * HP_BONUS_PER_POINT;
+/** Bonus for clearing `level` with `lives` left; `leaked` = anything got past at all. */
+export function levelClearBonus(level: number, lives: number, leaked: boolean): number {
+  return CLEAR_BONUS_PER_LEVEL * level + Math.max(0, Math.min(MAX_LIVES, lives)) * LIFE_BONUS + (leaked ? 0 : NO_LEAK_BONUS);
 }
 
-// Generous ceiling on kill points per second of play. Real play peaks well below this.
-export const MAX_KILL_POINTS_PER_SEC = 500;
-// Bosses appear on every 5th level (5, 10, then endless waves 15, 20, ...).
-const bossesBetween = (from: number, to: number) => Math.floor(to / 5) - Math.floor((from - 1) / 5);
+/** Every kill (children and boss launches at their cap included) plus every wave reward, per level. */
+export const LEVEL_MAX_PLAY_SCORE = [5770, 200_000, 200_000, 200_000, 200_000, 200_000, 200_000, 200_000, 200_000, 200_000];
+/** Every enemy a level can produce. */
+export const LEVEL_ENEMY_COUNT = [299, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000];
+/** Shortest possible level: all spawn spans back to back at 3x speed, minus 10%. */
+export const LEVEL_MIN_MS = [30_840, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
-/** Highest score a legitimate run from `startLevel` to `levelReached` could reach in `durationMs`. */
-export function maxPlausibleScore(startLevel: number, levelReached: number, durationMs: number): number {
-  const from = Math.max(1, Math.floor(startLevel));
-  const to = Math.max(from, Math.floor(levelReached));
-  const secs = Math.max(0, durationMs) / 1000;
-  let bonuses = 0;
-  for (let l = from; l <= to; l++) bonuses += levelClearBonus(l, MAX_HP, false);
-  return Math.ceil(bonuses + bossesBetween(from, to) * KILL_POINTS.boss + secs * MAX_KILL_POINTS_PER_SEC);
+const levelsIn = (from: number, to: number): number[] => {
+  const out: number[] = [];
+  for (let l = Math.max(1, from); l <= Math.min(LEVEL_COUNT, to); l++) out.push(l);
+  return out;
+};
+
+/** Highest score a run from `startLevel` that ended on `levelReached` could hold. */
+export function maxPlausibleScore(startLevel: number, levelReached: number): number {
+  return levelsIn(startLevel, levelReached).reduce(
+    (a, l) => a + LEVEL_MAX_PLAY_SCORE[l - 1] + levelClearBonus(l, MAX_LIVES, false),
+    0,
+  );
 }
 
-/** Shortest a level could possibly take (levels are >= 60s each). */
-export const MIN_LEVEL_DURATION_MS = 55_000;
+/** Reaching level N from S means clearing levels S..N-1, each with a minimum length. */
+export function minRunMs(startLevel: number, levelReached: number): number {
+  return levelsIn(startLevel, levelReached - 1).reduce((a, l) => a + LEVEL_MIN_MS[l - 1], 0);
+}
+
+export function maxRunKills(startLevel: number, levelReached: number): number {
+  return levelsIn(startLevel, levelReached).reduce((a, l) => a + LEVEL_ENEMY_COUNT[l - 1], 0);
+}
 
 export interface RunSubmission {
   score: number;
-  startLevel: number; // level the run began on (1..10 campaign, 11 = endless)
-  levelReached: number; // level the run ended on (or 10 on victory)
+  startLevel: number; // level the run began on (1..10)
+  levelReached: number; // level the run ended on (10 on victory)
   durationMs: number;
   kills: number;
 }
@@ -53,10 +55,9 @@ export interface RunSubmission {
 export function isPlausibleRun(run: RunSubmission): boolean {
   const { score, startLevel, levelReached, durationMs, kills } = run;
   if (![score, startLevel, levelReached, durationMs, kills].every((n) => Number.isInteger(n) && n >= 0)) return false;
-  if (startLevel < 1 || startLevel > 11 || levelReached < startLevel || levelReached > 999) return false;
+  if (startLevel < 1 || levelReached < startLevel || levelReached > LEVEL_COUNT) return false;
   if (durationMs > 6 * 60 * 60 * 1000) return false;
-  // Reaching level N from S means clearing N-S levels, each of which has a minimum length.
-  if (durationMs < (levelReached - startLevel) * MIN_LEVEL_DURATION_MS) return false;
-  if (kills > (durationMs / 1000) * 10 + 10) return false;
-  return score <= maxPlausibleScore(startLevel, levelReached, durationMs);
+  if (durationMs < minRunMs(startLevel, levelReached)) return false;
+  if (kills > maxRunKills(startLevel, levelReached)) return false;
+  return score <= maxPlausibleScore(startLevel, levelReached);
 }

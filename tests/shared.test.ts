@@ -2,10 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { emptyProgress, LEVEL_COUNT, mergeProgress, sanitizeProgress } from '../shared/progress';
 import {
   isPlausibleRun,
-  KILL_POINTS,
+  LEVEL_ENEMY_COUNT,
+  LEVEL_MAX_PLAY_SCORE,
+  LEVEL_MIN_MS,
   levelClearBonus,
   maxPlausibleScore,
-  MIN_LEVEL_DURATION_MS,
+  minRunMs,
 } from '../shared/scoring';
 
 describe('sanitizeProgress', () => {
@@ -68,32 +70,33 @@ describe('mergeProgress', () => {
 
 describe('scoring', () => {
   it('computes clear bonuses', () => {
-    expect(levelClearBonus(3, 50, true)).toBe(3000 + 500);
-    expect(levelClearBonus(1, 100, false)).toBe(1000 + 2000 + 1000);
+    expect(levelClearBonus(3, 50, true)).toBe(3000 + 2500);
+    expect(levelClearBonus(1, 100, false)).toBe(1000 + 5000 + 1500);
+    expect(levelClearBonus(2, 250, false)).toBe(2000 + 5000 + 1500);
   });
 
-  it('bounds scores by levels, bosses and time', () => {
-    const one = maxPlausibleScore(1, 1, 60_000);
-    expect(one).toBe(levelClearBonus(1, 100, false) + 60 * 500);
-    // A run through level 5 includes a boss.
-    expect(maxPlausibleScore(1, 5, 0)).toBeGreaterThanOrEqual(KILL_POINTS.boss);
-    expect(maxPlausibleScore(6, 9, 0)).toBeLessThan(KILL_POINTS.boss + 40_000);
+  it('bounds scores by the levels played', () => {
+    expect(maxPlausibleScore(1, 1)).toBe(LEVEL_MAX_PLAY_SCORE[0] + levelClearBonus(1, 100, false));
+    expect(maxPlausibleScore(1, 3)).toBeGreaterThan(maxPlausibleScore(2, 3));
+    expect(minRunMs(1, 1)).toBe(0);
+    expect(minRunMs(1, 3)).toBe(LEVEL_MIN_MS[0] + LEVEL_MIN_MS[1]);
   });
 
   it('accepts a normal run', () => {
-    expect(isPlausibleRun({ score: 12_000, startLevel: 1, levelReached: 3, durationMs: 200_000, kills: 60 })).toBe(true);
-    expect(isPlausibleRun({ score: 3_000, startLevel: 11, levelReached: 12, durationMs: 90_000, kills: 20 })).toBe(true);
+    expect(isPlausibleRun({ score: 6_000, startLevel: 1, levelReached: 2, durationMs: 200_000, kills: 200 })).toBe(true);
+    expect(isPlausibleRun({ score: 0, startLevel: 4, levelReached: 4, durationMs: 1_000, kills: 0 })).toBe(true);
   });
 
   it('rejects forged runs', () => {
     const base = { score: 1000, startLevel: 1, levelReached: 2, durationMs: 120_000, kills: 10 };
     expect(isPlausibleRun({ ...base, score: 10_000_000 })).toBe(false);
-    expect(isPlausibleRun({ ...base, durationMs: MIN_LEVEL_DURATION_MS - 1 })).toBe(false);
-    expect(isPlausibleRun({ ...base, kills: 100_000 })).toBe(false);
+    expect(isPlausibleRun({ ...base, durationMs: LEVEL_MIN_MS[0] - 1 })).toBe(false);
+    expect(isPlausibleRun({ ...base, kills: LEVEL_ENEMY_COUNT[0] + LEVEL_ENEMY_COUNT[1] + 1 })).toBe(false);
     expect(isPlausibleRun({ ...base, score: -1 })).toBe(false);
     expect(isPlausibleRun({ ...base, score: 1.5 })).toBe(false);
     expect(isPlausibleRun({ ...base, startLevel: 0 })).toBe(false);
     expect(isPlausibleRun({ ...base, startLevel: 3 })).toBe(false); // levelReached < startLevel
-    expect(isPlausibleRun({ ...base, startLevel: 12, levelReached: 12 })).toBe(false);
+    expect(isPlausibleRun({ ...base, startLevel: 11, levelReached: 11 })).toBe(false);
+    expect(isPlausibleRun({ ...base, durationMs: 7 * 60 * 60 * 1000 })).toBe(false);
   });
 });

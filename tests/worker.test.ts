@@ -224,16 +224,18 @@ describe('runs and leaderboard', () => {
     const cRun = await call('/api/runs', { token: c.token, body: validRun(7000) });
     expect(cRun.data.rank).toBe(2);
 
+    // There is no endless mode: level 11 runs are rejected.
     const endless = await call('/api/runs', {
       token: b.token,
       body: { score: 5000, startLevel: 11, levelReached: 11, durationMs: 60_000, kills: 30 },
     });
-    expect(endless.status).toBe(200);
+    expect(endless.status).toBe(400);
 
     const me = await call('/api/me', { token: a.token });
     expect(me.data.progress.bestRun).toBe(9000);
     const meB = await call('/api/me', { token: b.token });
-    expect(meB.data.progress.endlessBest).toBe(5000);
+    expect(meB.data.progress.bestRun).toBe(6000);
+    expect(meB.data.progress.endlessBest).toBe(0);
 
     const lb = await call('/api/leaderboard?limit=50');
     expect(lb.status).toBe(200);

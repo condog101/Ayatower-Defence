@@ -16,36 +16,52 @@ import gen  # noqa: E402
 
 # name -> (frame_w, frame_h, frames). This is the contract with web/src; change both together.
 EXPECTED = {
-    "destroyer": (64, 24, 9),
-    "turret": (12, 12, 1),
-    "boat_a": (16, 8, 2),
-    "boat_b": (16, 8, 2),
-    "artillery": (24, 24, 3),
-    "battery": (24, 24, 3),
-    "shell": (4, 4, 1),
-    "shell_shadow": (6, 6, 1),
-    "reticle": (16, 16, 2),
-    "round": (6, 3, 1),
-    "splash": (16, 16, 4),
+    "tiles": (16, 16, 43),
+    "decor": (16, 16, 4),
+    "towers": (16, 16, 33),
+    "turrets": (16, 16, 96),
+    "ayatower": (32, 32, 4),
+    "rhib": (12, 6, 2),
+    "patrol": (16, 8, 2),
+    "cyclone": (20, 8, 2),
+    "lcs": (24, 10, 2),
+    "frigate": (28, 10, 2),
+    "burke": (32, 10, 2),
+    "sub": (24, 8, 4),
+    "tico": (36, 12, 2),
+    "lhd": (48, 16, 2),
+    "carrier": (64, 20, 2),
+    "boss_yacht": (48, 14, 2),
+    "boss_don": (80, 24, 2),
+    "reaper": (16, 12, 2),
+    "seahawk": (16, 12, 2),
+    "hornet": (16, 12, 2),
+    "b2": (24, 12, 2),
+    "p_bullet": (4, 4, 1),
+    "p_rocket": (6, 3, 2),
+    "p_missile": (8, 3, 2),
+    "p_shahed": (8, 6, 2),
+    "p_torpedo": (8, 3, 2),
+    "p_mine": (6, 6, 2),
+    "p_boat": (10, 5, 2),
+    "p_sam": (8, 3, 2),
+    "muzzle": (6, 6, 2),
     "explosion_sm": (16, 16, 6),
     "explosion_lg": (32, 32, 6),
+    "splash": (16, 16, 4),
     "smoke": (8, 8, 4),
-    "mine": (12, 12, 2),
-    "drone": (20, 12, 2),
-    "missile": (16, 6, 2),
-    "boss": (48, 20, 3),
-    "pickup": (12, 12, 2),
-    "potus": (64, 64, 5),
-    "ui_panel": (48, 48, 1),
-    "hud_icons": (16, 16, 10),
-    "tiles": (16, 16, 23),
-    "title_logo": (232, 104, 1),
+    "stun": (8, 8, 2),
+    "jam": (16, 16, 2),
+    "ring": (24, 24, 1),
+    "coin": (8, 8, 1),
+    "don": (64, 64, 5),
+    "aya": (64, 64, 5),
+    "title_logo": (288, 96, 1),
     "advisory": (48, 32, 1),
-    "lowrider": (24, 12, 10),
-    "guests": (64, 64, 8),
-    "mic": (12, 12, 2),
+    "hud_icons": (12, 12, 17),
+    "ui_panel": (48, 48, 1),
 }
-OPAQUE = {"tiles", "potus", "title_logo", "advisory", "guests"}
+OPAQUE = {"tiles", "don", "aya", "title_logo", "advisory"}
 
 
 def main():
@@ -77,7 +93,7 @@ def main():
             if name not in OPAQUE and alpha.getextrema()[0] != 0:
                 failures.append(f"{name}: expected a transparent background")
         # skip-existing behaviour: a second plain run must not overwrite anything
-        marker = os.path.join(out, "turret.png")
+        marker = os.path.join(out, "coin.png")
         before = os.path.getmtime(marker)
         os.utime(marker, (before - 100, before - 100))
         gen.main(["--out", out])
