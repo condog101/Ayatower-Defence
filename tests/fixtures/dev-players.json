@@ -1,0 +1,4 @@
+{
+  "_note": "Throwaway accounts for the LOCAL wrangler dev database only. Never valid in production.",
+  "players": [{ "callsign": "DEV GUARD", "pin": "8917" }]
+}

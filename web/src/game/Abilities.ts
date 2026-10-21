@@ -36,7 +36,8 @@ export class Abilities {
       b.root.add(label(s, W - 12, 8, byInput(String(i + 1), ''), 8, COLORS.dim, 0));
       if (sim.level.n < ABILITIES[k].unlockLevel) {
         b.setEnabled(false);
-        b.root.add(label(s, W / 2 - 10, 20, `L${ABILITIES[k].unlockLevel}`, 8, COLORS.dim, 0));
+        b.root.list.forEach((o) => o !== b.bg && (o as Phaser.GameObjects.Image).setAlpha(0.25));
+        b.root.add(label(s, W / 2 - 12, 20, `L${ABILITIES[k].unlockLevel}`, 8, COLORS.gold, 0).setStroke('#000', 3));
       }
       return b;
     };

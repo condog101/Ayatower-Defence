@@ -61,7 +61,8 @@ export class MapView {
     }
     const [ac, ar] = ayaCell;
     this.aya = s.add
-      .sprite(MAP_X + ac * TILE + TILE / 2, MAP_Y + ar * TILE + TILE, 'ayatower', 0)
+      // kept inside the map when the Ayatower sits on an edge column
+      .sprite(Math.max(MAP_X + TILE, Math.min(MAP_X + MAP_W - TILE, MAP_X + ac * TILE + TILE / 2)), MAP_Y + ar * TILE + TILE, 'ayatower', 0)
       .setOrigin(0.5, 0.85)
       .setScale(PX)
       .setDepth(DEPTH.towers + 1);

@@ -358,3 +358,15 @@ describe('determinism', () => {
     expect(play(42)).not.toBe(play(43));
   });
 });
+
+describe('events', () => {
+  it('delivers events from player actions between ticks with the next step', () => {
+    const sim = make([wave(0, rush('rhib', 1, 1))]);
+    sim.place('boats', 5, 4);
+    sim.startWave();
+    const evs = sim.step();
+    expect(evs.some((e) => e.t === 'tower' && e.op === 'place')).toBe(true);
+    expect(evs.some((e) => e.t === 'waveStart')).toBe(true);
+    expect(sim.step().some((e) => e.t === 'waveStart')).toBe(false);
+  });
+});

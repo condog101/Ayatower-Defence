@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { DEPTH, HEIGHT, HUD_H, PX, SIDE_W, SIDE_X } from '../data/balance';
+import { DEPTH, HEIGHT, HUD_H, MAP_X, PX, SIDE_W, SIDE_X } from '../data/balance';
 import { TOWER_KEYS, TOWERS } from '../data/towers';
 import type { Sim } from '../sim/sim';
 import type { TowerDef, TowerKey } from '../sim/types';
@@ -39,6 +39,7 @@ export class Shop {
   private root: Phaser.GameObjects.Container;
   private tip: Phaser.GameObjects.Container;
   private tipText: Phaser.GameObjects.Text;
+  private tipPanel: Phaser.GameObjects.NineSlice;
   selected: TowerKey | null = null;
 
   constructor(
@@ -82,13 +83,16 @@ export class Shop {
       }
       this.cards.push({ key, root, frame, cost, lock });
     });
-    // Tooltip, left of the sidebar over the map's edge.
-    const tw = 250;
-    const th = 118;
+    // Tooltip: left of the sidebar on desktop; top-left of the map on touch (the tap-mode X sits top-right).
+    const tw = TOUCH ? 300 : 250;
     this.tipText = s.add
       .text(12, 12, '', { fontFamily: FONT, fontSize: `${uiSize(8)}px`, color: COLORS.text, lineSpacing: 5, wordWrap: { width: tw - 24 } })
       .setOrigin(0);
-    this.tip = s.add.container(SIDE_X - tw - 6, HUD_H + 6, [panel(s, 0, 0, tw, th), this.tipText]).setDepth(DEPTH.hud + 2).setVisible(false);
+    this.tipPanel = panel(s, 0, 0, tw, 100);
+    this.tip = s.add
+      .container(TOUCH ? MAP_X + 6 : SIDE_X - tw - 6, HUD_H + 6, [this.tipPanel, this.tipText])
+      .setDepth(DEPTH.hud + 2)
+      .setVisible(false);
   }
 
   showTip(key: TowerKey | null) {
@@ -100,6 +104,8 @@ export class Shop {
     const t0 = def.tiers[0];
     this.tipText.setText(`${def.name}  ${t0.cost}\n${def.basis}\n+ ${def.pro}\n- ${def.con}\n${t0.blurb}`);
     this.tipText.setColor(COLORS.text);
+    // nineslice size is in unscaled units (the panel is drawn at 2x)
+    this.tipPanel.setSize(this.tipPanel.width, Math.ceil((this.tipText.height + 24) / 2));
     this.tip.setVisible(true);
   }
 

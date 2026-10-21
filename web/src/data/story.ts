@@ -35,7 +35,7 @@ export const TWEETS: Record<number, Tweet[]> = {
         touch: 'They tell me the old man fights back by DRAGGING a little card from the right onto the sand. Speedboats on land, mines in the shallow water. Hatched squares only. So complicated. Sad!',
       },
       stats: 'REPOSTS 3   LIKES 4',
-      reply: { who: 'aya', text: 'He is not wrong, for once. Tap a tower you built to upgrade it, or sell it.' },
+      reply: { who: 'aya', text: 'He is not wrong, for once. Click or tap a tower you built to upgrade it, sell it or retarget it.' },
     },
     {
       who: 'don',

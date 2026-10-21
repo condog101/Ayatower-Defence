@@ -97,10 +97,18 @@ export class Sim {
     return this.phase === 'won' || this.phase === 'lost';
   }
 
-  /** Advance one tick and return what happened during it. */
+  /**
+   * Advance one tick and return what happened since the last call: the tick itself plus anything
+   * the player did in between (placing, upgrading, starting a wave, casting).
+   */
   step(): SimEvent[] {
+    if (!this.over) this.tick_();
+    const out = this.events;
     this.events = [];
-    if (this.over) return this.events;
+    return out;
+  }
+
+  private tick_() {
     this.tick++;
     if (this.cooldowns.staff > 0) this.cooldowns.staff--;
     if (this.cooldowns.fatwa > 0) this.cooldowns.fatwa--;
@@ -111,14 +119,13 @@ export class Sim {
     if (this.lives <= 0) {
       this.phase = 'lost';
       this.emit({ t: 'lost' });
-      return this.events;
+      return;
     }
     revealPass(this);
     stepTowers(this);
     stepProjectiles(this);
     this.compact();
     this.checkWaves();
-    return this.events;
   }
 
   private compact() {

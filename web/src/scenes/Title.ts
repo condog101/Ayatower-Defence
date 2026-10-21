@@ -42,8 +42,9 @@ export class TitleScene extends Phaser.Scene {
     this.add.image(24, 16, 'title_logo').setOrigin(0).setScale(1.5);
     this.add.sprite(36, 196, 'aya', 4).setOrigin(0).setScale(1.25).setCrop(0, 0, 64, 56);
     this.add.sprite(136, 196, 'don', 2).setOrigin(0).setScale(1.25).setCrop(0, 0, 64, 56);
-    text(this, 76, 280, 'THE GREY TURBAN', 8, COLORS.gold);
-    text(this, 176, 280, 'VS BIG DON', 8, COLORS.red);
+    text(this, 76, 286, 'THE GREY\nTURBAN', 8, COLORS.gold);
+    text(this, 126, 230, 'VS', 8, COLORS.text);
+    text(this, 176, 280, 'BIG DON', 8, COLORS.red);
     this.add.image(WIDTH - 20, HEIGHT - 20, 'advisory').setOrigin(1).setScale(2);
     this.layer = this.add.container(0, 0);
     this.cameras.main.fadeIn(300);
@@ -81,8 +82,8 @@ export class TitleScene extends Phaser.Scene {
         text(
           this,
           MENU_X + 50,
-          274,
-          byInput('CLICK A CARD, CLICK THE MAP. SPACE STARTS A WAVE.', 'DRAG A CARD ONTO THE MAP.'),
+          270,
+          byInput('CLICK A CARD, CLICK THE MAP.\nSPACE STARTS A WAVE.', 'DRAG A CARD ONTO THE MAP.'),
           8,
           COLORS.dim,
         ),

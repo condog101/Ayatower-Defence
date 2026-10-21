@@ -50,7 +50,7 @@ export class TowerPanel {
     const txt = (yy: number, size: number, color: string) =>
       s.add.text(6, yy, '', { fontFamily: FONT, fontSize: `${uiSize(size)}px`, color, lineSpacing: 5, wordWrap: { width: W - 12 } }).setOrigin(0);
     const bg = s.add.rectangle(0, 0, W, 348, 0x14110d, 1).setOrigin(0).setStrokeStyle(2, 0xb88c1e);
-    this.name = txt(8, 8, COLORS.gold);
+    this.name = txt(8, 8, COLORS.gold).setWordWrapWidth(W - 40);
     this.tierText = txt(36, 8, COLORS.text);
     this.icon = s.add.container(W / 2, 92);
     this.statsText = txt(124, 8, COLORS.dim);

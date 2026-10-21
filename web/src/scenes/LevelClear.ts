@@ -42,7 +42,7 @@ export class LevelClearScene extends Phaser.Scene {
       `SHIPS SUNK         ${String(r.killScore).padStart(7)}`,
       `WAVE BOUNTIES      ${String(r.waveScore).padStart(7)}`,
       `CLEAR BONUS        ${String(1000 * lvl).padStart(7)}`,
-      `PATIENCE ${String(r.livesLeft).padStart(3)} x50    ${String(r.livesLeft * 50).padStart(7)}`,
+      `PATIENCE ${String(r.livesLeft).padStart(3)} X 50  ${String(r.livesLeft * 50).padStart(7)}`,
       `NONE PASSED        ${String(r.leaked ? 0 : 1500).padStart(7)}`,
       '',
       `LEVEL SCORE        ${String(r.levelScore).padStart(7)}`,
@@ -50,7 +50,7 @@ export class LevelClearScene extends Phaser.Scene {
     ];
     lines.forEach((l, i) =>
       this.time.delayedCall(220 * (i + 1), () => {
-        text(this, WIDTH / 2, 178 + i * 24, l, 8, i >= 6 ? COLORS.gold : COLORS.text);
+        text(this, WIDTH / 2 - 128, 178 + i * 24, l, 8, i >= 6 ? COLORS.gold : COLORS.text, 0).setOrigin(0, 0.5);
         if (l) Audio.play('blip');
       }),
     );

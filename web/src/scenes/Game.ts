@@ -26,7 +26,7 @@ import { Music } from '../systems/Music';
 import { Popups, SPEAKERS, type Shown } from '../systems/Popups';
 import type { RunState } from '../systems/Run';
 import { Ticker } from '../systems/Ticker';
-import { COLORS, FONT, menu, text, uiSize } from '../systems/UI';
+import { COLORS, FONT, menu, text } from '../systems/UI';
 
 export interface LevelResult {
   run: RunState;
@@ -124,7 +124,7 @@ export class GameScene extends Phaser.Scene {
     this.placement = new Placement(this, sim, () => this.commit(), () => this.cancelPlacement());
     this.startBtn = button(this, SIDE_X + 3, SHOP_BOTTOM + 4, 154, 36, '', () => this.startWave(), 8);
     this.info = this.add
-      .text(SIDE_X + 8, ABILITY_Y + 60, '', { fontFamily: FONT, fontSize: `${uiSize(8)}px`, color: COLORS.dim, lineSpacing: 4, wordWrap: { width: 146 } })
+      .text(SIDE_X + 6, ABILITY_Y + 58, '', { fontFamily: FONT, fontSize: '8px', color: COLORS.dim, lineSpacing: 3, wordWrap: { width: 150 } })
       .setOrigin(0)
       .setDepth(DEPTH.hud);
     this.input_ = new Input(this, {
