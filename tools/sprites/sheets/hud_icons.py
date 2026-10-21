@@ -1,8 +1,10 @@
 """HUD icons, 12x12 with a 1px dark outline.
 
- 0 lives (grey turban)   1 rial coin   2 wave crest   3 play   4-6 speed x1/x2/x3
- 7 auto (circular arrows)   8 pause   9 target FIRST   10 target LAST   11 target STRONG
-12 target CLOSE (crosshair)   13 staff ability   14 fatwa scroll ability   15 sell   16 upgrade
+ 0 lives (the Grey Turban)   1 gold coin with a Persian star   2 wave (the red Eye)   3 play
+ 4-6 speed x1/x2/x3 (hourglass with 1/2/3 gold pips)   7 auto (circular arrows)   8 pause
+ 9 target FIRST (arrow to the goal)   10 target LAST (arrow back)   11 target STRONG (shield)
+12 target CLOSE (crosshair)   13 staff ability (wizard staff + crystal)
+14 fatwa ability (rolled scroll with a red wax seal)   15 sell (coin minus)   16 upgrade
 """
 from draw import bevel, circle, disc, ellipse, new, outline, poly, px, rect, strip
 from palette import C
@@ -12,7 +14,6 @@ FRAME = (12, 12)
 FRAMES = 17
 
 INK = C["cream"]
-INK_DK = C["sand_dk"]
 
 
 def icon():
@@ -46,46 +47,88 @@ def lives():
 
 def coin(minus=False):
     img = icon()
-    disc(img, 5.5, 5.5, 4.6, C["gold"])
-    circle(img, 5.5, 5.5, 3.4, C["gold_dk"], thickness=0.9)
+    disc(img, 5.5, 5.5, 4.9, C["gold_dk"])
+    disc(img, 5.2, 5.2, 4.2, C["gold"])
     if minus:
         rect(img, 3, 5, 8, 6, C["tie"])
         rect(img, 3, 5, 8, 5, C["fire_red"])
     else:
-        rect(img, 5, 3, 6, 8, C["gold_dk"])  # stamped I (rial bar)
-        rect(img, 4, 3, 7, 3, C["gold_dk"])
-        rect(img, 4, 8, 7, 8, C["gold_dk"])
+        for dx, dy in ((0, -3), (0, 3), (-3, 0), (3, 0), (-2, -2), (2, -2), (-2, 2), (2, 2)):
+            px(img, 5 + dx, 5 + dy, C["gold_dk"])
+        rect(img, 4, 4, 6, 6, C["gold_dk"])
+        for dx, dy in ((0, -2), (0, 2), (-2, 0), (2, 0)):
+            px(img, 5 + dx, 5 + dy, C["gold_dk"])
+        px(img, 5, 5, C["fire_yellow"])
     px(img, 3, 2, C["cream"])
     px(img, 2, 3, C["cream"])
     return outline(img)
 
 
 def wave():
+    """The red Eye: flame-licked almond, fiery iris, black slit pupil."""
     img = icon()
-    poly(img, [(0, 10), (1, 6), (3, 3), (6, 2), (9, 3), (10, 5), (8, 5), (7, 4), (6, 5), (7, 7), (10, 8), (11, 10)],
-         C["water_lt"])
-    rect(img, 0, 9, 11, 10, C["water"])
-    for x, y in ((3, 3), (4, 2), (5, 2), (6, 2), (7, 2), (8, 3), (9, 3), (10, 4)):
-        px(img, x, y, C["foam"])
-    px(img, 2, 5, C["shallow"])
-    px(img, 1, 7, C["shallow"])
+    # flame licks above and below
+    for x, y in ((3, 1), (5, 0), (5, 1), (8, 1), (6, 10)):
+        px(img, x, y, C["fire_red"])
+    for x, y in ((5, 2), (6, 2), (4, 2), (7, 2)):
+        px(img, x, y, C["fire_orange"])
+    # almond
+    for x in range(0, 12):
+        u = (x - 5.5) / 6.0
+        lim = 3.2 * (1 - u * u) ** 0.9
+        for y in range(12):
+            dy = y - 5.5
+            if abs(dy) <= lim:
+                d = abs(x - 5.5) + abs(dy) * 1.3
+                c = C["fire_yellow"] if d < 2.2 else C["fire_orange"] if d < 4.2 else C["fire_red"]
+                px(img, x, y, c)
+    # slit pupil
+    rect(img, 5, 3, 6, 8, C["black"])
+    return outline(img)
+
+
+def hourglass(n):
+    """Speed: hourglass (wood caps, glass bulbs, running sand) with n gold pips beside it."""
+    img = icon()
+    W, WD, G, SA, SD = C["wood"], C["wood_dk"], C["chrome"], C["sand"], C["gold_dk"]
+    rect(img, 0, 0, 7, 1, W)
+    rect(img, 0, 1, 7, 1, WD)
+    rect(img, 0, 10, 7, 11, W)
+    rect(img, 0, 10, 7, 10, C["parch"])
+    # posts
+    rect(img, 0, 2, 0, 9, WD)
+    rect(img, 7, 2, 7, 9, WD)
+    # glass: bulbs narrowing to a neck at row 5/6
+    for y in range(2, 10):
+        hw = {2: 2, 3: 2, 4: 1, 5: 0, 6: 0, 7: 1, 8: 2, 9: 2}[y]
+        for x in range(3 - hw, 5 + hw):
+            px(img, x, y, G)
+    # sand: less on top / more below the faster the speed
+    top_rows = {1: (3, 4), 2: (4,), 3: ()}[n]
+    for y in top_rows:
+        hw = {3: 2, 4: 1}[y]
+        for x in range(3 - hw, 5 + hw):
+            px(img, x, y, SA)
+    bot_rows = {1: (9,), 2: (8, 9), 3: (7, 8, 9)}[n]
+    for y in bot_rows:
+        hw = {7: 1, 8: 2, 9: 2}[y]
+        for x in range(3 - hw, 5 + hw):
+            px(img, x, y, SA if y < 9 else SD)
+    px(img, 3, 5, SA)  # falling stream
+    px(img, 4, 6, SA)
+    px(img, 2, 2, C["white"])  # glint
+    # pips
+    for k in range(n):
+        y = 9 - k * 4
+        rect(img, 9, y, 10, y + 1, C["gold"])
+        px(img, 9, y, C["fire_yellow"])
+        px(img, 10, y + 1, C["gold_dk"])
     return outline(img)
 
 
 def play():
     img = icon()
     poly(img, [(3, 1), (10, 5.5), (3, 10)], INK)
-    return finish(img)
-
-
-def chevrons(n):
-    img = icon()
-    widths = {1: [4], 2: [2, 6], 3: [0, 4, 8]}[n]
-    for x0 in widths:
-        for y in range(1, 11):
-            d = 4 - abs(y - 5.5) + 0.5
-            for t in range(2):
-                px(img, x0 + int(d) + t - 1 + (1 if n == 1 else 0), y, INK)
     return finish(img)
 
 
@@ -120,20 +163,33 @@ def pause():
     return finish(img)
 
 
+def arrow(img, flip=False):
+    """A fletched arrow pointing east (west when flipped), rows 4..7."""
+    def P(x, y, c):
+        px(img, 11 - x if flip else x, y, c)
+    for x in range(2, 8):
+        P(x, 5, C["parch"])
+        P(x, 6, C["wood"])
+    # iron head
+    for x, y in ((8, 3), (8, 4), (9, 4), (8, 5), (9, 5), (10, 5), (8, 6), (9, 6), (10, 6), (8, 7), (9, 7), (8, 8)):
+        P(x, y, C["chrome"] if y <= 5 else C["smoke_lt"])
+    # red fletching
+    for x, y in ((0, 3), (1, 4), (2, 4), (0, 8), (1, 7), (2, 7), (0, 4), (0, 7), (1, 5), (1, 6)):
+        P(x, y, C["tie"])
+
+
 def target_first():
     img = icon()
-    rect(img, 1, 5, 6, 6, INK)
-    poly(img, [(6, 2), (9, 5.5), (6, 9)], INK)
-    rect(img, 10, 1, 10, 10, C["gold"])
-    return finish(img)
+    arrow(img)
+    rect(img, 11, 1, 11, 10, C["gold"])
+    return finish(img, bev=False)
 
 
 def target_last():
     img = icon()
-    rect(img, 5, 5, 10, 6, INK)
-    poly(img, [(5, 2), (2, 5.5), (5, 9)], INK)
-    rect(img, 1, 1, 1, 10, C["smoke_lt"])
-    return finish(img)
+    arrow(img, flip=True)
+    rect(img, 0, 1, 0, 10, C["smoke_lt"])
+    return finish(img, bev=False)
 
 
 def target_strong():
@@ -163,36 +219,47 @@ def target_close():
 
 
 def staff():
+    """Wizard staff with a glowing crystal in a gnarled crook."""
     img = icon()
-    for k in range(9):  # diagonal wooden staff, bottom-left to top-right
+    for k in range(8):  # diagonal staff, bottom-left to top-right
         px(img, 1 + k, 10 - k, C["wood"])
-        px(img, 2 + k, 10 - k, C["rock"])
-    px(img, 1, 10, C["rock"])
-    # gnarled crook at the top
-    px(img, 9, 1, C["wood"])
-    px(img, 10, 2, C["wood"])
+        px(img, 2 + k, 10 - k, C["wood_dk"])
+    px(img, 0, 11, C["wood_dk"])
+    # crook prongs around the crystal
+    px(img, 7, 2, C["wood"])
+    px(img, 7, 1, C["wood"])
+    px(img, 10, 4, C["wood_dk"])
+    px(img, 11, 4, C["wood_dk"])
     outline(img)
-    # glowing tip
-    disc(img, 9.5, 1.5, 1.6, (*C["foam"][:3], 255))
-    px(img, 9, 1, C["white"])
-    px(img, 10, 1, C["white"])
-    for x, y in ((11, 0), (7, 0), (11, 4)):
-        px(img, x, y, C["fire_yellow"])
+    # crystal (drawn over the outline so it glows)
+    for x, y, c in ((9, 0, C["white"]), (8, 1, C["mithril_lt"]), (9, 1, C["white"]), (10, 1, C["mithril_lt"]),
+                    (8, 2, C["mithril"]), (9, 2, C["mithril_lt"]), (10, 2, C["mithril"]), (9, 3, C["mithril"]),
+                    (11, 2, C["mithril_lt"])):
+        px(img, x, y, c)
+    for x, y in ((11, 0), (6, 0), (11, 5)):
+        px(img, x, y, (*C["mithril_lt"][:3], 200))
     return img
 
 
 def fatwa():
+    """A rolled scroll tied with a red ribbon and a wax seal."""
     img = icon()
-    rect(img, 2, 1, 9, 9, C["cream"])
-    rect(img, 1, 1, 10, 2, C["sand"])  # top roll
-    rect(img, 1, 9, 10, 10, C["sand"])  # bottom roll
-    rect(img, 1, 1, 10, 1, C["sand_lt"])
-    for y in (4, 6):
-        rect(img, 3, y, 8, y, C["smoke"])  # script lines
-    rect(img, 3, 5, 6, 5, C["smoke"])
-    disc(img, 8, 8, 1.6, C["tie"])  # red wax seal
-    px(img, 7, 7, C["fire_orange"])
-    px(img, 9, 10, C["maroon"])
+    # rolled parchment (horizontal cylinder) with spiral ends
+    rect(img, 1, 3, 10, 8, C["parch"])
+    rect(img, 1, 3, 10, 4, C["cream"])
+    rect(img, 1, 8, 10, 8, C["parch_dk"])
+    for x in (1, 10):
+        rect(img, x, 4, x, 7, C["parch_dk"])
+        px(img, x, 5, C["sand_lt"])
+    # ribbon tails
+    rect(img, 5, 2, 6, 9, C["tie"])
+    px(img, 4, 10, C["tie"])
+    px(img, 7, 10, C["maroon"])
+    # wax seal
+    disc(img, 5.5, 5.5, 1.9, C["tie"])
+    px(img, 5, 5, C["fire_red"])
+    px(img, 6, 6, C["maroon"])
+    px(img, 4, 4, C["fire_orange"])
     return outline(img)
 
 
@@ -211,6 +278,6 @@ def upgrade():
 
 def build():
     return strip([
-        lives(), coin(), wave(), play(), chevrons(1), chevrons(2), chevrons(3), auto(), pause(),
+        lives(), coin(), wave(), play(), hourglass(1), hourglass(2), hourglass(3), auto(), pause(),
         target_first(), target_last(), target_strong(), target_close(), staff(), fatwa(), coin(minus=True), upgrade(),
     ])

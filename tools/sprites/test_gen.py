@@ -16,8 +16,9 @@ import gen  # noqa: E402
 
 # name -> (frame_w, frame_h, frames). This is the contract with web/src; change both together.
 EXPECTED = {
-    "tiles": (16, 16, 43),
-    "decor": (16, 16, 4),
+    "tiles": (16, 16, 44),
+    "decor": (16, 16, 6),
+    "beacon": (16, 16, 4),
     "towers": (16, 16, 33),
     "turrets": (16, 16, 96),
     "ayatower": (32, 32, 4),
@@ -57,11 +58,14 @@ EXPECTED = {
     "don": (64, 64, 5),
     "aya": (64, 64, 5),
     "title_logo": (288, 96, 1),
-    "advisory": (48, 32, 1),
     "hud_icons": (12, 12, 17),
     "ui_panel": (48, 48, 1),
+    "button": (48, 48, 1),
+    "palantir": (48, 48, 1),
+    "scroll": (48, 48, 1),
+    "seal": (48, 48, 1),
 }
-OPAQUE = {"tiles", "don", "aya", "title_logo", "advisory"}
+OPAQUE = {"tiles", "don", "aya", "title_logo"}
 
 
 def main():

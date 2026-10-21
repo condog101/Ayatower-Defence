@@ -1,13 +1,21 @@
-"""US Navy ships, seen from above, all facing EAST (bow right). 2 frames each = stern wake + bow spray
-animation (the submarine has 4: surfaced x2, submerged x2).
+"""Sauron's host at sea: US Navy silhouettes in Mordor dress (fictional satire), seen from above,
+all facing EAST (bow right). 2 frames each = stern wake + bow spray (+ oar strokes on the small
+galleys); the submarine has 4: surfaced x2, submerged x2.
 
-Haze-grey hulls with a lit top rim and shaded bottom rim, darker decks, light superstructures,
-1px dark outline. Silhouette length and superstructure layout carry the class identity.
+Black-iron hulls with a lit grey top rim and a blood-red waterline so they read on the dark-teal
+sea, iron rams and spikes on every prow, a red Eye emblem on each ship, glowing forge-windows,
+ballistae instead of deck guns, tattered red sails from the frigate up, and riveted iron plating
+on the armoured kinds (burke, tico, lhd, carrier). Silhouette length and the layout of the
+deckhouses still carry the class identity.
 """
-from draw import circle, frame_rect, new, outline, poly, px, rect, strip
+from draw import circle, new, outline, poly, px, rect, rng, strip
 from palette import C
 
 CLEAR = (0, 0, 0, 0)
+
+RIM, LIT, SHADE = C["iron"], C["smoke"], C["maroon"]
+DECK_WOOD = C["wood_dk"]
+PLATE = C["stone_dk"]
 
 
 def a(c, alpha):
@@ -34,10 +42,10 @@ def paint_hull(img, cy, x0, x1, half, rim=None, deck=None, lit=None, shade=None,
     """Fill a hull from a half-width function: rim colour band, deck inside.
 
     Rows cy-k .. cy+k-1 are hull (the centreline sits between rows cy-1 and cy)."""
-    rim = rim or C["hull"]
-    deck = deck or C["hull_dk"]
-    lit = lit or C["hull_lt"]
-    shade = shade or C["deck"]
+    rim = rim or RIM
+    deck = deck or DECK_WOOD
+    lit = lit or LIT
+    shade = shade or SHADE
     for x in range(x0, x1 + 1):
         k = half(x)
         if k <= 0:
@@ -72,58 +80,200 @@ def paint_hull2(img, cy, x0, x1, top, bot, rim, deck, lit, shade, inset=1):
         px(img, x, cy + b - 1, shade)
 
 
-def block(img, x0, y0, x1, y1, base=None, lit=None, shade=None, shadow=True):
-    """Raised superstructure block with a drop shadow down-right and top-left light."""
-    base = base or C["hull_lt"]
-    lit = lit or C["white"]
-    shade = shade or C["hull"]
+def planks(img, x0, x1, y0, y1, deck=None, seam=None, step=3):
+    """Timber deck seams: every `step` columns a lighter plank joint (only on deck pixels)."""
+    deck = deck or DECK_WOOD
+    seam = seam or C["wood"]
+    for x in range(x0, x1 + 1):
+        if (x - x0) % step:
+            continue
+        for y in range(y0, y1 + 1):
+            if img.getpixel((x, y)) == deck and (x + y) % 2 == 0:
+                px(img, x, y, seam)
+
+
+def plating(img, x0, x1, y0, y1, deck=None, step=4):
+    """Riveted iron plates: a dark seam every `step` columns, rivets along the plate middles."""
+    deck = deck or PLATE
+    for y in range(y0, y1 + 1):
+        for x in range(x0, x1 + 1):
+            if img.getpixel((x, y)) != deck:
+                continue
+            if (x - x0) % step == 0:
+                px(img, x, y, C["iron"])
+            elif (x - x0) % step == step // 2 and (y - y0) % 3 == 1:
+                px(img, x, y, C["stone"])
+
+
+def block(img, x0, y0, x1, y1, base=None, lit=None, shade=None, shadow=True, spikes=False):
+    """Raised black-iron deckhouse with a drop shadow down-right and top-left light.
+
+    spikes=True adds a crenellated crown of spikes along the lit top edge."""
+    base = base or C["iron"]
+    lit = lit or C["smoke"]
+    shade = shade or C["black"]
     if shadow:
-        rect(img, x0 + 1, y0 + 1, x1 + 1, y1 + 1, C["deck"])
+        rect(img, x0 + 1, y0 + 1, x1 + 1, y1 + 1, a(C["black"], 255))
     rect(img, x0, y0, x1, y1, base)
     rect(img, x0, y0, x1, y0, lit)
     rect(img, x0, y0, x0, y1, lit)
     rect(img, x1, y0 + 1, x1, y1, shade)
     rect(img, x0 + 1, y1, x1, y1, shade)
+    if spikes:
+        for x in range(x0 + 1, x1, 2):
+            px(img, x, y0, C["smoke_lt"])
 
 
-def vls(img, x0, y0, cols, rows):
-    """Vertical launch cells: dark grid with lighter lids."""
-    rect(img, x0, y0, x0 + cols - 1, y0 + rows - 1, C["deck"])
+def window(img, x, y0, y1):
+    """Glowing forge-light window slit."""
+    for y in range(y0, y1 + 1):
+        px(img, x, y, C["fire_orange"] if (y - y0) % 2 == 0 else C["fire_red"])
+
+
+def forge(img, x0, y0, x1, y1):
+    """Funnel turned forge-chimney: iron rim around a glowing ember pit."""
+    rect(img, x0, y0, x1, y1, C["black"])
+    rect(img, x0, y0, x1, y0, C["smoke"])
+    if x1 - x0 >= 1 and y1 - y0 >= 2:
+        rect(img, x0 + (1 if x1 - x0 > 1 else 0), y0 + 1, x1 - (1 if x1 - x0 > 1 else 0), y1 - 1, C["fire_red"])
+        px(img, x0 + (x1 - x0) // 2, y0 + 1 + (y1 - y0 - 2) // 2, C["fire_yellow"])
+    else:
+        px(img, x0, y1, C["fire_orange"])
+
+
+def grate(img, x0, y0, cols, rows):
+    """Iron hatch grate over the bolt-magazine (replaces the VLS): ember glow through the bars."""
+    rect(img, x0, y0, x0 + cols - 1, y0 + rows - 1, C["black"])
     for cx in range(cols):
         for cy in range(rows):
             if (cx + cy) % 2 == 0:
-                px(img, x0 + cx, y0 + cy, C["hull"])
+                px(img, x0 + cx, y0 + cy, C["fire_red"] if (cx * 3 + cy) % 4 == 0 else C["iron"])
 
 
-def gun(img, x, cy, barrel=3, big=False):
-    """Deck gun: round mount with the barrel pointing forward. Mount centred between rows cy-1/cy."""
-    if big:
-        rect(img, x - 1, cy - 2, x + 1, cy + 1, C["hull_lt"])
-        px(img, x - 1, cy - 2, C["white"])
-        rect(img, x + 1, cy - 1, x + 1, cy + 1, C["hull"])
-        if barrel:
-            rect(img, x + 2, cy - 1, x + 1 + barrel, cy - 1, C["iron"])
-    else:
-        rect(img, x, cy - 1, x + 1, cy, C["hull_lt"])
-        px(img, x, cy - 1, C["white"])
-        rect(img, x + 2, cy - 1, x + 1 + barrel, cy - 1, C["iron"])
+def eye(img, cx, cy, size=1):
+    """The red Eye emblem. size 0: 2px glint; 1: 3x3 lidless eye; 2: 5x3 eye with a slit pupil."""
+    if size == 0:
+        px(img, cx, cy, C["tie"])
+        px(img, cx + 1, cy, C["fire_orange"])
+        return
+    if size == 1:
+        px(img, cx, cy - 1, C["tie"])
+        px(img, cx - 1, cy, C["tie"])
+        px(img, cx, cy, C["fire_yellow"])
+        px(img, cx + 1, cy, C["tie"])
+        px(img, cx, cy + 1, C["tie"])
+        return
+    for dx in (-1, 0, 1):
+        px(img, cx + dx, cy - 1, C["tie"])
+        px(img, cx + dx, cy + 1, C["tie"])
+    px(img, cx - 2, cy, C["maroon"])
+    px(img, cx + 2, cy, C["maroon"])
+    px(img, cx - 1, cy, C["fire_orange"])
+    px(img, cx + 1, cy, C["fire_orange"])
+    px(img, cx, cy, C["black"])
+    px(img, cx, cy - 1, C["fire_yellow"])
 
 
-def helipad(img, x0, y0, x1, y1):
-    rect(img, x0, y0, x1, y1, C["deck"])
+def ballista(img, x, cy, arm=2, big=False):
+    """Deck ballista pointing forward: a lit iron mount, bow arms across, a bolt along the centreline.
+
+    The mount sits between rows cy-1 and cy (same anchor as the old deck gun)."""
+    rect(img, x, cy - 1, x + 1, cy, C["smoke"])
+    px(img, x, cy - 1, C["smoke_lt"])
+    px(img, x + 1, cy, C["iron"])
+    reach = 2 if big else 1
+    for d in range(1, reach + 1):  # bow arms, swept back
+        px(img, x + 1, cy - 1 - d, C["wood"])
+        px(img, x + 1, cy + d, C["wood"])
+    px(img, x + 1, cy - 1 - reach, C["wood_dk"])
+    px(img, x + 1, cy + reach, C["wood_dk"])
+    if arm:
+        rect(img, x + 2, cy - 1, x + 1 + arm, cy - 1, C["wood"])
+        px(img, x + 1 + arm, cy - 1, C["smoke_lt"])  # iron bolt head
+
+
+def ram(img, x1, cy, half, spikes=(3, 6)):
+    """Iron ram on the bow tip plus spikes jutting from the bow flanks (drawn before the outline)."""
+    for x in (x1, x1 - 1):
+        k = half(x)
+        for y in range(cy - k, cy + k):
+            px(img, x, y, C["smoke_lt"] if y < cy else C["smoke"])
+    px(img, x1, cy - 1, C["chrome"])
+    for back in spikes:
+        x = x1 - back
+        k = half(x)
+        if k <= 0:
+            continue
+        px(img, x, cy - k - 1, C["smoke_lt"])
+        px(img, x, cy + k, C["smoke"])
+
+
+def sail(img, x, y0, y1, seed=0, depth=4):
+    """Tattered red square sail seen from above: dark yard at column x, cloth billowing forward
+    (east) to `depth` px in the middle, a sunlit upper half, ragged holes and a torn leech."""
+    rnd = rng(seed)
+    n = y1 - y0
+    for y in range(y0, y1 + 1):
+        t = (y - y0) / max(n, 1)
+        reach = max(1, round(depth * (1 - (2 * t - 1) ** 2) ** 0.5))
+        for d in range(1, reach + 1):
+            if d == reach and reach > 1 and rnd.random() < 0.3:
+                continue  # torn leech
+            if 1 < d < reach and 0 < y - y0 < n and rnd.random() < 0.07:
+                continue  # holes
+            if d == 1:
+                c = C["maroon"]  # shadow under the yard
+            elif d == reach and t > 0.5:
+                c = C["maroon"]
+            elif t < 0.45:
+                c = C["fire_red"] if d >= reach - 1 else C["tie"]
+            else:
+                c = C["tie"]
+            px(img, x + d, y, c)
+        px(img, x, y, C["wood_dk"])
+    px(img, x, (y0 + y1) // 2, C["black"])  # mast top
+
+
+def banner(img, x, y, length=3):
+    """Black pennant with a red Eye glint, streaming aft from a mast at (x, y)."""
+    px(img, x, y, C["wood_dk"])
+    for k in range(1, length + 1):
+        px(img, x - k, y, C["black"] if k != 1 else C["iron"])
+    px(img, x - 1, y, C["tie"])
+
+
+def summoning_ring(img, x0, y0, x1, y1):
+    """Old helipad: a black deck square with a red ring and a dark rune dot."""
+    rect(img, x0, y0, x1, y1, C["black"])
     cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
     r = min(x1 - x0, y1 - y0) / 2 - 0.4
-    circle(img, cx, cy, r, C["fire_yellow"], thickness=0.9)
+    circle(img, cx, cy, r, C["maroon"], thickness=0.9)
+    px(img, round(cx), round(cy), C["fire_red"])
 
 
-def flag(img, x, y):
-    """3x2 US flag hint: blue canton, red/white stripes."""
-    px(img, x, y, C["suit"])
-    px(img, x + 1, y, C["tie"])
-    px(img, x + 2, y, C["white"])
-    px(img, x, y + 1, C["tie"])
-    px(img, x + 1, y + 1, C["white"])
-    px(img, x + 2, y + 1, C["tie"])
+def oars(img, xs, cy, half, f):
+    """Oar blades sweeping out of both sides; the stroke alternates between frames."""
+    for i, x in enumerate(xs):
+        k = half(x)
+        dx = (1 if (i + f) % 2 else -1)
+        px(img, x, cy - k - 1, C["wood"])
+        px(img, x + dx, cy - k - 2, C["wood_dk"])
+        px(img, x, cy + k, C["wood"])
+        px(img, x + dx, cy + k + 1, C["wood_dk"])
+
+
+def drake(img, x, y):
+    """Parked bat-winged drake facing east (5x5): black body, grey wings, red eye."""
+    for w in (1, 2):
+        px(img, x + 1, y - w, C["smoke"])
+        px(img, x + 1, y + w, C["smoke"])
+    px(img, x, y - 2, C["stone"])
+    px(img, x, y + 2, C["stone"])
+    px(img, x - 1, y, C["black"])
+    px(img, x, y, C["black"])
+    px(img, x + 1, y, C["black"])
+    px(img, x + 2, y, C["black"])
+    px(img, x + 3, y, C["fire_red"])
 
 
 def wake(img, x0, cy, half, frame, length=None, spread=1):
@@ -142,11 +292,9 @@ def wake(img, x0, cy, half, frame, length=None, spread=1):
     for x in range(x0 - 1, x0 - 1 - length, -1):
         d = x0 - 1 - x  # distance behind the stern
         fade_ = max(90, 245 - d * 30)
-        # bright prop-wash core on the centreline, churning between frames
         for y in range(cy - core, cy + core):
             m = (x + y + frame) % 3
             put(x, y, a(C["white"] if m else C["foam"], fade_))
-        # V edges spreading outward with distance
         spread_y = core + 1 + d // 2
         if (x + frame) % 2 == 0:
             put(x, cy - spread_y, a(C["foam"], fade_ - 40))
@@ -154,7 +302,6 @@ def wake(img, x0, cy, half, frame, length=None, spread=1):
         else:
             put(x, cy - spread_y + 1, a(C["shallow"], fade_ - 60))
             put(x, cy + spread_y - 2, a(C["shallow"], fade_ - 60))
-    # quarter wake: a pixel trail just outside the hull outline for the aft part
     for x in range(x0, x0 + max(3, int(spread * 5))):
         k = half(x)
         if (x + frame) % 2 == 0:
@@ -186,7 +333,7 @@ def finish(body, x0, x1, cy, half, frame, wake_len=None, spray_n=4):
 
 
 class Ship:
-    """Base: subclasses define NAME, FRAME, X0, X1, HW, BOW and draw(img)."""
+    """Base: subclasses define NAME, FRAME, X0, X1, HW, BOW and draw(img, f)."""
 
     FRAMES = 2
     X0 = 3
@@ -197,15 +344,15 @@ class Ship:
         return taper(x, cls.X0, cls.X1, cls.HW, cls.BOW, cls.STERN)
 
     @classmethod
-    def body(cls):
+    def body(cls, f=0):
         img = new(*cls.FRAME)
-        cls.draw(img)
+        cls.draw(img, f)
         return img
 
     @classmethod
     def frame(cls, f):
         cy = cls.FRAME[1] // 2
-        return finish(cls.body(), cls.X0, cls.X1, cy, cls.half, f)
+        return finish(cls.body(f), cls.X0, cls.X1, cy, cls.half, f)
 
     @classmethod
     def build(cls):
@@ -215,29 +362,29 @@ class Ship:
 # ---------------------------------------------------------------------------
 
 class Rhib(Ship):
-    """Rigid-hull inflatable: black tubes, grey deck, console, outboard."""
+    """Orc longboat (the RHIB): black hull, iron ram, two oars a side and an Eye on the bow."""
 
     NAME = "rhib"
     FRAME = (12, 6)
     X0, X1, HW, BOW = 2, 10, 2, 3
 
     @classmethod
-    def draw(cls, img):
+    def draw(cls, img, f=0):
         cy = 3
-        paint_hull(img, cy, cls.X0, cls.X1, cls.half, rim=C["iron"], deck=C["hull"], lit=C["smoke"],
-                   shade=C["black"])
-        rect(img, 3, 2, 7, 3, C["hull"])
-        rect(img, 6, 2, 6, 3, C["hull_lt"])  # console
-        px(img, 7, 2, C["water_dk"])  # windscreen
-        px(img, 7, 3, C["water_dk"])
-        px(img, 1, 2, C["iron"])  # outboard motor
-        px(img, 1, 3, C["black"])
-        px(img, 4, 2, C["olive_dk"])  # crew helmet
-        px(img, 9, 2, C["smoke"])
+        paint_hull(img, cy, cls.X0, cls.X1, cls.half)
+        ram(img, cls.X1, cy, cls.half, spikes=())
+        px(img, 3, 2, C["iron"])  # orc helmets at the oars
+        px(img, 5, 3, C["iron"])
+        px(img, 3, 3, C["smoke"])
+        eye(img, 7, 2, 0)
+        px(img, 1, 2, C["wood_dk"])  # steering oar
+        px(img, 1, 3, C["wood"])
+        oars(img, (4, 6), cy, cls.half, f)
 
 
 class Patrol(Ship):
-    """Mk VI patrol boat: long low hull, compact pilothouse amidships, gun fore and aft."""
+    """Black galley (the Mk VI): long low hull with oar banks, a small deckhouse with forge-light,
+    an Eye pennant and a bow ballista."""
 
     NAME = "patrol"
     FRAME = (16, 8)
@@ -245,22 +392,21 @@ class Patrol(Ship):
     STERN = 1
 
     @classmethod
-    def draw(cls, img):
+    def draw(cls, img, f=0):
         cy = 4
-        paint_hull(img, cy, cls.X0, cls.X1, cls.half, deck=C["hull_dk"])
-        block(img, 7, 2, 10, 5)
-        rect(img, 10, 3, 10, 4, C["water_dk"])  # bridge windows
-        px(img, 8, 3, C["iron"])  # mast
-        px(img, 8, 4, C["deck"])
-        # aft .50 cal / Mk38 forward
-        px(img, 4, 3, C["hull_lt"])
-        px(img, 4, 4, C["iron"])
-        gun(img, 12, cy, barrel=1)
-        px(img, 5, 5, C["olive_dk"])  # crew
+        paint_hull(img, cy, cls.X0, cls.X1, cls.half)
+        planks(img, 4, 12, 2, 5)
+        ram(img, cls.X1, cy, cls.half, spikes=(3,))
+        block(img, 6, 3, 8, 4)
+        window(img, 8, 3, 4)
+        eye(img, 5, 4, 0)
+        ballista(img, 11, cy, arm=1)
+        oars(img, (5, 8, 10), cy, cls.half, f)
 
 
 class Cyclone(Ship):
-    """Cyclone-class patrol ship: longer, tall superstructure with mast and funnel, stern ramp."""
+    """Corsair raider (the Cyclone): longer galley with a spiked forge-tower, chimney embers,
+    an Eye banner on the mast and a bow ballista."""
 
     NAME = "cyclone"
     FRAME = (20, 8)
@@ -268,25 +414,23 @@ class Cyclone(Ship):
     STERN = 1
 
     @classmethod
-    def draw(cls, img):
+    def draw(cls, img, f=0):
         cy = 4
-        paint_hull(img, cy, cls.X0, cls.X1, cls.half, deck=C["hull_dk"])
-        rect(img, 3, 3, 4, 4, C["deck"])  # stern launch ramp
-        px(img, 3, 3, C["iron"])
-        block(img, 7, 2, 13, 5)
-        rect(img, 9, 3, 10, 4, C["hull"])  # funnel
-        px(img, 9, 3, C["iron"])
-        px(img, 11, 3, C["iron"])  # mast
-        px(img, 11, 4, C["tie"])
-        rect(img, 13, 3, 13, 4, C["water_dk"])  # bridge windows
-        gun(img, 15, cy, barrel=2)
-        px(img, 6, 3, C["hull_lt"])  # stinger mount
-        px(img, 5, 5, C["hull_lt"])
+        paint_hull(img, cy, cls.X0, cls.X1, cls.half)
+        planks(img, 4, 15, 2, 5)
+        ram(img, cls.X1, cy, cls.half, spikes=(3, 6))
+        block(img, 7, 2, 12, 5, spikes=True)
+        forge(img, 8, 3, 9, 4)
+        eye(img, 11, 3, 0)
+        window(img, 12, 3, 4)
+        ballista(img, 14, cy, arm=2)
+        banner(img, 5, 3, 2)
+        oars(img, (6, 13), cy, cls.half, f)
 
 
 class Lcs(Ship):
-    """Independence-class littoral combat ship: wide angular trimaran, huge flight deck aft,
-    faceted superstructure, sharp wave-piercing bow."""
+    """Trimaran reaver (the Independence LCS): wide angular triple hull, a red summoning ring on
+    the broad after-deck, a faceted iron keep and a long spiked wave-piercing ram."""
 
     NAME = "lcs"
     FRAME = (24, 10)
@@ -304,33 +448,30 @@ class Lcs(Ship):
         return max(1, round(3 * t ** 0.8))
 
     @classmethod
-    def draw(cls, img):
+    def draw(cls, img, f=0):
         cy = 5
-        paint_hull(img, cy, cls.X0, cls.X1, cls.half, deck=C["hull"])
-        # outrigger seams of the trimaran
-        for x in range(4, 15):
-            px(img, x, 2, C["hull_dk"])
-            px(img, x, 7, C["hull_dk"])
-        # flight deck
-        rect(img, 3, 3, 10, 6, C["deck"])
-        circle(img, 6.5, 4.5, 1.6, C["fire_yellow"], thickness=0.8)
-        # faceted superstructure: trapezoid narrowing forward
-        rect(img, 12, 6, 17, 7, C["deck"])
-        poly(img, [(11, 2), (16, 3), (17, 4), (17, 5), (16, 6), (11, 7)], C["hull_lt"])
+        paint_hull(img, cy, cls.X0, cls.X1, cls.half, deck=C["stone_dk"])
+        for x in range(4, 15):  # outrigger seams of the trimaran
+            px(img, x, 2, C["black"])
+            px(img, x, 7, C["black"])
+        summoning_ring(img, 3, 3, 10, 6)
+        rect(img, 12, 6, 17, 7, C["black"])
+        poly(img, [(11, 2), (16, 3), (17, 4), (17, 5), (16, 6), (11, 7)], C["iron"])
         for y in range(2, 7):
-            px(img, 11, y, C["white"])
+            px(img, 11, y, C["smoke"])
         for x in range(11, 16):
-            px(img, x, 2 + (x - 11) // 5, C["white"])
-        px(img, 16, 4, C["water_dk"])
-        px(img, 16, 5, C["water_dk"])
-        rect(img, 13, 4, 14, 5, C["hull"])  # integrated mast block
-        px(img, 13, 4, C["iron"])
-        gun(img, 19, cy, barrel=1)
+            px(img, x, 2 + (x - 11) // 5, C["smoke"])
+        for x in (12, 14, 16):
+            px(img, x, 2 + (x - 11) // 5, C["smoke_lt"])  # spiked crest
+        window(img, 16, 4, 5)
+        eye(img, 13, 4, 1)
+        ram(img, cls.X1, cy, cls.half, spikes=(3, 6))
+        ballista(img, 19, cy, arm=1)
 
 
 class Frigate(Ship):
-    """Constellation-class frigate: flight deck + hangar aft, single superstructure with an
-    integrated mast, VLS and a 57mm gun forward."""
+    """Black-sailed frigate (the Constellation): after-deck with a summoning ring and a hangar,
+    one tattered red sail amidships, a deckhouse with the Eye, a bolt grate and a bow ballista."""
 
     NAME = "frigate"
     FRAME = (28, 10)
@@ -338,57 +479,50 @@ class Frigate(Ship):
     STERN = 1
 
     @classmethod
-    def draw(cls, img):
+    def draw(cls, img, f=0):
         cy = 5
-        paint_hull(img, cy, cls.X0, cls.X1, cls.half, deck=C["hull_dk"])
-        helipad(img, 4, 2, 8, 7)
-        block(img, 9, 2, 12, 7)  # hangar
-        rect(img, 9, 3, 9, 6, C["hull"])  # hangar door
-        block(img, 13, 2, 20, 7)
-        rect(img, 14, 3, 15, 5, C["hull"])  # funnel
-        rect(img, 14, 4, 15, 4, C["iron"])
-        rect(img, 17, 3, 18, 6, C["hull"])  # integrated mast with arrays
-        px(img, 17, 3, C["suit"])
-        px(img, 18, 6, C["suit"])
-        px(img, 18, 4, C["tie"])
-        rect(img, 20, 3, 20, 6, C["water_dk"])
-        vls(img, 22, 3, 2, 4)
-        gun(img, 24, cy, barrel=1)
+        paint_hull(img, cy, cls.X0, cls.X1, cls.half)
+        planks(img, 4, 23, 2, 7)
+        summoning_ring(img, 4, 2, 8, 7)
+        block(img, 9, 3, 11, 6)  # hangar
+        block(img, 16, 3, 20, 6, spikes=True)
+        eye(img, 18, 4, 1)
+        window(img, 20, 4, 5)
+        grate(img, 21, 4, 2, 2)
+        ram(img, cls.X1, cy, cls.half, spikes=(3, 6))
+        ballista(img, 23, cy, arm=1)
+        sail(img, 12, 0, 9, seed=11, depth=4)
 
 
 class Burke(Ship):
-    """Arleigh Burke destroyer: broad armoured look, helipad, two funnels, SPY-1 panels, VLS
-    fore and aft, 5-inch gun forward."""
+    """Iron destroyer (the Arleigh Burke): riveted iron plating, twin forge-chimneys, a tattered
+    sail, a spiked keep with the Eye, bolt grates fore and aft and a heavy bow ballista."""
 
     NAME = "burke"
     FRAME = (32, 10)
     X0, X1, HW, BOW = 3, 31, 4, 9
 
     @classmethod
-    def draw(cls, img):
+    def draw(cls, img, f=0):
         cy = 5
-        paint_hull(img, cy, cls.X0, cls.X1, cls.half, rim=C["hull_dk"], deck=C["deck"], lit=C["hull"],
-                   shade=C["iron"])
-        helipad(img, 4, 2, 8, 7)
-        vls(img, 9, 3, 3, 4)
-        block(img, 12, 2, 22, 7, base=C["hull"], lit=C["hull_lt"], shade=C["hull_dk"])
-        for fx in (13, 16):  # twin funnels with soot
-            rect(img, fx, 3, fx + 1, 6, C["hull_dk"])
-            rect(img, fx, 4, fx + 1, 5, C["iron"])
-        rect(img, 19, 4, 20, 5, C["hull_lt"])  # mast
-        px(img, 19, 4, C["black"])
-        px(img, 20, 4, C["tie"])
-        for x, y in ((21, 2), (21, 7), (22, 3), (22, 6)):  # SPY-1 array corners
-            px(img, x, y, C["suit"])
-        rect(img, 22, 4, 22, 5, C["water_dk"])
-        vls(img, 23, 3, 3, 4)
-        gun(img, 26, cy, barrel=2, big=True)
-        px(img, 29, 4, C["hull_lt"])
+        paint_hull(img, cy, cls.X0, cls.X1, cls.half, deck=PLATE)
+        plating(img, 4, 29, 2, 7)
+        summoning_ring(img, 4, 2, 8, 7)
+        grate(img, 9, 3, 2, 4)
+        block(img, 15, 2, 22, 7, spikes=True)
+        forge(img, 16, 3, 17, 6)
+        eye(img, 20, 4, 1)
+        window(img, 22, 3, 6)
+        grate(img, 23, 3, 2, 4)
+        ram(img, cls.X1, cy, cls.half, spikes=(3, 6))
+        ballista(img, 26, cy, arm=2, big=True)
+        sail(img, 11, 0, 9, seed=23, depth=4)
 
 
 class Sub(Ship):
-    """Virginia-class attack submarine. 0-1 surfaced (black hull, sail, wake); 2-3 submerged
-    (translucent dark shape under the water with just a periscope feather)."""
+    """The Deep Watcher (the Virginia-class sub). 0-1 surfaced (black iron hull with spined back,
+    a red Eye on the sail, wake); 2-3 submerged (translucent dark shape under the water with just a
+    periscope feather)."""
 
     NAME = "sub"
     FRAME = (24, 8)
@@ -407,35 +541,36 @@ class Sub(Ship):
         return 3
 
     @classmethod
-    def draw(cls, img):
+    def draw(cls, img, f=0):
         cy = 4
         paint_hull(img, cy, cls.X0, cls.X1, cls.half, rim=C["iron"], deck=C["iron"], lit=C["smoke"],
                    shade=C["black"])
         for x in range(8, 21):
-            px(img, x, 3, C["deck"])  # spine highlight
-        # cruciform stern planes + pump-jet
-        for y in (1, 6):
+            px(img, x, 3, C["stone_dk"])  # spine
+        for x in range(8, 14, 2):
+            px(img, x, 2, C["smoke_lt"])  # dorsal spines
+        for x in range(19, 22, 2):
+            px(img, x, 2, C["smoke_lt"])
+        for y in (1, 6):  # cruciform stern planes + screw
             px(img, 4, y, C["iron"])
         px(img, 4, 2, C["iron"])
         px(img, 4, 5, C["iron"])
-        px(img, 2, 3, C["deck"])
-        px(img, 2, 4, C["deck"])
-        # sail with fairwater planes
-        rect(img, 15, 3, 17, 4, C["black"])
-        rect(img, 15, 3, 17, 3, C["deck"])
+        px(img, 2, 3, C["stone_dk"])
+        px(img, 2, 4, C["stone_dk"])
+        rect(img, 15, 3, 17, 4, C["black"])  # sail
+        rect(img, 15, 3, 17, 3, C["stone_dk"])
         px(img, 16, 2, C["iron"])
         px(img, 16, 5, C["iron"])
-        px(img, 17, 3, C["smoke"])  # periscope
-        # hatch + a tiny flag on the sail
-        px(img, 11, 3, C["hull_dk"])
+        eye(img, 16, 4, 0)
+        px(img, 23, 3, C["smoke_lt"])  # ram tip
+        px(img, 23, 4, C["smoke"])
 
     @classmethod
     def frame(cls, f):
         cy = 4
         if f < 2:
-            img = finish(cls.body(), cls.X0, cls.X1, cy, cls.half, f, spray_n=3)
-            return img
-        # submerged: dark translucent silhouette, no outline, periscope feather only
+            return finish(cls.body(f), cls.X0, cls.X1, cy, cls.half, f, spray_n=3)
+        # submerged: dark translucent silhouette, no outline, periscope feather + a faint red glint
         body = new(*cls.FRAME)
         for x in range(cls.X0, cls.X1 + 1):
             k = cls.half(x)
@@ -443,7 +578,7 @@ class Sub(Ship):
                 edge = y == cy - k or y == cy + k - 1 or x in (cls.X0, cls.X1)
                 body.putpixel((x, y), a(C["water_dk"] if edge else C["black"], 110 if edge else 125))
         rect(body, 15, 3, 17, 4, a(C["black"], 150))
-        # periscope wake: a short V of foam behind the scope at (17, 3)
+        px(body, 16, 4, a(C["tie"], 120))
         ph = f - 2
         px(body, 17, 3, C["smoke_lt"])
         px(body, 18, 3, a(C["white"], 230))
@@ -453,8 +588,8 @@ class Sub(Ship):
 
 
 class Tico(Ship):
-    """Ticonderoga cruiser: two blocky superstructures with SPY-1 panels, funnels between,
-    5-inch guns fore and aft, VLS fore and aft."""
+    """Iron cruiser (the Ticonderoga): riveted plating, two spiked keeps with the Eye, forge
+    chimneys between, two tattered sails, ballistae fore and aft and bolt grates."""
 
     NAME = "tico"
     FRAME = (36, 12)
@@ -462,37 +597,35 @@ class Tico(Ship):
     STERN = 1
 
     @classmethod
-    def draw(cls, img):
+    def draw(cls, img, f=0):
         cy = 6
-        paint_hull(img, cy, cls.X0, cls.X1, cls.half, deck=C["hull_dk"])
-        gun(img, 6, cy, barrel=0, big=True)
-        px(img, 4, 5, C["iron"])  # aft gun barrel points aft
-        px(img, 3, 5, C["iron"])
-        vls(img, 8, 3, 3, 6)
-        # aft deckhouse
-        block(img, 12, 2, 17, 9)
-        rect(img, 13, 4, 14, 7, C["hull"])
-        for x, y in ((17, 3), (17, 8)):
-            px(img, x, y, C["suit"])
-        # funnels between the houses
-        rect(img, 18, 3, 20, 8, C["hull"])
-        rect(img, 19, 4, 19, 7, C["iron"])
-        px(img, 18, 3, C["hull_lt"])
-        # forward deckhouse with the bridge and the tall mast
-        block(img, 21, 2, 27, 9)
-        rect(img, 23, 5, 24, 6, C["hull"])
-        px(img, 23, 5, C["black"])
-        px(img, 24, 6, C["tie"])
-        for x, y in ((26, 2), (26, 9), (27, 3), (27, 8)):
-            px(img, x, y, C["suit"])
-        rect(img, 27, 4, 27, 7, C["water_dk"])
-        vls(img, 28, 4, 2, 4)
-        gun(img, 31, cy, barrel=2, big=True)
+        paint_hull(img, cy, cls.X0, cls.X1, cls.half, deck=PLATE)
+        plating(img, 4, 32, 2, 9)
+        # aft ballista pointing aft
+        rect(img, 5, 5, 6, 6, C["smoke"])
+        px(img, 5, 5, C["smoke_lt"])
+        px(img, 4, 5, C["wood"])
+        px(img, 3, 5, C["smoke_lt"])
+        px(img, 5, 3, C["wood"])
+        px(img, 5, 8, C["wood"])
+        grate(img, 8, 4, 2, 4)
+        block(img, 12, 3, 16, 8, spikes=True)  # aft keep
+        eye(img, 14, 5, 1)
+        forge(img, 18, 4, 19, 7)
+        block(img, 23, 3, 27, 8, spikes=True)  # forward keep with the bridge
+        eye(img, 25, 5, 1)
+        window(img, 27, 4, 7)
+        grate(img, 28, 4, 2, 4)
+        ram(img, cls.X1, cy, cls.half, spikes=(3, 6, 9))
+        ballista(img, 31, cy, arm=2, big=True)
+        sail(img, 9, 0, 11, seed=31, depth=4)
+        sail(img, 20, 0, 11, seed=37, depth=4)
 
 
 class Lhd(Ship):
-    """Wasp-class amphibious assault ship: full-length flat flight deck, island on the starboard
-    (south) side, numbered helicopter spots, a parked Seahawk and an Osprey."""
+    """Iron assault barge (the Wasp LHD): full-length plated deck, a spiked keep-island to
+    starboard (south) with a tattered sail, Eye-marked landing spots, a parked fell-beast and two
+    bat-winged drakes, and a ram."""
 
     NAME = "lhd"
     FRAME = (48, 16)
@@ -507,47 +640,36 @@ class Lhd(Ship):
         return 7
 
     @classmethod
-    def draw(cls, img):
+    def draw(cls, img, f=0):
         cy = 8
-        paint_hull(img, cy, cls.X0, cls.X1, cls.half, rim=C["hull"], deck=C["deck"])
-        # deck edge safety line + dashed centreline
-        for x in range(5, 43, 3):
-            px(img, x, cy, C["white"])
-            px(img, x + 1, cy, C["white"])
-        for x in range(4, 44):
-            px(img, x, 2, C["hull_dk"])
-        # helicopter landing spots along the port side
-        for i, sx in enumerate(range(8, 40, 7)):
-            for dx, dy in ((0, -1), (-1, 0), (1, 0), (0, 1)):
-                px(img, sx + dx, 4 + dy, C["hull_lt"])
-            px(img, sx, 4, C["fire_yellow"])
-        # island superstructure on the starboard side
-        rect(img, 26, 11, 35, 14, C["deck"])
-        block(img, 25, 10, 34, 13)
-        rect(img, 28, 11, 29, 12, C["hull"])  # stack
-        px(img, 28, 11, C["iron"])
-        rect(img, 31, 11, 31, 12, C["iron"])  # mast
-        px(img, 32, 11, C["tie"])
-        rect(img, 34, 11, 34, 12, C["water_dk"])
-        # deck-edge elevator (starboard aft)
-        rect(img, 14, 12, 18, 14, C["hull_dk"])
-        frame_rect(img, 14, 12, 18, 14, C["iron"])
-        # parked Seahawk on spot 2 and an Osprey forward
-        rect(img, 14, 8, 17, 9, C["hull_lt"])
-        rect(img, 12, 8, 13, 8, C["hull"])
-        px(img, 15, 7, C["hull"])
-        px(img, 15, 10, C["hull"])
-        rect(img, 37, 9, 41, 9, C["hull"])
-        rect(img, 39, 7, 39, 11, C["hull_lt"])
-        px(img, 39, 6, C["hull"])
-        px(img, 39, 12, C["hull"])
-        # bow / stern well deck
-        rect(img, 3, 6, 3, 9, C["iron"])
+        paint_hull(img, cy, cls.X0, cls.X1, cls.half, deck=PLATE)
+        plating(img, 4, 44, 2, 13, step=5)
+        for x in range(5, 43, 3):  # dashed centreline in dried-blood red
+            px(img, x, cy, C["maroon"])
+            px(img, x + 1, cy, C["maroon"])
+        # Eye-marked landing spots along the port side
+        for sx in range(8, 40, 8):
+            eye(img, sx, 4, 0)
+        # spiked keep-island on the starboard side
+        block(img, 25, 10, 34, 13, spikes=True)
+        forge(img, 27, 11, 28, 12)
+        eye(img, 31, 11, 1)
+        window(img, 34, 11, 12)
+        # deck-edge lift
+        rect(img, 14, 12, 18, 13, C["black"])
+        rect(img, 14, 12, 18, 12, C["iron"])
+        # parked drakes (tiny bat-winged shapes facing east) and a great Eye on the bow deck
+        for dx, dy in ((11, 9), (33, 6)):
+            drake(img, dx, dy)
+        eye(img, 40, cy - 1, 2)
+        ram(img, cls.X1, cy, cls.half, spikes=(3, 6))
+        sail(img, 21, 6, 15, seed=41, depth=4)
 
 
 class Carrier(Ship):
-    """Nimitz-class carrier: big flat deck with an angled landing strip, catapults, island to
-    starboard, parked jets."""
+    """Iron supercarrier (the Nimitz): vast riveted deck with an angled landing strip in blood
+    red, bolt catapults, a spiked keep-island to starboard with two tattered sails, a great Eye on
+    the bow and parked bat-winged drakes."""
 
     NAME = "carrier"
     FRAME = (64, 20)
@@ -581,59 +703,53 @@ class Carrier(Ship):
         return max(cls.top(x), cls.bot(x))
 
     @classmethod
-    def body(cls):
+    def body(cls, f=0):
         img = new(*cls.FRAME)
         cy = cls.CY
-        paint_hull2(img, cy, cls.X0, cls.X1, cls.top, cls.bot, C["hull"], C["deck"], C["hull_lt"], C["iron"])
-        # angled landing area: a slightly lighter strip from the stern centreline toward the port bow
+        paint_hull2(img, cy, cls.X0, cls.X1, cls.top, cls.bot, RIM, PLATE, LIT, SHADE)
+        plating(img, 4, 61, 2, 18, step=5)
+        # angled landing strip: dark edges and a red dashed centreline toward the port bow
         for x in range(4, 44):
             yc = cy + 1 - (x - 4) / 6.0
             for d in range(-3, 4):
                 y = round(yc + d)
-                if img.getpixel((x, y)) == C["deck"]:
+                if img.getpixel((x, y))[3] and img.getpixel((x, y)) != RIM and img.getpixel((x, y)) != LIT:
                     if abs(d) == 3:
-                        px(img, x, y, C["hull_lt"])
+                        px(img, x, y, C["black"])
                     elif d == 0 and (x // 2) % 2 == 0:
-                        px(img, x, y, C["fire_yellow"])
-        # arrestor wires across the landing strip
-        for x in (11, 13, 15):
+                        px(img, x, y, C["maroon"])
+                    elif abs(d) < 3:
+                        px(img, x, y, C["iron"])
+        for x in (11, 13, 15):  # arrestor chains
             yc = cy + 1 - (x - 4) / 6.0
             for d in range(-2, 3):
-                px(img, x, round(yc + d), C["hull_dk"])
-        # bow catapults
+                px(img, x, round(yc + d), C["smoke"])
+        # bow bolt catapults
         for y in (cy - 3, cy + 1):
-            for x in range(44, 60):
-                px(img, x, y, C["hull_dk"])
-            px(img, 44, y, C["fire_yellow"])
-        for y in (cy - 6, cy - 5):  # waist catapult
-            for x in range(28, 42):
-                px(img, x, y - (x - 28) // 6, C["hull_dk"])
-        # island to starboard
-        block(img, 37, 14, 46, 17)
-        rect(img, 39, 15, 40, 16, C["hull"])  # stack
-        px(img, 39, 15, C["iron"])
-        rect(img, 43, 15, 43, 16, C["iron"])  # mast
-        px(img, 44, 15, C["tie"])
-        rect(img, 46, 15, 46, 16, C["water_dk"])  # bridge windows
-        # parked jets (tiny Hornets) along the bow and the aft starboard deck
-        for jx, jy in ((50, cy + 5), (54, cy + 5), (58, cy + 4), (20, cy + 6), (25, cy + 6), (30, cy + 6)):
-            rect(img, jx, jy, jx + 3, jy, C["hull_lt"])  # fuselage, nose east
-            px(img, jx + 3, jy, C["white"])
-            px(img, jx + 1, jy - 1, C["hull_lt"])  # wings
-            px(img, jx + 1, jy + 1, C["hull"])
-            px(img, jx + 2, jy - 1, C["hull"])
-            px(img, jx + 2, jy + 1, C["hull_dk"])
-            px(img, jx, jy - 1, C["hull"])  # tails
-            px(img, jx, jy + 1, C["hull_dk"])
-        # hull number on the bow deck
-        for x in (58, 59):
-            px(img, x, cy - 1, C["white"])
-            px(img, x, cy, C["white"])
-        # elevators
-        rect(img, 30, 2, 34, 3, C["hull_dk"])
-        rect(img, 49, 17, 52, 17, C["hull_dk"])
+            for x in range(46, 58):
+                px(img, x, y, C["black"])
+            px(img, 46, y, C["fire_orange"])
+        for y in (cy - 6,):  # waist catapult
+            for x in range(28, 40):
+                px(img, x, y - (x - 28) // 6, C["black"])
+        # a great Eye painted on the bow deck
+        eye(img, 52, cy - 1, 2)
+        # spiked keep-island to starboard
+        block(img, 37, 14, 46, 17, spikes=True)
+        forge(img, 39, 15, 40, 16)
+        eye(img, 43, 15, 1)
+        window(img, 46, 15, 16)
+        # parked drakes along the aft starboard deck and the bow
+        for jx, jy in ((19, cy + 5), (25, cy + 5), (31, cy + 5), (57, cy + 4)):
+            drake(img, jx, jy)
+        # lifts
+        rect(img, 30, 2, 34, 3, C["black"])
+        rect(img, 49, 17, 52, 17, C["black"])
+        ram(img, cls.X1, cy, cls.half, spikes=(4, 8))
+        sail(img, 33, 10, 19, seed=53, depth=4)
+        sail(img, 47, 11, 19, seed=59, depth=2)
         return img
 
     @classmethod
     def frame(cls, f):
-        return finish(cls.body(), cls.X0, cls.X1, cls.CY, cls.half, f, spray_n=6)
+        return finish(cls.body(f), cls.X0, cls.X1, cls.CY, cls.half, f, spray_n=6)

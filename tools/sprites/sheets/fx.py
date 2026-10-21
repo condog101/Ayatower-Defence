@@ -1,4 +1,4 @@
-"""Small effect sheets: stun stars, EW jamming waves, shockwave ring, gold rial coin."""
+"""Small effect sheets: stun stars, the wizard's crackling hex rings, shockwave ring, gold coin."""
 import math
 
 from draw import circle, disc, new, outline, px, rect, strip
@@ -39,7 +39,8 @@ class Stun:
 
 
 class Jam:
-    """EW jamming: concentric zig-zag static rings, cyan-white, mostly transparent."""
+    """Wizard's hex from the jammer tent: concentric zig-zag crackle rings, mithril blue and violet,
+    mostly transparent."""
 
     NAME = "jam"
     FRAME = (16, 16)
@@ -58,7 +59,7 @@ class Jam:
                 x, y = c + math.cos(a) * rr, c + math.sin(a) * rr
                 if (k // 3 + ri + i) % 4 == 3:  # broken static gaps
                     continue
-                col = C["white"] if (k + i) % 5 == 0 else C["foam"] if ri == 0 else C["shallow"]
+                col = C["white"] if (k + i) % 5 == 0 else C["mithril_lt"] if ri == 0 else (C["mithril"] if k % 3 else C["dusk"])
                 alpha = 230 if ri == 0 else 170
                 px(img, round(x), round(y), (*col[:3], alpha))
         # centre crackle
@@ -67,7 +68,7 @@ class Jam:
                 px(img, x, y, (*C["white"][:3], 220))
         else:
             for x, y in ((7, 8), (8, 7), (6, 6), (9, 9)):
-                px(img, x, y, (*C["foam"][:3], 200))
+                px(img, x, y, (*C["mithril_lt"][:3], 200))
         return img
 
     @classmethod
@@ -90,7 +91,7 @@ class Ring:
 
 
 class Coin:
-    """Gold rial coin with a stamped star and a top-left glint."""
+    """Gold coin stamped with an eight-point Persian star and a top-left glint."""
 
     NAME = "coin"
     FRAME = (8, 8)
@@ -99,14 +100,12 @@ class Coin:
     @staticmethod
     def build():
         img = new(8, 8)
-        disc(img, 3.5, 3.5, 3.0, C["gold"])
-        circle(img, 3.5, 3.5, 2.2, C["gold_dk"], thickness=0.8)
-        for x, y in ((3, 2), (4, 2), (2, 3), (5, 3), (3, 4), (4, 4), (3, 3), (4, 3)):
-            px(img, x, y, C["gold"])
+        disc(img, 3.5, 3.5, 3.2, C["gold_dk"])
+        disc(img, 3.2, 3.2, 2.7, C["gold"])
+        # 8-point star: a plus and an x overlaid
+        for x, y in ((3, 1), (3, 5), (1, 3), (5, 3), (2, 2), (4, 2), (2, 4), (4, 4), (3, 2), (2, 3), (4, 3), (3, 4)):
+            px(img, x, y, C["gold_dk"])
         px(img, 3, 3, C["fire_yellow"])
-        px(img, 4, 4, C["gold_dk"])
-        px(img, 2, 1, C["cream"])
-        px(img, 1, 2, C["cream"])
-        rect(img, 5, 6, 5, 6, C["gold_dk"])
+        px(img, 1, 1, C["cream"])
         outline(img, C["black"])
         return img

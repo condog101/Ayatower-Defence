@@ -1,15 +1,21 @@
-"""Tower bases, 16x16 transparent, frame = towerIndex * 3 + tier.
+"""Tower bases, 16x16 transparent, frame = towerIndex * 3 + tier. High-fantasy stone and timber.
 
-Tier 0 is the basic emplacement, tier 1 adds kit (sandbags, camo nets, more launchers, a flag),
-tier 2 is the showpiece (concrete, gold trim, the green-white-red flag). Aimed towers (boats,
-aa_gun, missile, sam) keep a mount ring at the exact centre for the turret sheet.
+Tier 0 is the plain structure, tier 1 adds banners (and more kit), tier 2 is the showpiece with
+gold trim and glowing mithril runes. Aimed towers (boats, aa_gun, missile, sam) keep a mount ring
+at the exact centre for the turret sheet. Water-placed towers (boats, mines, martyr, ghadir)
+carry their own patch of water.
 
- 0 boats    IRGC speedboat pier          6 missile  coastal missile TEL
- 1 mines    naval mine-laying barge      7 radar    Ghadir over-the-horizon radar
- 2 martyr   explosive drone-boat dock    8 ghadir   midget submarine pen
- 3 aa_gun   ZU-23 sandbagged gun pit     9 sam      Bavar-373 SAM site
- 4 shahed   Shahed drone launch truck   10 minaret  propaganda minaret
- 5 jammer   EW jamming truck
+ 0 boats    timber pier, watch-hut and a ballista longboat
+ 1 mines    shipwright's hut with iron powder kegs
+ 2 martyr   dock of black-sailed fire skiffs
+ 3 aa_gun   round ballista bastion
+ 4 shahed   roost tower with winged drones
+ 5 jammer   wizard's tent with a crackling orb
+ 6 missile  stone keep with a great bow
+ 7 radar    palantir dome on a tower
+ 8 ghadir   sunken iron hull among reeds
+ 9 sam      twin-ballista tower (octagon with a timber fighting deck)
+10 minaret  tall minaret with a beacon flame
 """
 from draw import circle, disc, new, outline, px, rect, strip
 from palette import C
@@ -29,26 +35,36 @@ def a(c, alpha):
 # ---------------------------------------------------------------------------
 # shared parts
 
-def iran_flag(img, x, y, big=False):
-    """Flag on a pole: pole at column x from row y, cloth to the right (green / white / red)."""
-    h = 6 if big else 5
-    rect(img, x, y, x, y + h, C["iron"])
-    w = 4 if big else 3
-    rect(img, x + 1, y, x + w, y, C["green"])
-    rect(img, x + 1, y + 1, x + w, y + 1, C["white"])
-    rect(img, x + 1, y + 2, x + w, y + 2, C["tie"])
-    if big:
-        px(img, x + 2, y + 1, C["tie"])  # emblem hint
-    px(img, x, y - 1, C["gold"])
-
-
 def pennant(img, x, y, c=None):
-    c = c or C["green"]
-    px(img, x, y, C["iron"])
-    px(img, x, y + 1, C["iron"])
+    """Small swallow-tail pennant on a pole: pole at column x from row y, cloth flying right."""
+    c = c or C["grass_lt"]
+    rect(img, x, y, x, y + 3, C["wood_dk"])
+    px(img, x, y - 1, C["gold"])
     px(img, x + 1, y, c)
     px(img, x + 2, y, c)
+    px(img, x + 3, y, c)
     px(img, x + 1, y + 1, c)
+    px(img, x + 2, y + 1, C["white"])
+
+
+def banner(img, x, y, gold=False):
+    """Tall hanging banner: pole at column x, crossbar at row y, white cloth with a green
+    border and a red swallow-tail, a gold finial."""
+    rect(img, x, y - 1, x, y + 6, C["wood_dk"])
+    px(img, x, y - 2, C["gold"])
+    rect(img, x, y, x + 3, y, C["wood_dk"])
+    rect(img, x + 1, y + 1, x + 3, y + 4, C["white"])
+    rect(img, x + 1, y + 1, x + 1, y + 4, C["grass"])
+    px(img, x + 2, y + 2, C["gold"] if gold else C["tie"])
+    px(img, x + 1, y + 5, C["tie"])
+    px(img, x + 3, y + 5, C["tie"])
+
+
+def rune(img, x, y):
+    """A glowing mithril rune pixel with a soft blue halo."""
+    for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+        px(img, x + dx, y + dy, C["mithril"])
+    px(img, x, y, C["mithril_lt"])
 
 
 def water_patch(img, x0, y0, x1, y1):
@@ -64,27 +80,33 @@ def water_patch(img, x0, y0, x1, y1):
 def planks(img, x0, y0, x1, y1, vertical=False):
     rect(img, x0, y0, x1, y1, C["wood"])
     if vertical:
-        for y in range(y0, y1 + 1, 2):
-            rect(img, x0, y, x1, y, C["rock_lt"])
-        rect(img, x1, y0, x1, y1, C["rock"])
+        for y in range(y0 + 1, y1 + 1, 2):
+            rect(img, x0, y, x1, y, C["wood_dk"])
+        rect(img, x0, y0, x0, y1, C["parch_dk"])
     else:
-        for x in range(x0, x1 + 1, 2):
-            rect(img, x, y0, x, y1, C["rock_lt"])
-        rect(img, x0, y1, x1, y1, C["rock"])
-    rect(img, x0, y0, x1 if not vertical else x0, y0 if not vertical else y1, C["sand_dk"])
+        for x in range(x0 + 1, x1 + 1, 2):
+            rect(img, x, y0, x, y1, C["wood_dk"])
+        rect(img, x0, y0, x1, y0, C["parch_dk"])
 
 
-def concrete(img, x0, y0, x1, y1, joints=True):
-    rect(img, x0, y0, x1, y1, C["smoke_lt"])
-    rect(img, x0, y0, x1, y0, C["chrome"])
-    rect(img, x0, y0, x0, y1, C["chrome"])
-    rect(img, x1, y0 + 1, x1, y1, C["smoke"])
-    rect(img, x0 + 1, y1, x1, y1, C["smoke"])
-    if joints:
-        for x in range(x0 + 4, x1, 5):
-            for y in range(y0 + 1, y1):
-                if (x + y) % 3:
-                    px(img, x, y, C["hull_lt"])
+def posts(img, pts):
+    for x, y in pts:
+        px(img, x, y, C["wood_dk"])
+
+
+def flagstones(img, x0, y0, x1, y1, lt=None, mid=None, dk=None):
+    """Flagstone paving with staggered dark joints."""
+    lt, mid, dk = lt or C["stone_lt"], mid or C["stone"], dk or C["stone_dk"]
+    rect(img, x0, y0, x1, y1, mid)
+    for y in range(y0, y1 + 1):
+        for x in range(x0, x1 + 1):
+            row = (y - y0) // 3
+            if (y - y0) % 3 == 2:
+                px(img, x, y, dk)
+            elif (x - x0 + row * 2) % 4 == 3:
+                px(img, x, y, dk)
+            elif (y - y0) % 3 == 0 and (x + y) % 3 == 0:
+                px(img, x, y, lt)
 
 
 def gold_rim(img, x0, y0, x1, y1):
@@ -96,123 +118,62 @@ def gold_rim(img, x0, y0, x1, y1):
         px(img, x1, y, C["gold_dk"])
 
 
-def sandbags(img, x0, y0, x1, y1):
-    """A rectangular ring of sandbags with lumpy lit tops."""
-    for x in range(x0, x1 + 1):
-        for y in (y0, y1):
-            px(img, x, y, C["sand_lt"] if (x + y) % 2 == 0 else C["sand"])
-    for y in range(y0, y1 + 1):
-        for x in (x0, x1):
-            px(img, x, y, C["sand_lt"] if (x + y) % 2 == 0 else C["sand"])
-    for x in range(x0 + 1, x1):
-        px(img, x, y0 + 1, C["sand_dk"])
-    for y in range(y0 + 1, y1):
-        px(img, x0 + 1, y, C["sand_dk"])
-
-
-def ring_bags(img, cx, cy, r, lit=None, mid=None, dk=None):
-    lit, mid, dk = lit or C["sand_lt"], mid or C["sand"], dk or C["sand_dk"]
-    for y in range(16):
-        for x in range(16):
-            d = ((x - cx) ** 2 + (y - cy) ** 2) ** 0.5
-            if r - 1.5 <= d <= r + 0.5:
-                inner = d < r - 0.5
-                if inner:
-                    px(img, x, y, dk)
-                else:
-                    px(img, x, y, lit if (x - cx) + (y - cy) < 0 and (x + y) % 2 == 0 else mid)
-
-
 def mount(img, gold=False):
-    """Turret mount ring at the frame centre (pixels 5..10)."""
+    """Turret mount ring at the frame centre (pixels 5..10): an iron turntable."""
     disc(img, 7.5, 7.5, 2.9, C["iron"])
-    circle(img, 7.5, 7.5, 2.6, C["gold"] if gold else C["deck"], thickness=0.8)
+    circle(img, 7.5, 7.5, 2.6, C["gold"] if gold else C["smoke"], thickness=0.8)
     rect(img, 7, 7, 8, 8, C["black"])
 
 
-def crate(img, x, y, c=None):
-    c = c or C["olive"]
-    rect(img, x, y, x + 1, y + 1, c)
-    px(img, x, y, C["olive_lt"])
-    px(img, x + 1, y + 1, C["olive_dk"])
+def keg(img, x, y, glow=False):
+    """Iron-banded powder keg standing upright, 3x4, with a fuse on top."""
+    rect(img, x, y, x + 2, y + 3, C["iron"])
+    rect(img, x, y, x, y + 3, C["smoke"])
+    rect(img, x, y + 1, x + 2, y + 1, C["wood_dk"])
+    rect(img, x, y + 3, x + 2, y + 3, C["black"])
+    px(img, x, y + 1, C["wood"])
+    px(img, x + 1, y, C["smoke_lt"])
+    px(img, x + 1, y - 1, C["mithril_lt"] if glow else C["fire_orange"])
 
 
-def drum(img, x, y):
-    px(img, x, y, C["tie"])
-    px(img, x, y + 1, C["maroon"])
+def skiff(img, x0, y, sail=3, gold=False):
+    """Fire skiff pointing east: a 7-long hull on rows y..y+1, a black sail rising above."""
+    rect(img, x0, y, x0 + 5, y + 1, C["wood_dk"])
+    rect(img, x0 + 1, y, x0 + 4, y, C["wood"])
+    px(img, x0 + 6, y, C["wood_dk"])
+    px(img, x0 + 6, y + 1, C["black"])
+    px(img, x0 + 5, y + 1, C["fire_orange"])  # pitch pot in the bow
+    # mast + black sail (a triangle seen leaning up from the deck)
+    m = x0 + 2
+    for k in range(1, sail + 1):
+        for x in range(m - (sail - k) // 2, m + 2 + (sail - k) // 2 + (1 if k < sail else 0)):
+            px(img, x, y - k, C["black"] if (x + k) % 3 else C["iron"])
+    px(img, m, y - sail - 1, C["gold"] if gold else C["tie"])
+    if gold:
+        px(img, x0 + 1, y + 1, C["gold"])
+        px(img, x0 + 4, y + 1, C["gold"])
 
 
-def wheels(img, xs, y_top, y_bot):
-    for x in xs:
-        px(img, x, y_top, C["black"])
-        px(img, x, y_bot, C["black"])
+def drone(img, cx, cy, glow=False):
+    """Winged drone with leathery bat wings spread, 7x3: dusk membranes, pale wing bones."""
+    for dx in (-3, -2, -1, 1, 2, 3):
+        px(img, cx + dx, cy, C["dusk"])
+    px(img, cx - 3, cy - 1, C["smoke_lt"])
+    px(img, cx + 3, cy - 1, C["smoke_lt"])
+    px(img, cx - 2, cy - 1, C["smoke_lt"])
+    px(img, cx + 2, cy - 1, C["smoke_lt"])
+    px(img, cx - 2, cy + 1, C["dusk"])
+    px(img, cx + 2, cy + 1, C["dusk"])
+    px(img, cx, cy, C["black"])
+    px(img, cx, cy + 1, C["black"])
+    px(img, cx, cy - 1, C["mithril_lt"] if glow else C["fire_orange"])  # glowing eye
 
 
-def truck(img, x0, y0, x1, y1, cab=3, body=None):
-    """Top-down truck facing east: cargo bed + cab on the right, wheels poking out."""
-    body = body or C["olive"]
-    rect(img, x0, y0, x1, y1, body)
-    rect(img, x0, y0, x1, y0, C["olive_lt"])
-    rect(img, x1 - cab + 1, y0, x1, y1, C["olive_dk"])
-    rect(img, x1 - cab + 2, y0 + 1, x1 - cab + 2, y1 - 1, C["water_dk"])  # windscreen
-    px(img, x1, y0 + 1, C["fire_yellow"])
-    px(img, x1, y1 - 1, C["fire_yellow"])
-    wheels(img, range(x0 + 1, x1 - 1, 3), y0 - 1, y1 + 1)
-
-
-def speedboat(img, x0, y, length, hull=None, deck=None, stripe=None, rows=4):
-    """Boghammar-style speedboat pointing east (rows y..y+rows-1) with an outboard."""
-    hull = hull or C["olive"]
-    deck = deck or C["sand_dk"]
-    x1 = x0 + length - 1
-    mid = y + rows / 2 - 0.5
-    for x in range(x0, x1 + 1):
-        t = max(0, x - (x1 - 4)) / 4.0  # bow taper over the last 4 columns
-        hw = rows / 2 * (1 - t * t * 0.75)
-        for yy in range(y, y + rows):
-            if abs(yy - mid) <= hw - 0.5 + 0.01:
-                px(img, x, yy, hull)
-    for x in range(x0 + 1, x1 - 3):
-        for yy in range(y + 1, y + rows - 1):
-            px(img, x, yy, deck)
-    rect(img, x0, y, x1 - 4, y, C["olive_lt"])
-    if stripe:
-        rect(img, x0, y + rows - 1, x1 - 4, y + rows - 1, stripe)
-    for yy in range(y + 1, y + rows - 1):  # outboard motor
-        px(img, x0 - 1, yy, C["iron"])
-    px(img, x0 - 1, y + rows - 2, C["black"])
-
-
-def drone_boat(img, x0, y, gold=False):
-    """Martyr explosive drone boat, 7x3, pointing east: black hull, red warhead nose."""
-    rect(img, x0, y, x0 + 4, y + 2, C["iron"])
-    rect(img, x0, y, x0 + 4, y, C["smoke"])
-    rect(img, x0 + 5, y, x0 + 5, y + 2, C["tie"])
-    px(img, x0 + 6, y + 1, C["fire_red"])
-    px(img, x0 + 5, y, C["fire_orange"])
-    px(img, x0 + 2, y + 1, C["black"])
-    px(img, x0 + 3, y + 1, C["green"] if not gold else C["gold"])
-
-
-def mine_ball(img, cx, cy):
-    """Horned contact mine, 3x3 sphere + 4 horns."""
-    rect(img, cx - 1, cy - 1, cx + 1, cy + 1, C["iron"])
-    px(img, cx - 1, cy - 1, C["smoke"])
-    px(img, cx + 1, cy + 1, C["black"])
-    for dx, dy in ((0, -2), (0, 2), (-2, 0), (2, 0)):
-        px(img, cx + dx, cy + dy, C["black"])
-
-
-def delta(img, cx, y, small=False):
-    """Shahed drone on its rail, nose up (north), delta wing."""
-    px(img, cx, y, C["smoke"])
-    rect(img, cx, y + 1, cx, y + 5, C["sand"])
-    for k in range(1, 4):
-        rect(img, cx - k, y + 1 + k, cx + k, y + 1 + k, C["sand_lt"])
-    px(img, cx - 3, y + 4, C["smoke"])
-    px(img, cx + 3, y + 4, C["smoke"])
-    px(img, cx, y + 2, C["tie"])
-    px(img, cx, y + 5, C["iron"])
+def reeds(img, x, y, h=3):
+    for k in range(h):
+        px(img, x, y - k, C["grass"] if k < h - 1 else C["grass_lt"])
+    px(img, x, y - h, C["sand_dk"])
+    px(img, x + 1, y, C["moss"])
 
 
 def finish(fig, shadow=None):
@@ -230,390 +191,481 @@ def finish(fig, shadow=None):
 # towers
 
 def boats(tier):
+    """Timber pier, a thatched watch-hut and a ballista longboat moored alongside."""
     img = new(16, 16)
-    water_patch(img, 2, 1, 15, 12)
-    if tier < 2:
-        planks(img, 0, 12, 15, 14)
-        planks(img, 0, 1, 2, 12, vertical=True)
+    water_patch(img, 2, 0, 15, 11)
+    planks(img, 0, 12, 15, 15)
+    planks(img, 0, 0, 2, 12, vertical=True)
+    posts(img, [(3, 12), (7, 12), (11, 12), (15, 12), (2, 3), (2, 7)])
+    if tier == 2:
+        for x, y in ((3, 12), (7, 12), (11, 12), (15, 12)):
+            px(img, x, y, C["gold"])
+    # longboat with a carved prow (bow east), mount amidships
+    hull = C["wood_dk"]
+    rect(img, 4, 5, 12, 10, hull)
+    rect(img, 13, 6, 13, 9, hull)
+    px(img, 14, 7, hull)
+    px(img, 14, 8, hull)
+    px(img, 3, 6, hull)
+    px(img, 3, 9, hull)
+    rect(img, 4, 6, 12, 9, C["wood"])
+    for x in (5, 10, 12):
+        rect(img, x, 6, x, 9, C["parch_dk"])  # thwarts
+    rect(img, 4, 5, 12, 5, C["parch_dk"] if tier < 2 else C["gold"])  # gunwale
+    if tier == 2:
+        rect(img, 4, 10, 12, 10, C["gold_dk"])
+        px(img, 15, 7, C["gold"])  # gilded dragon prow
     else:
-        concrete(img, 0, 12, 15, 14)
-        concrete(img, 0, 1, 2, 12, joints=False)
-        for x in (5, 10, 15):
-            px(img, x, 12, C["gold"])
-    if tier == 2:  # a second boat moored along the top
-        speedboat(img, 5, 1, 9, hull=C["olive"], rows=3)
-    speedboat(img, 4, 5, 12, hull=C["olive"] if tier == 0 else C["olive_dk"], rows=6,
-              stripe=C["gold"] if tier == 2 else (C["sand"] if tier == 1 else None))
-    if tier >= 1:  # camo blotches
-        for x, y in ((5, 6), (9, 9), (12, 6)):
-            px(img, x, y, C["sand_dk"] if tier == 1 else C["olive"])
-    px(img, 12, 7, C["water_dk"])  # windscreen
-    px(img, 12, 8, C["water_dk"])
+        px(img, 15, 7, C["wood"])
+    px(img, 15, 6, C["wood_dk"] if tier < 2 else C["gold_dk"])
+    # oars
+    for x in (6, 9):
+        px(img, x, 4, C["parch_dk"])
+        px(img, x, 11, C["parch_dk"])
+    if tier == 2:  # a second rowboat moored up top
+        rect(img, 7, 1, 12, 2, C["wood_dk"])
+        rect(img, 8, 1, 11, 1, C["wood"])
+        px(img, 13, 1, C["wood_dk"])
+    # thatched watch-hut on the pier corner
+    rect(img, 0, 9, 4, 13, C["sand"])
+    rect(img, 0, 9, 4, 9, C["sand_lt"])
+    rect(img, 0, 11, 4, 11, C["sand_dk"])  # ridge shadow
+    for x in (1, 3):
+        px(img, x, 10, C["sand_dk"])
+    rect(img, 5, 9, 5, 13, C["wood_dk"])
+    rect(img, 0, 13, 5, 13, C["wood_dk"])  # eaves
+    rect(img, 0, 14, 4, 15, C["wood"])
+    px(img, 2, 15, C["black"])  # door
+    px(img, 2, 14, C["wood_dk"])
     if tier >= 1:
-        for x in (6, 11):
-            px(img, x, 11, C["black"])  # tyre fenders
-        if tier == 1:
-            drum(img, 1, 12)
-            pennant(img, 0, 2)
-        else:
-            iran_flag(img, 1, 2, big=True)
-    disc(img, 7.5, 7.5, 2.0, C["iron"])  # small pintle mount on the boat
-    circle(img, 7.5, 7.5, 2.0, C["gold"] if tier == 2 else C["deck"], thickness=0.7)
+        banner(img, 1, 3, gold=tier == 2)
+    else:
+        pennant(img, 1, 5)
+    if tier == 2:
+        rune(img, 3, 14)
+    disc(img, 7.5, 7.5, 2.0, C["iron"])  # pintle mount on the boat
+    circle(img, 7.5, 7.5, 2.0, C["gold"] if tier == 2 else C["smoke"], thickness=0.7)
     return finish(img)
 
 
 def mines(tier):
+    """Shipwright's hut on a jetty, iron powder kegs stacked and floating on tethers."""
     img = new(16, 16)
-    water_patch(img, 1, 1, 14, 14)
+    water_patch(img, 0, 0, 15, 10)
+    planks(img, 0, 11, 15, 15)
+    posts(img, [(2, 11), (8, 11), (14, 11)])
+    # hut with a shingled roof over the water + front wall on the jetty
+    rx0, rx1 = 1, 7
+    rect(img, rx0, 4, rx1, 11, C["wood_dk"])
+    for y in range(4, 11, 2):
+        for x in range(rx0, rx1 + 1):
+            px(img, x, y, C["stone"] if (x + y // 2) % 2 else C["stone_dk"])
+    rect(img, rx0, 4, rx1, 4, C["stone_lt"])
+    rect(img, rx0 + 3, 4, rx0 + 3, 11, C["stone_lt"])  # ridge
     if tier == 2:
-        concrete(img, 0, 13, 15, 15, joints=False)
-    else:
-        planks(img, 0, 13, 15, 15)
-    # barge
-    x0, x1 = 2, 13
-    rect(img, x0, 3, x1, 11, C["olive"])
-    rect(img, x0, 3, x1, 3, C["olive_lt"])
-    rect(img, x0, 11, x1, 11, C["olive_dk"])
-    rect(img, x1, 4, x1, 10, C["olive_dk"])
-    rect(img, x0 + 1, 4, x1 - 1, 10, C["sand_dk"])
-    for x in range(x0 + 2, x1, 3):
-        rect(img, x, 4, x, 10, C["sand"])  # deck plates
-    # mine rails toward the stern
-    rect(img, x0 + 1, 6, x0 + 1, 8, C["iron"])
-    spots = {0: [(6, 7), (10, 7)], 1: [(5, 5), (9, 5), (5, 9), (9, 9)],
-             2: [(4, 5), (8, 5), (12, 5), (4, 9), (8, 9), (12, 9)]}[tier]
-    if tier == 2:
-        spots = [(5, 5), (8, 5), (11, 5), (5, 9), (8, 9), (11, 9)]
-    for cx, cy in spots:
-        mine_ball(img, cx, cy)
+        rect(img, rx0, 11, rx1, 11, C["gold"])
+        rect(img, rx0 + 3, 4, rx0 + 3, 10, C["gold"])
+    rect(img, rx0, 12, rx1, 14, C["wood"])
+    rect(img, rx0, 12, rx1, 12, C["parch_dk"])
+    rect(img, 3, 13, 4, 14, C["black"])  # door
+    px(img, 6, 13, C["fire_yellow"])  # lit window
+    # kegs
+    spots = {0: [(9, 12), (12, 12)], 1: [(9, 12), (12, 12), (9, 6), (12, 3)],
+             2: [(9, 12), (12, 12), (9, 6), (12, 3), (12, 7), (9, 1)]}[tier]
+    for x, y in spots:
+        keg(img, x, y, glow=tier == 2)
+        if y < 11:  # floating keg: tether + ripple
+            px(img, x - 1, y + 3, C["foam"])
+            px(img, x + 3, y + 3, C["foam"])
     if tier >= 1:
-        # small crane on the bow
-        rect(img, 12, 6, 12, 8, C["fire_yellow"] if tier == 1 else C["gold"])
-        px(img, 13, 5, C["fire_yellow"] if tier == 1 else C["gold"])
-        px(img, 14, 4, C["iron"])
+        # crane boom swinging over the water
+        rect(img, 8, 2, 8, 10, C["wood"])
+        rect(img, 8, 2, 11, 2, C["wood_dk"])
+        px(img, 11, 3, C["iron"])
+        banner(img, 14, 5, gold=tier == 2)
+    else:
+        pennant(img, 4, 0)
     if tier == 2:
-        gold_rim(img, x0, 3, x1, 11)
-        iran_flag(img, 2, 0)
-    elif tier == 1:
-        pennant(img, 2, 1)
+        rune(img, 2, 7)
+        rune(img, 6, 9)
     return finish(img)
 
 
 def martyr(tier):
+    """A dock of black-sailed fire skiffs."""
     img = new(16, 16)
-    water_patch(img, 3, 1, 15, 14)
-    if tier < 2:
-        planks(img, 0, 0, 2, 15, vertical=True)
-    else:
-        concrete(img, 0, 0, 2, 15, joints=False)
-    rows = {0: [7], 1: [4, 10], 2: [2, 7, 12]}[tier]
-    for y in rows:
-        drone_boat(img, 4, y - 1, gold=tier == 2)
-        px(img, 3, y, C["wood"])  # mooring line
+    water_patch(img, 3, 0, 15, 15)
+    planks(img, 0, 0, 2, 15, vertical=True)
+    posts(img, [(2, 2), (2, 6), (2, 10), (2, 14)])
+    rows = {0: [(9, 4)], 1: [(6, 3), (13, 3)], 2: [(3, 2), (8, 3), (13, 2)]}[tier]
+    for y, sail in rows:
+        skiff(img, 5, y, sail=sail, gold=tier == 2)
+        px(img, 3, y + 1, C["parch_dk"])  # mooring line
+        px(img, 4, y + 1, C["parch_dk"])
+    if tier == 0:
+        pennant(img, 0, 2, C["tie"])
     if tier >= 1:
-        for y in (3, 9, 13):
-            px(img, 2, y, C["black"])  # tyre fenders
+        banner(img, 0, 9 if tier == 1 else 9, gold=tier == 2)
     if tier == 2:
-        # gold-roofed boat shed over the dock
-        rect(img, 0, 0, 3, 4, C["gold"])
-        rect(img, 0, 4, 3, 4, C["gold_dk"])
+        # gold-roofed boat shed at the head of the dock
+        rect(img, 0, 0, 3, 3, C["gold"])
+        rect(img, 0, 3, 3, 3, C["gold_dk"])
         px(img, 0, 0, C["cream"])
-        iran_flag(img, 1, 9)
-    elif tier == 1:
-        pennant(img, 0, 10, C["tie"])
+        rune(img, 1, 6)
     return finish(img)
 
 
+def bastion_ring(img, cx, cy, r, gold=False):
+    """Round stone bastion: wall ring with merlons, lit top-left, flagstone floor inside."""
+    disc(img, cx, cy, r, C["stone"])
+    for y in range(16):
+        for x in range(16):
+            d = ((x - cx) ** 2 + (y - cy) ** 2) ** 0.5
+            if r - 1.6 < d <= r + 0.1:
+                lit = (x - cx) + (y - cy) < 0
+                px(img, x, y, C["stone_lt"] if lit else C["stone_dk"])
+    disc(img, cx, cy, r - 1.8, C["stone"])
+    flagstones(img, int(cx - r + 3), int(cy - r + 3), int(cx + r - 3), int(cy + r - 3),
+               lt=C["chrome"], mid=C["stone_lt"], dk=C["stone"])
+    # trim the paving back to a disc
+    for y in range(16):
+        for x in range(16):
+            d = ((x - cx) ** 2 + (y - cy) ** 2) ** 0.5
+            if r - 2.6 < d <= r - 1.6:
+                px(img, x, y, C["stone"])
+    # merlons: lighter blocks with dark crenel gaps every 45 degrees
+    import math
+    for k in range(8):
+        ang = k * math.pi / 4 + math.pi / 8
+        x = round(cx + math.cos(ang) * (r - 0.8))
+        y = round(cy + math.sin(ang) * (r - 0.8))
+        px(img, x, y, C["black"])
+    if gold:
+        circle(img, cx, cy, r - 0.3, C["gold"], thickness=0.7)
+
+
 def aa_gun(tier):
+    """Round ballista bastion: crenellated stone ring around the ballista turntable."""
     img = new(16, 16)
-    if tier < 2:
-        disc(img, 7.5, 7.5, 6.6, C["sand_dk"])  # dug-out pit floor
-        ring_bags(img, 7.5, 7.5, 6.8)
-        if tier == 1:
-            ring_bags(img, 7.5, 7.5, 5.2, lit=C["sand"], mid=C["sand_dk"], dk=C["rock_lt"])
-    else:
-        disc(img, 7.5, 7.5, 7.2, C["smoke"])
-        disc(img, 7.5, 7.5, 6.2, C["smoke_lt"])
-        circle(img, 7.5, 7.5, 7.0, C["gold"], thickness=0.9)
-        disc(img, 7.5, 7.5, 4.6, C["hull_lt"])
-    # ammo crates
-    crate(img, 3, 11)
-    crate(img, 11, 3)
+    bastion_ring(img, 7.5, 7.5, 7.4, gold=tier == 2)
+    # bolt racks
+    for x, y in ((3, 10), (11, 4)):
+        rect(img, x, y, x + 1, y + 1, C["wood"])
+        px(img, x, y, C["iron"])
+        px(img, x + 1, y, C["iron"])
     if tier >= 1:
-        crate(img, 11, 11)
-        crate(img, 3, 3, C["olive_dk"])
-    if tier == 1:  # camo netting draped over the rim
-        for x, y in ((1, 6), (1, 8), (2, 5), (13, 9), (14, 7), (6, 14), (9, 14), (6, 1), (9, 1)):
-            px(img, x, y, C["olive"])
-    mount(img, gold=tier == 2)
+        for x, y in ((3, 4), (11, 10)):
+            rect(img, x, y, x + 1, y + 1, C["wood"])
+            px(img, x, y, C["iron"])
+            px(img, x + 1, y, C["iron"])
+        banner(img, 0, 1, gold=tier == 2)
+        pennant(img, 13, 10)
+    else:
+        pennant(img, 1, 1)
     if tier == 2:
-        iran_flag(img, 1, 0, big=True)
-        # small fire-control dish
-        disc(img, 13, 13, 1.6, C["chrome"])
-        px(img, 13, 13, C["iron"])
+        for x, y in ((7, 3), (12, 7), (7, 12), (3, 7)):
+            rune(img, x if x < 8 else x + 1, y if y < 8 else y + 1)
+    mount(img, gold=tier == 2)
     return finish(img)
 
 
 def shahed(tier):
+    """Roost tower: a round stone tower with timber perches and winged drones."""
     img = new(16, 16)
-    shadow = [(3, 10, 15, 15)]
-    if tier == 0:
-        # trailer with one drone on an angled rail
-        rect(img, 4, 9, 11, 13, C["olive"])
-        rect(img, 4, 9, 11, 9, C["olive_lt"])
-        rect(img, 11, 10, 14, 11, C["iron"])  # tow bar
-        wheels(img, (5, 9), 8, 14)
-        rect(img, 7, 3, 8, 12, C["iron"])
-        delta(img, 7, 2)
-    elif tier == 1:
-        truck(img, 2, 9, 14, 13, cab=3)
-        for cx in (4, 9):
-            rect(img, cx, 4, cx, 12, C["iron"])
-        delta(img, 4, 2)
-        delta(img, 9, 4)
-        pennant(img, 13, 5)
+    # tower: cylinder walls (seen with height) and a crenellated top
+    rect(img, 4, 6, 11, 14, C["stone"])
+    for y in range(7, 15, 2):  # brick courses
+        rect(img, 4, y, 11, y, C["stone_dk"])
+        for x in range(4 + (y // 2) % 2 * 2, 12, 4):
+            px(img, x, y - 1, C["stone_dk"])
+    rect(img, 4, 6, 4, 14, C["stone_lt"])
+    rect(img, 11, 6, 11, 14, C["stone_dk"])
+    rect(img, 7, 12, 8, 14, C["black"])  # arched door
+    px(img, 7, 11, C["stone_dk"])
+    # roof platform
+    disc(img, 7.5, 5.0, 4.6, C["stone_lt"])
+    disc(img, 7.5, 5.0, 3.4, C["stone_dk"])
+    disc(img, 7.5, 5.0, 2.5, C["wood"])
+    for x in (4, 7, 10):
+        px(img, x, 1, C["black"])
+    # perch beams sticking out
+    rect(img, 0, 8, 3, 8, C["wood_dk"])
+    rect(img, 12, 9, 15, 9, C["wood_dk"])
+    if tier == 2:
+        rect(img, 4, 14, 11, 14, C["gold"])
+        circle(img, 7.5, 5.0, 4.4, C["gold"], thickness=0.7)
+    # drones
+    spots = {0: [(7, 4), (3, 8)], 1: [(7, 4), (3, 8), (12, 9)], 2: [(7, 4), (3, 8), (12, 9), (12, 1)]}[tier]
+    for cx, cy in spots:
+        drone(img, cx, cy, glow=tier == 2)
+    if tier >= 1:
+        banner(img, 1, 10 if tier == 1 else 10, gold=tier == 2)
     else:
-        rect(img, 0, 13, 15, 15, C["smoke_lt"])  # launch pad
-        rect(img, 0, 13, 15, 13, C["chrome"])
-        truck(img, 1, 9, 14, 13, cab=3, body=C["olive_dk"])
-        gold_rim(img, 1, 9, 11, 13)
-        for cx in (3, 7, 11):
-            rect(img, cx, 4, cx, 12, C["iron"])
-        delta(img, 3, 3)
-        delta(img, 7, 1)
-        delta(img, 11, 3)
-        iran_flag(img, 14, 3)
-    return finish(img)
+        pennant(img, 12, 4)
+    if tier == 2:
+        rune(img, 9, 10)
+    return finish(img, [(6, 13, 14, 15)])
 
 
 def jammer(tier):
+    """Wizard's striped tent with a crackling orb on the centre pole."""
     img = new(16, 16)
-    truck(img, 1, 8, 14, 13, cab=3, body=C["olive"] if tier < 2 else C["olive_dk"])
-    rect(img, 2, 9, 10, 12, C["olive_dk"])  # equipment shelter
-    rect(img, 2, 9, 10, 9, C["olive_lt"])
-    px(img, 9, 11, C["fire_yellow"])
-    px(img, 8, 11, C["green"])
-    if tier == 0:
-        rect(img, 4, 2, 4, 9, C["iron"])  # whip antennas
-        rect(img, 8, 4, 8, 9, C["iron"])
-        px(img, 4, 1, C["tie"])
-        px(img, 8, 3, C["tie"])
-    elif tier == 1:
-        rect(img, 3, 1, 3, 9, C["iron"])
-        rect(img, 10, 3, 10, 9, C["iron"])
-        rect(img, 5, 2, 8, 6, C["hull_dk"])  # log-periodic array panel
-        for y in (3, 5):
-            rect(img, 5, y, 8, y, C["hull_lt"])
-        rect(img, 6, 7, 7, 8, C["iron"])
-        px(img, 3, 0, C["tie"])
-        px(img, 10, 2, C["fire_yellow"])
-        pennant(img, 12, 4)
+    top = 4 if tier < 2 else 5
+    # cone tent: stripes alternating dusk / cream, lit left, shaded right
+    for y in range(top, 14):
+        t = (y - top) / (13 - top)
+        hw = 1 + t * 5.6
+        for x in range(16):
+            dx = x - 7.5
+            if abs(dx) <= hw:
+                stripe = int((dx / max(hw, 0.1) + 1) * 3) % 2
+                c = C["dusk"] if stripe else C["cream"]
+                if dx > hw * 0.45:
+                    c = C["night"] if stripe else C["parch"]
+                px(img, x, y, c)
+    rect(img, 2, 13, 13, 13, C["parch_dk"])
+    rect(img, 7, 10, 8, 13, C["black"])  # door flap
+    px(img, 6, 13, C["dusk"])
+    if tier == 2:
+        rect(img, 2, 13, 13, 13, C["gold"])
+        px(img, 7, top, C["gold"])
+        px(img, 8, top, C["gold"])
+    # orb on the pole
+    rect(img, 7, top - 2, 8, top, C["wood_dk"])
+    r = {0: 1.6, 1: 2.0, 2: 2.3}[tier]
+    oy = top - 2 - r
+    disc(img, 7.5, oy, r, C["mithril"])
+    disc(img, 7.5, oy, r - 0.9, C["mithril_lt"])
+    px(img, 7, round(oy - 0.5), C["white"])
+    if tier >= 1:
+        banner(img, 12, 4, gold=tier == 2)
+        rect(img, 1, 9, 1, 13, C["wood_dk"])  # guy-rope stake
+        px(img, 1, 8, C["fire_yellow"])  # lantern
     else:
-        # big dish on a mast
-        rect(img, 7, 6, 8, 9, C["iron"])
-        disc(img, 7.5, 4.0, 4.4, C["chrome"])
-        circle(img, 7.5, 4.0, 4.0, C["gold"], thickness=0.9)
-        disc(img, 7.5, 4.0, 2.4, C["hull_lt"])
-        disc(img, 7.5, 4.0, 1.0, C["smoke"])
-        for x, y in ((5, 2), (4, 3), (6, 1)):
-            px(img, x, y, C["white"])
-        px(img, 7, 4, C["fire_red"])  # feed horn
-        rect(img, 1, 3, 1, 9, C["iron"])
-        px(img, 1, 2, C["tie"])
-        gold_rim(img, 1, 8, 11, 13)
-        iran_flag(img, 13, 2)
-    return finish(img)
+        pennant(img, 1, 8, C["dusk"])
+    if tier == 2:
+        for x, y in ((1, 14), (5, 15), (10, 15), (14, 14)):
+            rune(img, x, y)
+    out = finish(img, [(4, 13, 14, 15)])
+    # crackle sparks spill over the outline
+    sparks = {0: [(5, round(oy) - 2), (10, round(oy))],
+              1: [(4, round(oy) - 1), (11, round(oy) - 2), (6, round(oy) + 3)],
+              2: [(4, round(oy) - 2), (11, round(oy) - 1), (5, round(oy) + 3), (10, round(oy) + 3), (7, 0)]}[tier]
+    for x, y in sparks:
+        px(out, x, y, C["mithril_lt"])
+        px(out, x + (1 if x < 8 else -1), y + 1, a(C["dusk"], 220))
+    return out
 
 
 def missile(tier):
+    """Square stone keep with corner turrets, the great bow mounted on its roof."""
     img = new(16, 16)
-    if tier == 2:
-        concrete(img, 0, 2, 15, 3, joints=False)  # revetment walls
-        concrete(img, 0, 12, 15, 13, joints=False)
-        gold_rim(img, 0, 2, 15, 3)
-        gold_rim(img, 0, 12, 15, 13)
-    # 8-wheel TEL chassis with a cab on the right
-    rect(img, 1, 5, 14, 10, C["olive"])
-    rect(img, 1, 5, 14, 5, C["olive_lt"])
-    rect(img, 12, 5, 14, 10, C["olive_dk"])
-    rect(img, 13, 6, 13, 9, C["water_dk"])
-    wheels(img, (2, 4, 9, 11), 4, 11)
-    rect(img, 1, 7, 2, 8, C["olive_dk"])  # rear jacks
-    mount(img, gold=tier == 2)
+    rect(img, 1, 1, 14, 14, C["stone"])
+    rect(img, 1, 1, 14, 1, C["stone_lt"])
+    rect(img, 1, 1, 1, 14, C["stone_lt"])
+    rect(img, 14, 2, 14, 14, C["stone_dk"])
+    rect(img, 2, 14, 14, 14, C["stone_dk"])
+    flagstones(img, 3, 3, 12, 12, lt=C["chrome"], mid=C["stone_lt"], dk=C["stone"])
+    frame_c = C["stone_dk"]
+    rect(img, 2, 2, 13, 2, frame_c)
+    rect(img, 2, 2, 2, 13, frame_c)
+    # crenels along the parapet
+    for k in range(4, 12, 3):
+        px(img, k, 1, C["black"])
+        px(img, 1, k, C["black"])
+        px(img, k, 14, C["black"])
+        px(img, 14, k, C["black"])
+    # corner turrets
+    for cx, cy in ((2.0, 2.0), (13.0, 2.0), (2.0, 13.0), (13.0, 13.0)):
+        disc(img, cx, cy, 2.0, C["stone_lt"] if cx + cy < 15 else C["stone"])
+        px(img, int(cx), int(cy), C["stone_dk"])
     if tier >= 1:
-        # camo net over the cab + a support crate
-        for x, y in ((12, 5), (14, 6), (13, 10), (12, 8)):
-            px(img, x, y, C["sand_dk"])
-        if tier == 1:
-            crate(img, 1, 12, C["olive_dk"])
-            pennant(img, 1, 1)
+        banner(img, 1, 3, gold=tier == 2)
+        banner(img, 12, 3, gold=tier == 2) if tier == 2 else pennant(img, 12, 1)
+    else:
+        pennant(img, 1, 0)
     if tier == 2:
-        iran_flag(img, 14, 8)
+        gold_rim(img, 3, 3, 12, 12)
+        for x, y in ((2, 13), (13, 13)):
+            rune(img, x, y)
+    mount(img, gold=tier == 2)
     return finish(img)
 
 
 def radar(tier):
+    """A slim stone tower crowned by a cradle holding a palantir seeing-stone."""
     img = new(16, 16)
-    shadow = [(8, 12, 15, 15)]
-    # concrete footing
-    concrete(img, 3, 12, 12, 14, joints=False)
-    top = {0: 6, 1: 4, 2: 4}[tier]
-    # lattice mast (two legs with cross bracing), seen with a little height
-    for y in range(top, 13):
-        spread = (y - top) // 4
-        px(img, 6 - spread, y, C["hull_dk"])
-        px(img, 9 + spread, y, C["hull_dk"])
-        if (y - top) % 2 == 0:
-            for x in range(7 - spread, 9 + spread):
-                px(img, x, y, C["hull"] if (x + y) % 2 else CLEAR)
-    # antenna array on top
-    if tier == 0:
-        rect(img, 4, top - 2, 11, top - 1, C["hull_lt"])
-        rect(img, 4, top - 1, 11, top - 1, C["hull"])
-        for x in range(5, 11, 2):
-            px(img, x, top - 2, C["white"])
-    elif tier == 1:
-        rect(img, 2, top - 3, 13, top - 1, C["hull_lt"])
-        for x in range(3, 13, 2):
-            rect(img, x, top - 3, x, top - 1, C["hull"])
-        rect(img, 2, top - 3, 13, top - 3, C["white"])
-        pennant(img, 12, 9)
+    # plinth
+    rect(img, 3, 12, 12, 14, C["stone"])
+    rect(img, 3, 12, 12, 12, C["stone_lt"])
+    rect(img, 12, 13, 12, 14, C["stone_dk"])
+    # shaft
+    rect(img, 5, 6, 10, 12, C["stone_lt"])
+    rect(img, 9, 6, 10, 12, C["stone"])
+    rect(img, 10, 6, 10, 12, C["stone_dk"])
+    for y in (8, 11):
+        rect(img, 5, y, 10, y, C["stone_dk"])
+    px(img, 7, 9, C["black"])  # window
+    px(img, 7, 10, C["black"])
+    rect(img, 7, 13, 8, 14, C["black"])  # door
+    # cradle (dome ribs) holding the stone
+    rect(img, 4, 5, 11, 6, C["gold"] if tier == 2 else C["stone_dk"])
+    rect(img, 4, 5, 11, 5, C["gold"] if tier == 2 else C["stone"])
+    r = 2.6 if tier == 0 else 3.0
+    cy = 2.9
+    disc(img, 7.5, cy, r, C["night"])
+    disc(img, 8.2, cy + 0.6, r - 1.2, C["dusk"])
+    px(img, 6, round(cy) - 1, C["mithril_lt"])
+    px(img, 6, round(cy), C["mithril"])
+    if tier >= 1:
+        # ribs of the dome rising round the stone
+        px(img, 4, 4, C["gold"] if tier == 2 else C["stone"])
+        px(img, 11, 4, C["gold_dk"] if tier == 2 else C["stone_dk"])
+        banner(img, 12, 7, gold=tier == 2)
     else:
-        rect(img, 0, 0, 15, 3, C["hull_lt"])
-        for x in range(1, 15, 2):
-            rect(img, x, 1, x, 2, C["hull"])
-        rect(img, 0, 0, 15, 0, C["gold"])
-        rect(img, 0, 3, 15, 3, C["gold_dk"])
-        px(img, 7, 1, C["tie"])
-        px(img, 8, 1, C["green"])
-        rect(img, 11, 9, 14, 12, C["olive"])  # control hut
-        rect(img, 11, 9, 14, 9, C["olive_lt"])
-        px(img, 13, 11, C["fire_yellow"])
-        iran_flag(img, 1, 7)
-    return finish(img, shadow)
+        pennant(img, 1, 8)
+    if tier == 2:
+        px(img, 8, round(cy) + 1, C["fire_red"])  # the stone stirs
+        rune(img, 7, 9)
+        rect(img, 3, 12, 12, 12, C["gold"])
+        rune(img, 4, 13)
+    return finish(img, [(7, 13, 14, 15)])
 
 
 def ghadir(tier):
+    """A sunken iron hull half-drowned among the reeds, its broken mast still standing."""
     img = new(16, 16)
-    water_patch(img, 2, 3, 15, 12)
-    # U-shaped concrete pen open to the east
-    concrete(img, 0, 1, 15, 2, joints=False)
-    concrete(img, 0, 13, 15, 14, joints=False)
-    concrete(img, 0, 3, 1, 12, joints=False)
-    # midget submarine: dark cigar with a conning tower
-    rect(img, 4, 7, 12, 8, C["iron"])
-    if tier >= 1:  # bigger boat from tier 1
-        rect(img, 5, 6, 11, 9, C["iron"])
-    rect(img, 4, 7, 12, 7, C["smoke"])
-    px(img, 13, 7, C["iron"])
-    px(img, 13, 8, C["black"])
-    px(img, 3, 7, C["deck"])  # screw
-    px(img, 3, 8, C["deck"])
-    rect(img, 8, 6, 9, 9, C["black"])  # conning tower
-    px(img, 8, 6, C["smoke"])
-    px(img, 9, 5, C["smoke_lt"])  # periscope
-    for x in (4, 12):
-        px(img, x, 9, a(C["foam"], 200))
+    water_patch(img, 0, 1, 15, 15)
+    # iron hull lying east-west, the right end slipping under the water
+    rect(img, 2, 6, 12, 10, C["iron"])
+    rect(img, 3, 5, 11, 5, C["iron"])
+    rect(img, 3, 11, 11, 11, C["iron"])
+    rect(img, 3, 6, 11, 6, C["smoke"])  # lit upper strake
+    rect(img, 3, 9, 11, 10, C["stone_dk"])
+    for x in range(3, 12, 2):
+        px(img, x, 8, C["gold"] if tier == 2 else C["smoke_lt"])  # rivets
+    px(img, 1, 8, C["iron"])
+    # waterline lapping over the bow
+    for x, y in ((12, 6), (12, 7), (13, 8), (12, 9), (11, 10), (12, 11)):
+        px(img, x, y, C["water_lt"])
+    for x, y in ((13, 7), (13, 9), (12, 10), (2, 11), (1, 9)):
+        px(img, x, y, C["foam"])
+    # rust holes
+    px(img, 5, 7, C["fire_orange"] if tier == 2 else C["maroon"])
+    px(img, 9, 7, C["black"])
+    # broken mast + yard
+    rect(img, 7, 1, 7, 7, C["wood_dk"])
+    rect(img, 5, 3, 9, 3, C["wood_dk"])
+    px(img, 7, 0, C["wood"])
+    # reeds
+    clumps = {0: [(1, 4), (14, 14), (4, 14)], 1: [(1, 4), (14, 14), (4, 14), (14, 4), (10, 14)],
+              2: [(1, 4), (14, 14), (4, 14), (14, 4), (10, 14), (0, 14)]}[tier]
+    for x, y in clumps:
+        reeds(img, x, y)
+        reeds(img, x + 1, y + 1, 2)
     if tier >= 1:
-        # camo net over the back of the pen + a gantry crane
-        for y in range(3, 13):
-            for x in range(2, 5):
-                if (x + y) % 2 == 0:
-                    px(img, x, y, C["olive"])
-        rect(img, 6, 1, 6, 14, C["fire_yellow"] if tier == 1 else C["gold"])
-        px(img, 6, 7, C["iron"])
+        banner(img, 7, 1, gold=tier == 2)
+    else:
+        pennant(img, 7, 1, C["tie"])
     if tier == 2:
-        gold_rim(img, 0, 1, 15, 2)
-        gold_rim(img, 0, 13, 15, 14)
-        rect(img, 12, 6, 12, 9, C["iron"])
-        iran_flag(img, 1, 0)
+        for x, y in ((4, 12), (10, 12)):
+            rune(img, x, y)
     return finish(img)
 
 
 def sam(tier):
+    """Twin-ballista tower: an octagonal stone tower topped with a timber fighting deck."""
     img = new(16, 16)
-    concrete(img, 2, 2, 13, 13)
-    if tier >= 1:
-        sandbags(img, 0, 0, 15, 15)
+    oct_ = [(4, 0), (11, 0), (15, 4), (15, 11), (11, 15), (4, 15), (0, 11), (0, 4)]
+    from draw import poly
+    poly(img, oct_, C["stone"])
+    for k in range(16):  # lit NW edges, dark SE edges
+        for x, y in ((k, 4 - k) if k <= 4 else (None, None), (0, k) if 4 <= k <= 11 else (None, None)):
+            if x is not None:
+                px(img, x, y, C["stone_lt"])
+    rect(img, 4, 0, 11, 0, C["stone_lt"])
+    rect(img, 4, 15, 11, 15, C["stone_dk"])
+    rect(img, 15, 4, 15, 11, C["stone_dk"])
+    for k in range(5):
+        px(img, 11 + k, 15 - k, C["stone_dk"])
+        px(img, 11 + k, k, C["stone"])
+        px(img, k, 11 + k, C["stone"])
+    # timber deck inside
+    poly(img, [(5, 2), (10, 2), (13, 5), (13, 10), (10, 13), (5, 13), (2, 10), (2, 5)], C["wood"])
+    for x in range(3, 13, 2):
+        for y in range(2, 14):
+            if img.getpixel((x, y)) == C["wood"]:
+                px(img, x, y, C["wood_dk"])
+    for x, y in ((5, 2), (10, 2), (13, 5), (13, 10), (10, 13), (5, 13), (2, 10), (2, 5)):
+        px(img, x, y, C["black"])  # crenel gaps at the facets
     if tier == 2:
-        gold_rim(img, 2, 2, 13, 13)
-    # engagement radar box (bottom-left), facing east
-    rect(img, 1, 11, 5, 14, C["olive"])
-    rect(img, 1, 11, 5, 11, C["olive_lt"])
-    rect(img, 4, 11, 5, 13, C["hull_lt"])  # phased-array face
-    px(img, 5, 12, C["hull"])
+        poly(img, [(5, 2), (10, 2)], C["gold"])
+        rect(img, 5, 1, 10, 1, C["gold"])
+        rect(img, 5, 14, 10, 14, C["gold_dk"])
+        rect(img, 1, 5, 1, 10, C["gold"])
+        rect(img, 14, 5, 14, 10, C["gold_dk"])
     if tier >= 1:
-        rect(img, 10, 1, 14, 4, C["olive_dk"])  # command post truck
-        rect(img, 10, 1, 14, 1, C["olive"])
-        px(img, 14, 2, C["water_dk"])
-        px(img, 11, 3, C["green"])
+        banner(img, 12, 0, gold=tier == 2)
+        banner(img, 0, 8, gold=tier == 2) if tier == 2 else pennant(img, 1, 11)
+    else:
+        pennant(img, 12, 1)
     if tier == 2:
-        rect(img, 0, 9, 1, 14, C["hull_lt"])  # big panel radar
-        rect(img, 0, 9, 0, 14, C["white"])
-        px(img, 1, 11, C["tie"])
-        iran_flag(img, 13, 9)
+        for x, y in ((3, 3), (12, 12)):
+            rune(img, x, y)
     mount(img, gold=tier == 2)
     return finish(img)
 
 
 def minaret(tier):
+    """A tall minaret: turquoise tile bands, a balcony, a dome cap and a beacon flame on top."""
     img = new(16, 16)
-    shadow = [(8, 12, 14, 15)]
     # plinth
     rect(img, 3, 12, 12, 14, C["sand"])
     rect(img, 3, 12, 12, 12, C["sand_lt"])
     rect(img, 12, 13, 12, 14, C["sand_dk"])
-    rect(img, 7, 13, 8, 14, C["water_dk"])  # door
-    top = {0: 4, 1: 3, 2: 4}[tier]
-    # slender shaft with tile bands
+    rect(img, 7, 13, 8, 14, C["black"])  # door
+    px(img, 7, 12, C["sand_dk"])
+    top = 5
+    # shaft
     rect(img, 6, top, 9, 12, C["sand_lt"])
     rect(img, 9, top, 9, 12, C["sand_dk"])
     rect(img, 6, top, 6, 12, C["cream"])
     for y in (9, 11):
-        rect(img, 6, y, 9, y, C["water_lt"])
-    # balcony with loudspeakers
+        rect(img, 6, y, 9, y, C["shallow"])
+        px(img, 9, y, C["water_lt"])
+    # balcony
     by = top + 2
     rect(img, 5, by, 10, by, C["sand_dk"])
     rect(img, 5, by - 1, 10, by - 1, C["sand"])
-    px(img, 4, by - 1, C["iron"])
-    px(img, 11, by - 1, C["iron"])
-    px(img, 3, by - 1, C["smoke"])
-    px(img, 12, by - 1, C["smoke"])
+    # dome cap
+    dome = C["gold"] if tier == 2 else C["shallow"]
+    rect(img, 6, top - 1, 9, top, dome)
+    rect(img, 7, top - 2, 8, top - 2, dome)
+    px(img, 6, top - 1, C["gold"] if tier == 2 else C["foam"])
+    px(img, 9, top, C["gold_dk"] if tier == 2 else C["water_lt"])
     if tier >= 1:
-        px(img, 4, by + 2, C["iron"])  # second speaker pair
-        px(img, 11, by + 2, C["iron"])
-        px(img, 3, by + 2, C["smoke"])
-        px(img, 12, by + 2, C["smoke"])
-    # green banner hanging down the shaft
-    rect(img, 7, by + 1, 8, by + 5, C["green"])
-    px(img, 7, by + 5, C["white"])
-    px(img, 8, by + 4, C["white"])
-    if tier >= 1:
-        rect(img, 2, 12, 2, 14, C["iron"])  # side banner on a pole
-        rect(img, 1, 9, 2, 11, C["tie"])
-        px(img, 1, 10, C["white"])
-        px(img, 2, 8, C["iron"])
-    # cap
-    if tier == 0:
-        rect(img, 6, top - 1, 9, top - 1, C["sand_dk"])
-        rect(img, 7, top - 2, 8, top - 2, C["sand_dk"])
-        px(img, 7, top - 3, C["iron"])
-    elif tier == 1:
-        rect(img, 6, top - 2, 9, top - 1, C["water_lt"])
-        rect(img, 7, top - 3, 8, top - 3, C["water_lt"])
-        px(img, 7, top - 2, C["foam"])
-        px(img, 7, top - 4, C["gold"])
+        rect(img, 4, by + 3, 11, by + 3, C["sand_dk"])  # second balcony
+        rect(img, 4, by + 2, 11, by + 2, C["sand"])
+        banner(img, 1, 7, gold=tier == 2)
     else:
-        disc(img, 7.5, top - 1.5, 2.6, C["gold"])
-        px(img, 6, top - 3, C["cream"])
-        px(img, 9, top - 1, C["gold_dk"])
-        rect(img, 6, top - 1, 9, top - 1, C["gold_dk"])
-        px(img, 7, 0, C["gold"])
-        px(img, 8, 0, C["gold"])
-        rect(img, 5, by, 10, by, C["gold"])
+        pennant(img, 10, 8)
+    if tier == 2:
         rect(img, 3, 12, 12, 12, C["gold"])
-        iran_flag(img, 12, 5)
-    return finish(img, shadow)
+        rect(img, 5, by, 10, by, C["gold"])
+        rune(img, 7, 10)
+        rune(img, 11, 13)
+    out = finish(img, [(8, 12, 15, 15)])
+    # beacon flame above the dome (grows with tier)
+    fy = top - 3
+    flame = {0: [(7, fy, "fire_orange"), (8, fy, "fire_yellow"), (7, fy - 1, "fire_yellow")],
+             1: [(7, fy, "fire_orange"), (8, fy, "fire_yellow"), (7, fy - 1, "fire_yellow"),
+                 (8, fy - 1, "fire_orange"), (8, fy - 2, "fire_red")],
+             2: [(6, fy, "fire_red"), (7, fy, "fire_orange"), (8, fy, "fire_yellow"), (9, fy, "fire_orange"),
+                 (7, fy - 1, "white"), (8, fy - 1, "fire_yellow"), (7, fy - 2, "fire_orange"),
+                 (8, fy - 2, "fire_yellow")]}[tier]
+    for x, y, c in flame:
+        px(out, x, max(0, y), C[c])
+    return out
 
 
 TOWERS = [boats, mines, martyr, aa_gun, shahed, jammer, missile, radar, ghadir, sam, minaret]

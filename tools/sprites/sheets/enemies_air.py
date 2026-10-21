@@ -1,17 +1,30 @@
-"""US aircraft, top-down, all facing EAST (nose right): MQ-9 Reaper, MH-60 Seahawk, F/A-18 Super
-Hornet and B-2 Spirit. 2 frames each (prop blur / rotor position / afterburner / stealth shimmer)."""
+"""Sauron's air host (fictional satire), top-down, all facing EAST (nose right): the MQ-9 Reaper,
+MH-60 Seahawk and F/A-18 Super Hornet silhouettes in Mordor black with the red Eye roundel, and
+the B-2 Spirit reimagined as a fell-beast (a winged drake with a black rider). 2 frames each
+(prop blur / rotor position / afterburner / wingbeat)."""
 import math
 
 from draw import bevel, ellipse, new, outline, poly, px, rect, strip
 from palette import C
+
+BODY, BODY_LT, BODY_DK = C["iron"], C["smoke"], C["black"]
 
 
 def a(c, alpha):
     return (*c[:3], alpha)
 
 
+def roundel(img, x, y):
+    """Eye roundel: red disc with a yellow slit, 2x2 (fits the thin wings)."""
+    px(img, x, y, C["tie"])
+    px(img, x + 1, y, C["fire_orange"])
+    px(img, x, y + 1, C["maroon"])
+    px(img, x + 1, y + 1, C["tie"])
+
+
 class Reaper:
-    """MQ-9 Reaper: very long thin straight wings, bulbous satcom nose, V-tail, pusher prop."""
+    """MQ-9 Reaper: very long thin black wings with Eye roundels, bulbous nose with a red sensor
+    eye, V-tail, pusher prop."""
 
     NAME = "reaper"
     FRAME = (16, 12)
@@ -20,26 +33,24 @@ class Reaper:
     @staticmethod
     def frame(f):
         img = new(16, 12)
-        # wings (one pixel chord, two at the root)
-        rect(img, 8, 0, 8, 11, C["hull_lt"])
-        rect(img, 7, 3, 7, 8, C["hull_lt"])
-        px(img, 8, 0, C["hull"])
-        px(img, 8, 11, C["hull"])
-        # fuselage
-        rect(img, 3, 5, 12, 6, C["hull_lt"])
-        rect(img, 11, 5, 13, 6, C["hull_lt"])
-        px(img, 14, 5, C["hull"])
-        px(img, 14, 6, C["hull"])
-        px(img, 12, 5, C["white"])  # satcom bulge highlight
-        px(img, 10, 6, C["iron"])  # sensor ball
-        # V-tail
-        px(img, 3, 4, C["hull"])
-        px(img, 2, 3, C["hull"])
-        px(img, 3, 7, C["hull"])
-        px(img, 2, 8, C["hull"])
-        bevel(img, light=0.15, dark=-0.25)
+        rect(img, 8, 0, 8, 11, BODY_LT)
+        rect(img, 7, 1, 7, 10, BODY)
+        px(img, 8, 0, BODY)
+        px(img, 8, 11, BODY)
+        rect(img, 3, 5, 13, 6, BODY)
+        px(img, 14, 5, BODY)
+        px(img, 14, 6, BODY)
+        rect(img, 11, 5, 13, 5, BODY_LT)  # nose bulge highlight
+        px(img, 3, 4, BODY)  # V-tail
+        px(img, 2, 3, BODY_LT)
+        px(img, 3, 7, BODY)
+        px(img, 2, 8, BODY)
         outline(img)
-        # pusher prop blur behind the tail
+        px(img, 7, 2, C["tie"])  # Eye roundels on the wings
+        px(img, 8, 2, C["fire_orange"])
+        px(img, 7, 9, C["tie"])
+        px(img, 8, 9, C["fire_orange"])
+        px(img, 13, 6, C["fire_red"])  # sensor eye
         blur = [(1, 4), (1, 7), (0, 5), (0, 6)] if f == 0 else [(1, 5), (1, 6), (0, 3), (0, 8)]
         for x, y in blur:
             if img.getpixel((x, y))[3] == 0 or img.getpixel((x, y)) == C["black"]:
@@ -52,8 +63,8 @@ class Reaper:
 
 
 class Seahawk:
-    """MH-60 Seahawk: fuselage, tail boom with tail rotor, translucent main rotor disc with four
-    blades in two positions."""
+    """MH-60 Seahawk: black fuselage with a red-lit cockpit and an Eye roundel, tail boom with tail
+    rotor, translucent main rotor disc with four blades in two positions."""
 
     NAME = "seahawk"
     FRAME = (16, 12)
@@ -62,20 +73,19 @@ class Seahawk:
     @staticmethod
     def frame(f):
         img = new(16, 12)
-        # tail boom + stabiliser + tail rotor
-        rect(img, 1, 5, 7, 6, C["hull"])
-        rect(img, 1, 4, 2, 7, C["hull_dk"])
-        # fuselage
-        ellipse(img, 5, 3, 13, 8, C["hull"])
-        rect(img, 6, 4, 11, 7, C["hull"])
-        px(img, 12, 4, C["water_dk"])  # cockpit glass
-        px(img, 12, 5, C["water_lt"])
-        px(img, 12, 6, C["water_dk"])
-        px(img, 12, 7, C["water_dk"])
-        rect(img, 8, 4, 10, 4, C["hull_lt"])  # engine cowling
-        bevel(img, light=0.2, dark=-0.25)
+        rect(img, 1, 5, 7, 6, BODY)
+        rect(img, 1, 4, 2, 7, BODY_DK)
+        ellipse(img, 5, 3, 13, 8, BODY)
+        rect(img, 6, 4, 11, 7, BODY)
+        rect(img, 8, 4, 10, 4, BODY_LT)  # engine cowling
+        rect(img, 6, 4, 7, 4, BODY_LT)
+        bevel(img, light=0.45, dark=-0.4)
+        px(img, 12, 4, C["maroon"])  # red-lit cockpit glass
+        px(img, 12, 5, C["fire_red"])
+        px(img, 12, 6, C["fire_red"])
+        px(img, 12, 7, C["maroon"])
         outline(img)
-        # main rotor disc + blades
+        roundel(img, 7, 6)
         cx, cy, r = 8.5, 5.5, 6.2
         for y in range(12):
             for x in range(16):
@@ -87,9 +97,8 @@ class Seahawk:
             ang = base + k * math.pi / 2
             for t in range(1, 7):
                 x, y = round(cx + math.cos(ang) * t - 0.5), round(cy + math.sin(ang) * t - 0.5)
-                px(img, x, y, a(C["iron"], 220 if t < 5 else 150))
-        px(img, 8, 5, C["iron"])  # hub
-        # tail rotor flicker
+                px(img, x, y, a(C["smoke"], 230 if t < 5 else 160))
+        px(img, 8, 5, C["smoke_lt"])  # hub
         px(img, 1, 3 if f == 0 else 8, a(C["smoke_lt"], 200))
         px(img, 2, 3 if f == 0 else 8, a(C["smoke_lt"], 140))
         return img
@@ -100,8 +109,8 @@ class Seahawk:
 
 
 class Hornet:
-    """F/A-18E Super Hornet: pointed nose, trapezoid wings with LEX, twin canted tails,
-    afterburner flicker."""
+    """F/A-18E Super Hornet: black jet, pointed nose, trapezoid wings with Eye roundels, twin
+    canted tails, red-glass canopy, afterburner flicker."""
 
     NAME = "hornet"
     FRAME = (16, 12)
@@ -110,31 +119,26 @@ class Hornet:
     @staticmethod
     def frame(f):
         img = new(16, 12)
-        # wings
-        poly(img, [(6, 5), (10, 5), (8, 1), (6, 1)], C["hull"])
-        poly(img, [(6, 6), (10, 6), (8, 10), (6, 10)], C["hull"])
-        # horizontal stabilators
-        poly(img, [(2, 5), (4, 5), (3, 2), (2, 2)], C["hull"])
-        poly(img, [(2, 6), (4, 6), (3, 9), (2, 9)], C["hull"])
-        # fuselage + LEX + nose
-        rect(img, 2, 5, 13, 6, C["hull_lt"])
-        rect(img, 9, 4, 11, 7, C["hull_lt"])
-        px(img, 14, 5, C["hull"])
-        px(img, 14, 6, C["hull"])
-        px(img, 15, 5, C["hull_dk"])
-        px(img, 11, 5, C["water_dk"])  # canopy
-        px(img, 12, 5, C["water_lt"])
-        px(img, 11, 6, C["water_dk"])
-        # twin canted tails
-        px(img, 4, 4, C["hull_dk"])
-        px(img, 5, 4, C["hull_dk"])
-        px(img, 4, 7, C["hull_dk"])
-        px(img, 5, 7, C["hull_dk"])
-        bevel(img, light=0.18, dark=-0.25)
-        px(img, 7, 2, C["suit"])  # roundel hints
-        px(img, 7, 9, C["suit"])
+        poly(img, [(6, 5), (10, 5), (8, 1), (6, 1)], BODY)
+        poly(img, [(6, 6), (10, 6), (8, 10), (6, 10)], BODY)
+        poly(img, [(2, 5), (4, 5), (3, 2), (2, 2)], BODY)
+        poly(img, [(2, 6), (4, 6), (3, 9), (2, 9)], BODY)
+        rect(img, 2, 5, 13, 6, BODY_LT)
+        rect(img, 9, 4, 11, 7, BODY)
+        px(img, 14, 5, BODY)
+        px(img, 14, 6, BODY)
+        px(img, 15, 5, BODY_LT)
+        px(img, 4, 4, BODY_DK)  # twin canted tails
+        px(img, 5, 4, BODY_DK)
+        px(img, 4, 7, BODY_DK)
+        px(img, 5, 7, BODY_DK)
+        bevel(img, light=0.4, dark=-0.4)
+        px(img, 11, 5, C["maroon"])  # canopy
+        px(img, 12, 5, C["fire_red"])
+        px(img, 11, 6, C["maroon"])
         outline(img)
-        # twin afterburner flames
+        roundel(img, 6, 2)
+        roundel(img, 6, 8)
         if f == 0:
             for y in (5, 6):
                 px(img, 1, y, C["fire_yellow"])
@@ -151,39 +155,80 @@ class Hornet:
 
 
 class B2:
-    """B-2 Spirit: black flying wing with a sawtooth trailing edge; frame 1 shimmers."""
+    """The B-2 as a fell-beast: a winged drake seen from above. Two broad bat wings, each with
+    three pale finger bones fanning from the shoulder over dark membrane and deep scallops between
+    the tips; a narrow body, a neck and horned head to the east with a burning eye, a thin tail to
+    the west ending in a barb, and a tiny black-cloaked rider at the shoulders. Black outline round
+    the whole silhouette. Frame 0 wings spread (full height), frame 1 the downstroke (wings half
+    folded, tips swept back)."""
 
     NAME = "b2"
     FRAME = (24, 12)
     FRAMES = 2
 
-    @staticmethod
-    def frame(f):
+    # Top wing, rows 0-4 (the bottom wing mirrors it onto rows 11-7). M membrane (Mordor maroon so
+    # the wing mass reads against the black outline and the dark sea), o finger bones, L the lit
+    # leading arm. Three fingers fan from the shoulder (x 13-14, row 4) to three tips on the outer
+    # edge, with shallow scallops between the tips and a concave trailing edge back to the hip.
+    WINGS = (
+        [
+            "...oo...oo...LL..",
+            "....oMM.MoM.MML..",
+            "......oMMMoMMMML.",
+            ".......MoMMoMMML.",
+            "........MMooooL..",
+        ],
+        [
+            ".................",
+            ".................",
+            "....oo..o..LL....",
+            ".....MoMMoMMLL...",
+            ".......MMMooooL..",
+        ],
+    )
+    INK = {"L": C["chrome"], "o": C["smoke_lt"], "M": C["maroon"]}
+
+    @classmethod
+    def wing(cls, img, f, mirror):
+        for y, row in enumerate(cls.WINGS[f]):
+            for x, ch in enumerate(row):
+                if ch != ".":
+                    px(img, x, 11 - y if mirror else y, cls.INK[ch])
+
+    @classmethod
+    def frame(cls, f):
         img = new(24, 12)
-        # straight swept leading edge from the nose to the wingtips, double-W sawtooth trailing edge
-        top = [(20, 5), (5, 0), (5, 1), (11, 2.5), (8, 3.5), (12, 4.5), (10, 5)]
-        bot = [(10, 6), (12, 6.5), (8, 7.5), (11, 8.5), (5, 10), (5, 11), (20, 6)]
-        poly(img, top + bot, C["iron"])
-        rect(img, 10, 5, 20, 6, C["iron"])
-        # cockpit hump + spine
-        rect(img, 14, 5, 18, 6, C["deck"])
-        px(img, 18, 5, C["water_dk"])
-        px(img, 17, 5, C["water_dk"])
-        # engine humps with intakes
-        rect(img, 11, 4, 13, 4, C["deck"])
-        rect(img, 11, 7, 13, 7, C["deck"])
-        px(img, 13, 4, C["black"])
-        px(img, 13, 7, C["black"])
-        bevel(img, light=0.25, dark=-0.4)
+        cls.wing(img, f, False)
+        cls.wing(img, f, True)
+        body, lit, dk = C["iron"], C["smoke"], C["stone_dk"]
+        rect(img, 8, 5, 16, 6, body)  # body
+        rect(img, 11, 4, 14, 7, body)
+        rect(img, 11, 4, 14, 4, lit)
+        rect(img, 11, 7, 14, 7, dk)
+        rect(img, 17, 5, 19, 6, body)  # neck
+        rect(img, 17, 5, 19, 5, lit)
+        rect(img, 20, 5, 22, 6, body)  # head
+        px(img, 20, 5, lit)
+        px(img, 23, 5, dk)  # snout
+        px(img, 23, 6, dk)
+        px(img, 19, 4, C["smoke_lt"])  # horns sweeping back
+        px(img, 18, 4, C["smoke"])
+        px(img, 19, 7, C["smoke_lt"])
+        px(img, 18, 7, C["smoke"])
+        rect(img, 4, 5, 7, 6, body)  # tail: tapering to one pixel, then a barb
+        px(img, 4, 5, dk)
+        rect(img, 1, 6, 3, 6, body)
+        px(img, 0, 5, C["smoke_lt"])
+        px(img, 0, 6, C["smoke_lt"])
+        px(img, 0, 7, C["smoke_lt"])
+        px(img, 1, 5, C["smoke"])
+        px(img, 1, 7, C["smoke"])
         outline(img)
-        if f == 1:  # stealth shimmer: a faint diagonal glint sweeping the wing
-            for x, y in ((9, 2), (10, 3), (12, 3), (9, 9), (10, 8), (12, 8)):
-                if img.getpixel((x, y))[3]:
-                    px(img, x, y, C["hull_dk"])
-        else:
-            for x, y in ((6, 1), (7, 2), (6, 10), (7, 9)):
-                if img.getpixel((x, y))[3]:
-                    px(img, x, y, C["deck"])
+        # rider: black cloak with a pale crown glint; the burning eye of the beast
+        rect(img, 12, 5, 13, 6, C["black"])
+        px(img, 13, 5, C["smoke_lt"])
+        px(img, 21, 5, C["fire_red"])
+        px(img, 21, 6, C["fire_orange"] if f == 0 else C["fire_yellow"])
         return img
 
     @classmethod

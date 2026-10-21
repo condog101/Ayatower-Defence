@@ -1,5 +1,6 @@
 """Boss ships (fictional satire), facing EAST: the MAR-A-LAGO golden superyacht and USS BIG DON,
-a gold-and-black supercarrier with the flaming Eye painted across its flight deck."""
+a gold-and-black supercarrier with the flaming Eye painted across its flight deck and the spires
+of Barad-dur rising from its island."""
 import math
 
 from draw import circle, ellipse, new, px, rect, strip
@@ -44,24 +45,26 @@ class Yacht:
             px(img, 8, y, C["gold"])
         px(img, 7, 6, C["gold"])
         # tier 1 deckhouse (white, gold edges, smoked glass band)
-        block(img, 13, 2, 33, 11, base=C["white"], lit=C["cream"], shade=C["hull_lt"])
+        block(img, 13, 2, 33, 11, base=C["white"], lit=C["cream"], shade=C["smoke_lt"])
         rect(img, 13, 2, 33, 2, C["gold"])
         rect(img, 13, 11, 33, 11, C["gold_dk"])
-        rect(img, 14, 3, 32, 3, C["suit"])  # tinted windows port
-        rect(img, 14, 10, 32, 10, C["suit"])  # starboard
+        rect(img, 14, 3, 32, 3, C["night"])  # tinted windows port
+        rect(img, 14, 10, 32, 10, C["night"])  # starboard
         # pool with a gold rim
         rect(img, 15, 5, 20, 8, C["gold"])
         rect(img, 16, 6, 19, 7, C["shallow"])
         px(img, 16, 6, C["foam"])
         # tier 2 deckhouse
-        block(img, 22, 4, 31, 9, base=C["white"], lit=C["cream"], shade=C["hull_lt"])
+        block(img, 22, 4, 31, 9, base=C["white"], lit=C["cream"], shade=C["smoke_lt"])
         rect(img, 22, 4, 31, 4, C["gold"])
-        rect(img, 31, 5, 31, 8, C["suit"])
+        rect(img, 31, 5, 31, 8, C["night"])
         # radar dome + gold mast
         ellipse(img, 25, 5, 27, 7, C["cream"])
         px(img, 25, 5, C["white"])
         rect(img, 29, 6, 29, 7, C["gold"])
         px(img, 29, 5, C["tie"])
+        px(img, 28, 5, C["black"])  # little black Eye pennant streaming aft
+        px(img, 27, 5, C["tie"])
         # gold stripes running forward along the foredeck
         for x in range(34, 44):
             k = cls.half(x)
@@ -84,7 +87,8 @@ class Yacht:
 
 class BigDon:
     """USS BIG DON: supercarrier silhouette in gold and black, with a huge flaming Eye of Sauron
-    painted across the flight deck. Frame 1 flickers the flames and the eye's glow."""
+    painted across the flight deck and the black spires of Barad-dur rising from a gold island
+    sponson on the starboard bow. Frame 1 flickers the flames, the eye's glow and the spire fire."""
 
     NAME = "boss_don"
     FRAME = (80, 24)
@@ -107,11 +111,11 @@ class BigDon:
     def bot(x):
         if x < 3 or x > 79:
             return 0
-        if 42 <= x <= 58:
+        if 50 <= x <= 68:
             return 11
-        if x > 58:
-            t = (79 - x + 1) / 21
-            return max(2, round(10 * t ** 0.5))
+        if x > 68:
+            t = (79 - x + 1) / 12
+            return max(2, round(10 * t ** 0.6))
         return 10
 
     @classmethod
@@ -176,28 +180,66 @@ class BigDon:
                 px(img, x, cy + b - 2, C["gold_dk"])
         cls.eye(img, f)
         # bow catapults in gold
-        for y in (cy - 3, cy + 2):
-            for x in range(60, 76):
+        for y in (cy - 3, cy + 1):
+            for x in range(68, 77):
                 if img.getpixel((x, y)) == C["iron"]:
                     px(img, x, y, C["gold_dk"] if x % 2 else C["gold"])
-        # island: gold tower with a black spiked crown, starboard side
-        rect(img, 47, 20, 57, 22, C["black"])
-        block(img, 46, 19, 56, 21, base=C["gold"], lit=C["cream"], shade=C["gold_dk"])
-        for x in range(47, 56, 2):
-            px(img, x, 19, C["iron"])  # crown spikes
-        rect(img, 50, 20, 51, 20, C["tie"])
-        px(img, 54, 20, C["iron"])
-        # gold jets parked along the bow
-        for jx, jy in ((64, cy + 6), (69, cy + 6), (64, cy - 7), (69, cy - 7)):
+        # gold jets parked along the port bow
+        for jx, jy in ((58, cy - 8), (63, cy - 8), (68, cy - 7)):
             px(img, jx, jy, C["gold"])
             px(img, jx + 1, jy, C["gold"])
             px(img, jx + 2, jy, C["gold_dk"])
             px(img, jx + 1, jy - 1, C["gold_dk"])
             px(img, jx + 1, jy + 1, C["gold_dk"])
+        cls.spires(img, f)
         # stern: black ramp with gold edge
         for y in range(cy - 4, cy + 4):
             px(img, 4, y, C["gold_dk"])
         return img
+
+    @classmethod
+    def spires(cls, img, f):
+        """Barad-dur on the island: a gold sponson platform with three black spires rising north
+        (drawn in 3/4 so they read as tall), the great forked crown and a fire between its horns."""
+        rect(img, 51, 19, 70, 22, C["gold"])
+        rect(img, 51, 19, 70, 19, C["fire_yellow"])
+        rect(img, 51, 22, 70, 22, C["gold_dk"])
+        towers = [
+            # (x_left, x_right, top) per row band: list of (y_from, y_to, x0, x1)
+            [(17, 21, 53, 55), (15, 16, 54, 55), (14, 14, 54, 54)],
+            [(18, 21, 66, 68), (16, 17, 66, 67), (15, 15, 67, 67)],
+            [(17, 21, 57, 64), (13, 16, 58, 63), (10, 12, 59, 62), (7, 9, 59, 59), (7, 9, 62, 62)],
+        ]
+        mask = set()
+        for bands in towers:
+            for y0, y1, x0, x1 in bands:
+                for y in range(y0, y1 + 1):
+                    for x in range(x0, x1 + 1):
+                        mask.add((x, y))
+        # outline first so the spires stand out on the iron deck
+        for (x, y) in mask:
+            for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                if (x + dx, y + dy) not in mask:
+                    px(img, x + dx, y + dy, C["black"])
+        for (x, y) in mask:
+            left = (x - 1, y) not in mask
+            right = (x + 1, y) not in mask
+            col = C["stone_dk"]
+            if left:
+                col = C["smoke"]
+            elif right or (x + 2, y) not in mask and x > 60:
+                col = C["iron"]
+            px(img, x, y, col)
+        # lit windows and the burning crown
+        for x, y in ((55, 18), (59, 19), (61, 15), (60, 12), (67, 19), (63, 18)):
+            px(img, x, y, C["fire_orange"] if (x + y + f) % 2 else C["fire_red"])
+        px(img, 60, 9, C["fire_yellow"])
+        px(img, 61, 9, C["fire_orange"])
+        px(img, 60, 8, C["fire_orange"] if f == 0 else C["fire_yellow"])
+        px(img, 61, 8, C["fire_red"])
+        px(img, 60 + f, 7, C["fire_red"])
+        px(img, 59, 7, C["smoke_lt"])
+        px(img, 62, 7, C["smoke_lt"])
 
     @classmethod
     def frame(cls, f):

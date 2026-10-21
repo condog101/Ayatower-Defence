@@ -3,9 +3,9 @@
 The order and names here are the contract with web/src (see test_gen.py EXPECTED).
 """
 from . import (
-    advisory,
     aya,
     ayatower,
+    beacon,
     bosses,
     decor,
     don,
@@ -28,11 +28,12 @@ SHEETS = [
     # terrain + map dressing
     tiles,
     decor,
+    beacon,
     # player
     towers,
     turrets,
     ayatower,
-    # US Navy ships (all face east)
+    # Sauron's host: US Navy silhouettes in Mordor dress (all face east)
     enemies_sea.Rhib,
     enemies_sea.Patrol,
     enemies_sea.Cyclone,
@@ -73,7 +74,10 @@ SHEETS = [
     don,
     aya,
     title_logo,
-    advisory,
     hud_icons,
-    ui_panel,
+    ui_panel.Panel,
+    ui_panel.Button,
+    ui_panel.Palantir,
+    ui_panel.Scroll,
+    ui_panel.Seal,
 ]

@@ -1,5 +1,6 @@
-"""Projectiles, all facing EAST (nose right): tracer, rockets, missiles, Shahed, torpedo, mine,
-martyr drone boat, SAM, and the muzzle flash."""
+"""Projectiles, all facing EAST (head right): crossbow bolt, fire arrow, great ballista bolt,
+winged ornithopter drone, iron sea-dart, spiked iron mine, black-sailed fire skiff, mithril
+bolt, and the muzzle flash."""
 from draw import disc, new, poly, px, rect, strip
 from palette import C
 
@@ -9,6 +10,8 @@ def a(c, alpha):
 
 
 class Bullet:
+    """Crossbow bolt: red fletch, pale shaft, steel tip."""
+
     NAME = "p_bullet"
     FRAME = (4, 4)
     FRAMES = 1
@@ -16,20 +19,21 @@ class Bullet:
     @staticmethod
     def build():
         img = new(4, 4)
-        px(img, 0, 1, a(C["fire_orange"], 150))
-        px(img, 0, 2, a(C["fire_orange"], 150))
-        rect(img, 1, 1, 2, 2, C["fire_yellow"])
-        px(img, 1, 0, a(C["fire_yellow"], 140))
-        px(img, 1, 3, a(C["fire_yellow"], 140))
-        px(img, 2, 1, C["white"])
-        px(img, 3, 1, C["fire_yellow"])
-        px(img, 3, 2, a(C["fire_yellow"], 170))
-        px(img, 2, 2, C["white"])
+        px(img, 0, 1, C["tie"])
+        px(img, 0, 2, C["tie"])
+        px(img, 0, 0, a(C["tie"], 150))
+        px(img, 0, 3, a(C["tie"], 150))
+        px(img, 1, 1, C["cream"])
+        px(img, 2, 1, C["cream"])
+        px(img, 1, 2, C["parch"])
+        px(img, 2, 2, C["parch"])
+        px(img, 3, 1, C["white"])
+        px(img, 3, 2, C["smoke_lt"])
         return img
 
 
 class Rocket:
-    """107mm rocket: olive tube, dark nose, fins, flickering motor flame."""
+    """Fire arrow: fletched shaft, iron head wrapped in a flickering flame."""
 
     NAME = "p_rocket"
     FRAME = (6, 3)
@@ -38,19 +42,22 @@ class Rocket:
     @staticmethod
     def frame(i):
         img = new(6, 3)
-        rect(img, 2, 1, 4, 1, C["olive_lt"])
-        px(img, 5, 1, C["iron"])
-        px(img, 2, 0, C["olive_dk"])
-        px(img, 2, 2, C["olive_dk"])
-        px(img, 4, 1, C["olive"])
+        px(img, 0, 0, C["tie"])
+        px(img, 0, 2, C["tie"])
+        px(img, 0, 1, C["maroon"])
+        rect(img, 1, 1, 3, 1, C["parch"])
+        px(img, 5, 1, C["chrome"])
         if i == 0:
-            px(img, 1, 1, C["fire_yellow"])
-            px(img, 0, 1, C["fire_orange"])
+            px(img, 4, 1, C["fire_yellow"])
+            px(img, 4, 0, C["fire_orange"])
+            px(img, 3, 0, a(C["fire_red"], 200))
+            px(img, 4, 2, a(C["fire_orange"], 180))
         else:
-            px(img, 1, 1, C["white"])
-            px(img, 0, 1, C["fire_yellow"])
-            px(img, 0, 0, a(C["fire_orange"], 140))
-            px(img, 0, 2, a(C["fire_orange"], 140))
+            px(img, 4, 1, C["white"])
+            px(img, 4, 0, C["fire_yellow"])
+            px(img, 3, 0, C["fire_orange"])
+            px(img, 2, 0, a(C["fire_red"], 160))
+            px(img, 3, 2, a(C["fire_orange"], 160))
         return img
 
     @classmethod
@@ -59,7 +66,8 @@ class Rocket:
 
 
 class Missile:
-    """Coastal anti-ship missile (Noor / Khalij Fars): khaki body, black radome, cruciform fins."""
+    """Great ballista bolt from the keep's great bow: long shaft, broad iron head, red vanes,
+    a streak of ember light behind."""
 
     NAME = "p_missile"
     FRAME = (8, 3)
@@ -68,21 +76,22 @@ class Missile:
     @staticmethod
     def frame(i):
         img = new(8, 3)
-        rect(img, 2, 1, 6, 1, C["sand_lt"])
-        px(img, 5, 1, C["sand"])
-        px(img, 7, 1, C["iron"])
-        px(img, 4, 0, C["olive"])  # mid wings
-        px(img, 4, 2, C["olive"])
-        px(img, 2, 0, C["olive_dk"])  # tail fins
-        px(img, 2, 2, C["olive_dk"])
-        px(img, 6, 1, C["tie"])
+        rect(img, 2, 1, 5, 1, C["wood"])
+        px(img, 3, 1, C["parch"])
+        px(img, 2, 0, C["tie"])  # vanes
+        px(img, 2, 2, C["tie"])
+        px(img, 1, 0, C["maroon"])
+        px(img, 1, 2, C["maroon"])
+        px(img, 6, 0, C["smoke"])  # broadhead
+        px(img, 6, 1, C["chrome"])
+        px(img, 6, 2, C["iron"])
+        px(img, 7, 1, C["white"])
         if i == 0:
-            px(img, 1, 1, C["white"])
-            px(img, 0, 1, C["fire_orange"])
+            px(img, 1, 1, C["fire_orange"])
+            px(img, 0, 1, a(C["fire_red"], 170))
         else:
             px(img, 1, 1, C["fire_yellow"])
-            px(img, 0, 1, a(C["smoke_lt"], 150))
-            px(img, 0, 0, a(C["fire_orange"], 120))
+            px(img, 0, 1, a(C["fire_orange"], 170))
         return img
 
     @classmethod
@@ -91,7 +100,8 @@ class Missile:
 
 
 class Shahed:
-    """Shahed-136: beige delta flying wing with tip fins and a pusher prop."""
+    """Winged drone from the roost tower: a wood-and-parchment ornithopter with an iron beak,
+    wings flapping between the frames."""
 
     NAME = "p_shahed"
     FRAME = (8, 6)
@@ -100,25 +110,23 @@ class Shahed:
     @staticmethod
     def frame(i):
         img = new(8, 6)
-        poly(img, [(6, 2), (6, 3), (2, 5), (2, 0)], C["sand_lt"])
-        rect(img, 2, 2, 6, 3, C["sand"])
-        px(img, 2, 0, C["smoke"])  # tip fins
-        px(img, 2, 5, C["smoke"])
-        px(img, 6, 2, C["sand_lt"])
-        px(img, 7, 2, C["smoke"])
-        px(img, 7, 3, C["smoke"])
-        px(img, 5, 2, C["tie"])  # warhead band
-        px(img, 3, 2, C["sand_lt"])
-        if i == 0:
-            px(img, 1, 1, a(C["smoke_lt"], 190))
-            px(img, 1, 4, a(C["smoke_lt"], 190))
-            px(img, 1, 2, C["iron"])
-            px(img, 1, 3, C["iron"])
-        else:
-            px(img, 0, 2, a(C["smoke_lt"], 190))
-            px(img, 0, 3, a(C["smoke_lt"], 190))
-            px(img, 1, 2, C["iron"])
-            px(img, 1, 3, C["iron"])
+        if i == 0:  # wings swept back and spread wide
+            poly(img, [(5, 2), (5, 3), (2, 5), (1, 5), (3, 3), (3, 2), (1, 0), (2, 0)], C["cream"])
+            px(img, 1, 0, C["parch_dk"])
+            px(img, 1, 5, C["parch_dk"])
+            px(img, 3, 1, C["parch"])
+            px(img, 3, 4, C["parch"])
+        else:  # wings beating forward, folded shorter
+            poly(img, [(5, 2), (5, 3), (4, 5), (3, 5), (3, 3), (3, 2), (3, 0), (4, 0)], C["cream"])
+            px(img, 3, 0, C["parch_dk"])
+            px(img, 3, 5, C["parch_dk"])
+        rect(img, 1, 2, 6, 3, C["wood"])  # body
+        rect(img, 1, 2, 5, 2, C["parch_dk"])
+        px(img, 0, 2, C["wood_dk"])  # tail
+        px(img, 0, 3, C["wood_dk"])
+        px(img, 7, 2, C["smoke_lt"])  # iron beak
+        px(img, 7, 3, C["iron"])
+        px(img, 6, 2, C["tie"])  # red eye
         return img
 
     @classmethod
@@ -127,6 +135,8 @@ class Shahed:
 
 
 class Torpedo:
+    """Iron sea-dart running just under the surface, trailing bubbles."""
+
     NAME = "p_torpedo"
     FRAME = (8, 3)
     FRAMES = 2
@@ -136,9 +146,9 @@ class Torpedo:
         img = new(8, 3)
         rect(img, 3, 1, 7, 1, C["iron"])
         rect(img, 4, 0, 6, 0, C["smoke"])
-        rect(img, 4, 2, 6, 2, C["deck"])
-        px(img, 7, 1, C["smoke"])
-        px(img, 2, 1, C["deck"])  # screw
+        rect(img, 4, 2, 6, 2, C["stone_dk"])
+        px(img, 7, 1, C["gold_dk"])  # bronze nose
+        px(img, 2, 1, C["stone_dk"])  # screw
         bubbles = [(0, 0), (1, 2), (1, 1)] if i == 0 else [(0, 2), (1, 0), (0, 1)]
         for n, (x, y) in enumerate(bubbles):
             px(img, x, y, a(C["foam"], 220 - n * 50))
@@ -150,7 +160,7 @@ class Torpedo:
 
 
 class Mine:
-    """Floating horned contact mine: dark sphere, five horns, ripple."""
+    """Floating spiked iron sphere; the fuse ember glows on the bob frame."""
 
     NAME = "p_mine"
     FRAME = (6, 6)
@@ -160,16 +170,19 @@ class Mine:
     def frame(i):
         img = new(6, 6)
         if i == 1:  # bob: ripple at the waterline
-            for x, y in ((0, 4), (5, 4), (1, 5), (4, 5)):
+            for x, y in ((0, 5), (5, 5), (1, 5), (4, 5)):
                 px(img, x, y, a(C["foam"], 170))
         disc(img, 2.5, 2.5, 1.7, C["iron"])
         px(img, 2, 2, C["smoke"])
-        px(img, 1, 2, C["smoke"] if i == 0 else C["smoke_lt"])
-        px(img, 2, 1, C["smoke_lt"] if i == 1 else C["smoke"])
+        px(img, 1, 2, C["smoke_lt"] if i == 1 else C["smoke"])
+        px(img, 2, 1, C["smoke_lt"])
         px(img, 3, 3, C["black"])
-        for x, y in ((2, 0), (3, 0), (0, 2), (5, 2), (0, 3), (5, 3)):
+        for x, y in ((0, 0), (5, 0), (0, 5), (5, 5), (2, 0), (0, 3), (5, 2), (3, 5)):
+            if i == 1 and y == 5 and x in (0, 5):
+                continue
             px(img, x, y, C["black"])
-        px(img, 2, 0, C["tie"] if i == 1 else C["black"])
+        # fuse ember
+        px(img, 3, 0, C["fire_yellow"] if i == 1 else C["fire_orange"])
         return img
 
     @classmethod
@@ -178,7 +191,7 @@ class Mine:
 
 
 class Boat:
-    """Martyr explosive drone boat: low black hull, red warhead nose, wake."""
+    """Martyr fire skiff: dark hull, black sail, burning pitch at the prow, wake behind."""
 
     NAME = "p_boat"
     FRAME = (10, 5)
@@ -187,13 +200,17 @@ class Boat:
     @staticmethod
     def frame(i):
         img = new(10, 5)
-        poly(img, [(2, 1), (7, 1), (9, 2), (7, 3), (2, 3)], C["iron"])
-        rect(img, 2, 1, 6, 1, C["smoke"])
-        rect(img, 7, 1, 8, 3, C["tie"])
-        px(img, 9, 2, C["fire_red"])
-        px(img, 7, 1, C["fire_orange"])
-        px(img, 4, 2, C["black"])  # sensor mast
-        px(img, 5, 2, C["green"])  # antenna light
+        poly(img, [(2, 1), (7, 1), (9, 2), (7, 3), (2, 3)], C["wood_dk"])
+        rect(img, 2, 1, 6, 1, C["wood"])
+        # black sail across the beam, mast in the middle
+        rect(img, 4, 0, 5, 4, C["black"])
+        px(img, 4, 0, C["iron"])
+        px(img, 5, 2, C["wood"])
+        # burning prow
+        px(img, 8, 2, C["fire_orange"])
+        px(img, 9, 2, C["fire_yellow"] if i == 0 else C["white"])
+        px(img, 8, 1, C["fire_red"] if i == 0 else C["fire_orange"])
+        px(img, 7, 1 if i == 1 else 3, a(C["fire_red"], 180))
         # wake
         if i == 0:
             for x, y in ((1, 1), (0, 0), (1, 3), (0, 4), (1, 2)):
@@ -209,7 +226,7 @@ class Boat:
 
 
 class Sam:
-    """SAM interceptor: white body, red nose band, motor flame."""
+    """Mithril bolt from the twin ballistae: bright shaft, glowing blue head and trail."""
 
     NAME = "p_sam"
     FRAME = (8, 3)
@@ -218,21 +235,21 @@ class Sam:
     @staticmethod
     def frame(i):
         img = new(8, 3)
-        rect(img, 2, 1, 6, 1, C["white"])
-        px(img, 7, 1, C["tie"])
-        px(img, 6, 1, C["hull_lt"])
-        px(img, 3, 0, C["hull"])
-        px(img, 3, 2, C["hull"])
-        px(img, 2, 0, C["hull_dk"])
-        px(img, 2, 2, C["hull_dk"])
+        rect(img, 2, 1, 5, 1, C["chrome"])
+        px(img, 6, 1, C["mithril_lt"])
+        px(img, 7, 1, C["white"])
+        px(img, 6, 0, C["mithril"])
+        px(img, 6, 2, C["mithril"])
+        px(img, 2, 0, C["mithril"])  # vanes
+        px(img, 2, 2, C["mithril"])
         if i == 0:
-            px(img, 1, 1, C["fire_yellow"])
-            px(img, 0, 1, C["fire_orange"])
+            px(img, 1, 1, C["mithril_lt"])
+            px(img, 0, 1, a(C["mithril"], 170))
         else:
             px(img, 1, 1, C["white"])
-            px(img, 0, 1, C["fire_yellow"])
-            px(img, 0, 0, a(C["fire_orange"], 130))
-            px(img, 0, 2, a(C["fire_orange"], 130))
+            px(img, 0, 1, a(C["mithril_lt"], 190))
+            px(img, 0, 0, a(C["mithril"], 120))
+            px(img, 0, 2, a(C["mithril"], 120))
         return img
 
     @classmethod
@@ -241,7 +258,7 @@ class Sam:
 
 
 class Muzzle:
-    """Muzzle flash star (small, big)."""
+    """Release flash star (small, big)."""
 
     NAME = "muzzle"
     FRAME = (6, 6)

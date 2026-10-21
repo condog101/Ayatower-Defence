@@ -12,6 +12,7 @@ import { COLORS, text } from '../systems/UI';
 const SHEETS: [string, number, number][] = [
   ['tiles', 16, 16],
   ['decor', 16, 16],
+  ['beacon', 16, 16],
   ['towers', 16, 16],
   ['turrets', 16, 16],
   ['ayatower', 32, 32],
@@ -51,9 +52,12 @@ const SHEETS: [string, number, number][] = [
   ['don', 64, 64],
   ['aya', 64, 64],
   ['title_logo', 288, 96],
-  ['advisory', 48, 32],
+  ['seal', 48, 48],
   ['hud_icons', 12, 12],
   ['ui_panel', 48, 48],
+  ['button', 48, 48],
+  ['palantir', 48, 48],
+  ['scroll', 48, 48],
 ];
 
 const SHIPS = ['rhib', 'patrol', 'cyclone', 'lcs', 'frigate', 'burke', 'tico', 'lhd', 'carrier', 'boss_yacht', 'boss_don', 'reaper', 'seahawk', 'hornet', 'b2'];
@@ -92,6 +96,7 @@ export class BootScene extends Phaser.Scene {
     strip('smoke', 0, 3, 6, 0);
     strip('stun', 0, 1, 6);
     strip('jam', 0, 1, 6);
+    strip('beacon', 1, 3, 8);
 
     Save.load();
     Audio.warm();

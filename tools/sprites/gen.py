@@ -2,7 +2,7 @@
 """Generate the game's pixel-art sprite sheets.
 
     python3 tools/sprites/gen.py                 # write sheets that don't exist yet
-    python3 tools/sprites/gen.py --force boat_a  # regenerate specific sheets
+    python3 tools/sprites/gen.py --force towers   # regenerate specific sheets
     python3 tools/sprites/gen.py --all           # regenerate everything
     python3 tools/sprites/gen.py --list          # show sheet names and sizes
 
