@@ -12,6 +12,7 @@ import {
   type Enemy,
   type EnemyDef,
   type EnemyKey,
+  type LanePoint,
   type LevelDef,
   type Phase,
   type Projectile,
@@ -34,7 +35,7 @@ const AUTO_DELAY = 45;
  */
 export class Sim {
   readonly grid: Grid;
-  readonly lane: Lane;
+  readonly lanes: Lane[];
   readonly rng: () => number;
 
   tick = 0;
@@ -70,7 +71,7 @@ export class Sim {
     readonly enemyDefs: Record<EnemyKey, EnemyDef>,
   ) {
     this.grid = parseRows(level.rows);
-    this.lane = new Lane(level.lane);
+    this.lanes = level.lanes.map((l) => new Lane(l));
     this.rng = mulberry32(level.seed);
     this.lives = level.lives;
     this.cash = level.startCash;
@@ -114,7 +115,7 @@ export class Sim {
     if (this.cooldowns.fatwa > 0) this.cooldowns.fatwa--;
     if (this.autoIn > 0 && --this.autoIn === 0 && this.phase === 'build') this.startWave();
 
-    for (const r of this.runners) for (const kind of r.step()) spawnEnemy(this, kind, 0, r.wave);
+    for (const r of this.runners) for (const s of r.step()) spawnEnemy(this, s.kind, 0, r.wave, undefined, 0, s.lane);
     stepEnemies(this);
     if (this.lives <= 0) {
       this.phase = 'lost';
@@ -166,7 +167,7 @@ export class Sim {
   startWave(): boolean {
     if (!this.canStartWave()) return false;
     this.wave++;
-    this.runners.push(new WaveRunner(this.wave, this.level.waves[this.wave - 1]));
+    this.runners.push(new WaveRunner(this.wave, this.level.waves[this.wave - 1], this.lanes.length, this.level.airLane, this.enemyDefs));
     this.phase = 'wave';
     this.autoIn = 0;
     this.emit({ t: 'waveStart', wave: this.wave });
@@ -223,7 +224,7 @@ export class Sim {
       pulseAcc: 0,
       kills: 0,
       laneSpots: [],
-      entryD: 0,
+      entry: { lane: 0, d: 0 },
     };
     this.cash -= def.tiers[0].cost;
     this.towers.push(t);
@@ -285,6 +286,23 @@ export class Sim {
     return this.cooldowns[key];
   }
 
+  /** The nearest point on any lane to (x, y). */
+  nearestLanePoint(x: number, y: number): LanePoint & { dist: number } {
+    let best = { lane: 0, d: 0, dist: Infinity };
+    this.lanes.forEach((l, lane) => {
+      const d = l.nearestD(x, y);
+      const [px, py] = l.posAt(d);
+      const dist = Math.hypot(px - x, py - y);
+      if (dist < best.dist) best = { lane, d, dist };
+    });
+    return best;
+  }
+
+  /** Lane points (samples) on every lane within `range` of (x, y). */
+  spotsWithin(x: number, y: number, range: number): LanePoint[] {
+    return this.lanes.flatMap((l, lane) => l.spotsWithin(x, y, range).map((d) => ({ lane, d })));
+  }
+
   /** Nearest live enemy to (x, y) within `radius`, stealthed or not. */
   enemyNear(x: number, y: number, radius: number): Enemy | null {
     let best: Enemy | null = null;
@@ -311,7 +329,7 @@ export class Sim {
       kills: this.kills,
       wave: this.wave,
       phase: this.phase,
-      enemies: this.enemies.map((e) => [e.id, e.def.key, r(e.hp), r(e.d)]),
+      enemies: this.enemies.map((e) => [e.id, e.def.key, e.lane, r(e.hp), r(e.d)]),
       towers: this.towers.map((t) => [t.id, t.def.key, t.tier, t.kills]),
       projectiles: this.projectiles.map((p) => [p.id, p.kind, r(p.x), r(p.y)]),
     };

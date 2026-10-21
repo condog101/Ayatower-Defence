@@ -18,13 +18,14 @@ export function eligible(t: Tower, e: Enemy): boolean {
 /** Higher is a better pick under the tower's targeting mode. */
 function rank(t: Tower, e: Enemy): number {
   switch (t.targeting) {
+    // FIRST / LAST compare distance still to sail, so they agree across lanes of different lengths.
     case 'first':
-      return e.d;
+      return -e.left;
     case 'last':
-      return -e.d;
+      return e.left;
     case 'strong':
       // max hp, ties broken toward the front
-      return e.hp * 100_000 + e.d;
+      return e.hp * 100_000 - e.left;
     case 'close':
       return -((e.x - t.x) ** 2 + (e.y - t.y) ** 2);
   }

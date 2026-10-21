@@ -39,9 +39,10 @@ export function projectileSprite(t: Tower): string {
 export function predict(sim: Sim, e: Enemy, ticks: number): [number, number] {
   if (e.stunTicks > 0) return [e.x, e.y];
   const v = e.def.speed * BASE_SPEED * DT * (e.slowTicks > 0 ? e.slowMult : 1);
-  const d = Math.min(sim.lane.length, e.d + v * ticks);
-  const [x, y] = sim.lane.posAt(d);
-  const [nx, ny] = sim.lane.normalAt(d);
+  const lane = sim.lanes[e.lane];
+  const d = Math.min(lane.length, e.d + v * ticks);
+  const [x, y] = lane.posAt(d);
+  const [nx, ny] = lane.normalAt(d);
   return [x + nx * e.lateral, y + ny * e.lateral];
 }
 
@@ -66,6 +67,7 @@ function base(sim: Sim, t: Tower, tier: TierDef): Projectile {
     ttl: sec(4),
     hitsSea: tier.hitsSea,
     hitsAir: tier.hitsAir,
+    lane: 0,
     d: 0,
     tx: 0,
     ty: 0,
@@ -109,13 +111,16 @@ export function fireAt(sim: Sim, t: Tower, tier: TierDef, e: Enemy) {
   sim.emit({ t: 'shoot', tower: t.id, x: t.x, y: t.y, tx: e.x, ty: e.y, kind: p.kind, sprite: p.sprite });
 }
 
-/** Mine layer: drop a mine on a random lane spot in range. */
+/** Mine layer: drop a mine on a random spot of any lane in range. */
 export function layMine(sim: Sim, t: Tower, tier: TierDef) {
   if (t.laneSpots.length === 0) return;
   const p = base(sim, t, tier);
-  p.d = t.laneSpots[Math.floor(sim.rng() * t.laneSpots.length)];
-  const [x, y] = sim.lane.posAt(p.d);
-  const [nx, ny] = sim.lane.normalAt(p.d);
+  const spot = t.laneSpots[Math.floor(sim.rng() * t.laneSpots.length)];
+  p.lane = spot.lane;
+  p.d = spot.d;
+  const lane = sim.lanes[p.lane];
+  const [x, y] = lane.posAt(p.d);
+  const [nx, ny] = lane.normalAt(p.d);
   const lat = (sim.rng() * 2 - 1) * 8;
   p.x = x + nx * lat;
   p.y = y + ny * lat;
@@ -125,11 +130,13 @@ export function layMine(sim: Sim, t: Tower, tier: TierDef) {
   sim.emit({ t: 'shoot', tower: t.id, x: t.x, y: t.y, tx: p.x, ty: p.y, kind: 'mine', sprite: p.sprite });
 }
 
-/** Martyr dock: launch a boat at the nearest point of the lane; it then drives up the lane into traffic. */
+/** Martyr dock: launch a boat at the nearest point of any lane; it then drives up that lane into traffic. */
 export function launchBoat(sim: Sim, t: Tower, tier: TierDef, k: number) {
   const p = base(sim, t, tier);
-  p.d = Math.max(0, Math.min(sim.lane.length, t.entryD + k * 24));
-  const [ex, ey] = sim.lane.posAt(p.d);
+  p.lane = t.entry.lane;
+  const lane = sim.lanes[p.lane];
+  p.d = Math.max(0, Math.min(lane.length, t.entry.d + k * 24));
+  const [ex, ey] = lane.posAt(p.d);
   p.tx = ex;
   p.ty = ey;
   p.angle = Math.atan2(ey - t.y, ex - t.x);
@@ -187,7 +194,7 @@ export function stepProjectiles(sim: Sim) {
     switch (p.kind) {
       case 'mine': {
         for (const e of sim.enemies) {
-          if (!e.alive || e.def.layer !== 'sea' || Math.abs(e.d - p.d) >= MINE_TRIGGER) continue;
+          if (!e.alive || e.def.layer !== 'sea' || e.lane !== p.lane || Math.abs(e.d - p.d) >= MINE_TRIGGER) continue;
           if (p.ignoreHp && e.def.hp <= p.ignoreHp) continue;
           if (p.splash) splashDamage(sim, p.x, p.y, p.splash, p, tower);
           else {
@@ -220,7 +227,7 @@ export function stepProjectiles(sim: Sim) {
             finish(sim, p);
             break;
           }
-          const [x, y] = sim.lane.posAt(p.d);
+          const [x, y] = sim.lanes[p.lane].posAt(p.d);
           p.angle = Math.atan2(y - p.y, x - p.x);
           p.x = x;
           p.y = y;

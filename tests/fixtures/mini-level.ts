@@ -29,7 +29,7 @@ export function mini(waves: WaveDef[] = [], over: Partial<LevelDef> = {}): Level
     sub: 'Unit tests',
     brief: '',
     rows: MINI_ROWS,
-    lane: [[-1, 5], [23, 5]],
+    lanes: [[[-1, 5], [23, 5]]],
     startCash: 100_000,
     lives: 100,
     towers: [...TOWER_KEYS],

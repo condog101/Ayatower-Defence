@@ -27,8 +27,9 @@ export function refreshBuffs(sim: Sim) {
     }
     t.buff = b;
     const tier = t.def.tiers[t.tier];
-    t.laneSpots = tier.projectile === 'mine' ? sim.lane.spotsWithin(t.x, t.y, tier.range * b.range) : [];
-    t.entryD = sim.lane.nearestD(t.x, t.y);
+    t.laneSpots = tier.projectile === 'mine' ? sim.spotsWithin(t.x, t.y, tier.range * b.range) : [];
+    const near = sim.nearestLanePoint(t.x, t.y);
+    t.entry = { lane: near.lane, d: near.d };
   }
 }
 

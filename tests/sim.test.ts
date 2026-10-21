@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { ENEMIES } from '../web/src/data/enemies';
 import { TOWERS } from '../web/src/data/towers';
 import { rush, wave } from '../web/src/data/maps/recipes';
-import { spawnEnemy } from '../web/src/sim/enemies';
+import { damage, spawnEnemy } from '../web/src/sim/enemies';
+import { pickTarget } from '../web/src/sim/targeting';
 import { Sim } from '../web/src/sim/sim';
 import type { EnemyKey, SimEvent, WaveDef } from '../web/src/sim/types';
 import { mini } from './fixtures/mini-level';
@@ -227,7 +228,7 @@ describe('support towers', () => {
     expect(rhib.slowMult).toBeCloseTo(0.6);
     const d0 = rhib.d;
     sim.step();
-    expect(rhib.d - d0).toBeCloseTo((40 / 60) * 0.6, 5);
+    expect(rhib.d - d0).toBeCloseTo(((40 * ENEMIES.rhib.speed) / 60) * 0.6, 5);
     sim.upgrade(j);
     sim.upgrade(j);
     j.stunAcc = j.def.tiers[2].stun!.every;
@@ -368,5 +369,54 @@ describe('events', () => {
     expect(evs.some((e) => e.t === 'tower' && e.op === 'place')).toBe(true);
     expect(evs.some((e) => e.t === 'waveStart')).toBe(true);
     expect(sim.step().some((e) => e.t === 'waveStart')).toBe(false);
+  });
+});
+
+describe('multiple lanes', () => {
+  const two = (waves: WaveDef[], over: Partial<ReturnType<typeof mini>> = {}) =>
+    new Sim(mini(waves, { lanes: [[[-1, 5], [23, 5]], [[-1, 9], [10, 9]]], ...over }), TOWERS, ENEMIES);
+
+  it('alternates enemies across lanes, and children keep their lane', () => {
+    const sim = two([wave(0, rush('patrol', 4, 0.2))]);
+    sim.startWave();
+    run(sim, 60);
+    const lanes = sim.enemies.map((e) => e.lane);
+    expect(lanes.filter((l) => l === 0)).toHaveLength(2);
+    expect(lanes.filter((l) => l === 1)).toHaveLength(2);
+    const parent = sim.enemies.find((e) => e.lane === 1)!;
+    damage(sim, parent, 99, 'explosive');
+    const child = sim.enemies.find((e) => e.def.key === 'rhib')!;
+    expect(child.lane).toBe(1);
+  });
+
+  it('a group can be pinned to a lane, and aircraft use the air lane', () => {
+    const sim = two([wave(0, rush('rhib', 3, 0.2, 0, 1), rush('reaper', 3, 0.2))], { airLane: 0 });
+    sim.startWave();
+    run(sim, 60);
+    expect(sim.enemies.filter((e) => e.def.key === 'rhib').every((e) => e.lane === 1)).toBe(true);
+    expect(sim.enemies.filter((e) => e.def.key === 'reaper').every((e) => e.lane === 0)).toBe(true);
+  });
+
+  it('FIRST picks the ship closest to the tower whichever lane it is on', () => {
+    const sim = two([]);
+    // Same distance along, but lane 1 is far shorter, so its ship is nearer the Ayatower.
+    const far = spawnEnemy(sim, 'rhib', 300, 0, 0, 0, 0);
+    const near = spawnEnemy(sim, 'rhib', 300, 0, 0, 0, 1);
+    expect(near.left).toBeLessThan(far.left);
+    const t = sim.place('missile', 6, 4)!;
+    expect(pickTarget(t, sim.enemies)).toBe(near);
+    sim.setTargeting(t, 'last');
+    expect(pickTarget(t, sim.enemies)).toBe(far);
+  });
+
+  it('mines only trigger for ships on their own lane', () => {
+    const sim = two([]);
+    const m = sim.place('mines', 4, 6)!;
+    // lane 0 is right beside the layer, lane 1 is out of range
+    expect(m.laneSpots.every((s) => s.lane === 0)).toBe(true);
+    const other = spawnEnemy(sim, 'patrol', 0, 0, 0, 0, 1);
+    sim.phase = 'wave'; // layers only work during a wave
+    run(sim, 60 * 4);
+    expect(other.hp).toBe(ENEMIES.patrol.hp);
   });
 });

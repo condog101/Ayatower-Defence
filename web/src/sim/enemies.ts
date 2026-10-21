@@ -5,14 +5,16 @@ import type { DmgKind, Enemy, EnemyKey, Tower } from './types';
 /** Lateral spread of ships across the lane, px either side of the centre line. */
 const LATERAL = 10;
 
-export function spawnEnemy(sim: Sim, kind: EnemyKey, d: number, wave: number, lateral?: number, gen = 0): Enemy {
+export function spawnEnemy(sim: Sim, kind: EnemyKey, d: number, wave: number, lateral?: number, gen = 0, lane = 0): Enemy {
   const def = sim.enemyDefs[kind];
   const e: Enemy = {
     id: sim.nextId++,
     def,
     hp: def.hp,
     maxHp: def.hp,
+    lane,
     d: Math.max(0, d),
+    left: 0,
     lateral: lateral ?? (def.big ? 0 : (sim.rng() * 2 - 1) * LATERAL),
     x: 0,
     y: 0,
@@ -35,15 +37,16 @@ export function spawnEnemy(sim: Sim, kind: EnemyKey, d: number, wave: number, la
 }
 
 function place(sim: Sim, e: Enemy) {
-  const [x, y] = sim.lane.posAt(e.d);
-  const [nx, ny] = sim.lane.normalAt(e.d);
+  const lane = sim.lanes[e.lane];
+  const [x, y] = lane.posAt(e.d);
+  const [nx, ny] = lane.normalAt(e.d);
   e.x = x + nx * e.lateral;
   e.y = y + ny * e.lateral;
-  e.angle = sim.lane.angleAt(e.d);
+  e.angle = lane.angleAt(e.d);
+  e.left = lane.length - e.d;
 }
 
 export function stepEnemies(sim: Sim) {
-  const len = sim.lane.length;
   // Index loop: boss launches push onto the array mid-iteration and start moving next tick.
   const n = sim.enemies.length;
   for (let i = 0; i < n; i++) {
@@ -55,7 +58,7 @@ export function stepEnemies(sim: Sim) {
     if (sp && e.spawned < sp.max && ++e.spawnAcc >= sp.everyTicks) {
       e.spawnAcc = 0;
       e.spawned++;
-      const child = spawnEnemy(sim, sp.kind, e.d + 4, e.wave, undefined, e.gen + 1);
+      const child = spawnEnemy(sim, sp.kind, e.d + 4, e.wave, undefined, e.gen + 1, e.lane);
       sim.emit({ t: 'bossSpawn', id: child.id });
     }
     if (e.stunTicks > 0) {
@@ -63,7 +66,7 @@ export function stepEnemies(sim: Sim) {
       continue;
     }
     e.d += e.def.speed * BASE_SPEED * DT * (e.slowTicks > 0 ? e.slowMult : 1);
-    if (e.d >= len) {
+    if (e.d >= sim.lanes[e.lane].length) {
       leak(sim, e);
       continue;
     }
@@ -116,7 +119,7 @@ function kill(sim: Sim, e: Enemy, tower?: Tower) {
   let k = 0;
   for (const c of e.def.children ?? []) {
     for (let i = 0; i < c.n; i++, k++) {
-      const child = spawnEnemy(sim, c.kind, e.d - k * 6, e.wave, e.def.big ? undefined : e.lateral, e.gen + 1);
+      const child = spawnEnemy(sim, c.kind, e.d - k * 6, e.wave, e.def.big ? undefined : e.lateral, e.gen + 1, e.lane);
       // Children keep the parent's slow but not its stun.
       if (e.slowTicks > 0) {
         child.slowMult = e.slowMult;

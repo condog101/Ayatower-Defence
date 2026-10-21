@@ -2,8 +2,9 @@
 
 import type { EnemyKey, WaveDef, WaveGroup } from '../../sim/types';
 
-/** `n` of `kind`, `gap` seconds apart, starting `delay` seconds into the wave. */
-export const rush = (kind: EnemyKey, n: number, gap: number, delay = 0): WaveGroup => ({ kind, n, gap, delay });
+/** `n` of `kind`, `gap` seconds apart, starting `delay` seconds into the wave, on `lane` (default: alternate). */
+export const rush = (kind: EnemyKey, n: number, gap: number, delay = 0, lane?: number): WaveGroup =>
+  lane === undefined ? { kind, n, gap, delay } : { kind, n, gap, delay, lane };
 
 export const wave = (reward: number, ...groups: WaveGroup[]): WaveDef => ({ groups, reward });
 

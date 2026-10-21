@@ -21,16 +21,34 @@ const U = (wave: number, c: number | TowerKey, r?: number): Action => ({ wave, u
 const tail = (wave: number, kinds: TowerKey[]): Action[] =>
   kinds.flatMap((k, i) => [P(wave + i, k), U(wave + i, k), U(wave + i, k)]);
 
-/** The free spot for `key` whose tier-1 range covers the most lane samples (ties: first in reading order). */
+/**
+ * The free spot for `key`: first the lane that towers of its kind cover least (aircraft-only
+ * towers prefer the air corridor; ships never use it), then the most samples of that lane in
+ * range, then the most lane overall. Deterministic: ties go to the first cell in reading order.
+ */
 export function bestSpot(sim: Sim, key: TowerKey): [number, number] | null {
   const def = sim.towerDefs[key];
-  const range = def.tiers[0].range;
+  const t0 = def.tiers[0];
+  const range = t0.range;
+  const air = sim.level.airLane;
+  const airOnly = t0.hitsAir && !t0.hitsSea;
+  let lanes = sim.lanes.map((_, i) => i);
+  if (air !== undefined && sim.lanes.length > 1) lanes = airOnly ? [air] : lanes.filter((i) => i !== air);
+  const covers = (x: number, y: number, r: number, lane: number) => sim.lanes[lane].spotsWithin(x, y, r).length;
+  // Attack towers balance against towers that hit the same layer; support towers (radar, jammer,
+  // minaret) against their own kind, so a second radar goes to the lane the first one can't see.
+  const same = (t: Tower) =>
+    def.role === 'support' ? t.def.key === key : t.def.role === 'attack' && (t.def.tiers[0].hitsAir === t0.hitsAir || t.def.tiers[0].hitsSea === t0.hitsSea);
+  const cover = (lane: number) => sim.towers.filter(same).reduce((n, t) => n + covers(t.x, t.y, t.def.tiers[t.tier].range, lane), 0);
+  const target = lanes.reduce((best, l) => (cover(l) < cover(best) ? l : best), lanes[0]);
   let best: [number, number] | null = null;
   let bestScore = 0;
   for (let r = 0; r < 16; r++) {
     for (let c = 0; c < 25; c++) {
       if (!isPlaceable(sim.grid, c, r, def.placement) || sim.towerAt(c, r)) continue;
-      const score = sim.lane.spotsWithin(c * 32 + 16, r * 32 + 16, range).length;
+      const x = c * 32 + 16;
+      const y = r * 32 + 16;
+      const score = covers(x, y, range, target) * 10_000 + sim.spotsWithin(x, y, range).length;
       if (score > bestScore) {
         bestScore = score;
         best = [c, r];
@@ -41,44 +59,25 @@ export function bestSpot(sim: Sim, key: TowerKey): [number, number] | null {
 }
 
 export const BUILDS: Record<number, Action[]> = {
-  1: [
-    P(1, 'boats', 8, 4),
-    P(1, 'mines', 10, 3),
-    P(2, 'boats', 12, 9),
-    U(3, 8, 4),
-    P(4, 'mines', 6, 11),
-    P(5, 'boats', 18, 10),
-    U(6, 12, 9),
-    U(7, 8, 4),
-    U(8, 12, 9),
-    U(9, 18, 10),
-  ],
-  2: [
-    P(1, 'boats'), P(1, 'mines'), P(2, 'boats'), U(3, 'boats'), P(4, 'martyr'), U(5, 'mines'), P(6, 'boats'),
-    U(7, 'boats'), U(8, 'boats'), P(9, 'martyr'), U(10, 'martyr'), U(11, 'mines'),
-  ],
-  3: [
-    P(1, 'boats'), P(1, 'mines'), P(2, 'aa_gun'), U(3, 'boats'), P(4, 'boats'), P(5, 'martyr'), U(6, 'aa_gun'),
-    U(7, 'mines'), P(8, 'aa_gun'), U(9, 'boats'), U(10, 'aa_gun'), P(11, 'martyr'), U(12, 'boats'),
-    U(13, 'martyr'),
-  ],
+  1: [P(1, 'boats'), P(2, 'mines'), P(5, 'boats'), U(9, 'boats')],
+  2: [P(1, 'boats'), P(2, 'mines'), P(7, 'martyr'), P(9, 'boats')],
+  3: [P(1, 'boats'), P(1, 'aa_gun'), P(3, 'mines'), P(5, 'boats'), U(7, 'aa_gun'), P(10, 'martyr')],
   4: [
     P(1, 'boats'), P(1, 'mines'), P(2, 'aa_gun'), U(3, 'boats'), P(4, 'jammer'), P(5, 'shahed'), U(6, 'mines'),
-    U(7, 'aa_gun'), P(8, 'boats'), U(9, 'boats'), U(10, 'shahed'), P(11, 'shahed'), U(12, 'boats'),
-    P(13, 'martyr'), U(14, 'mines'), U(15, 'shahed'),
+    U(7, 'aa_gun'), P(8, 'boats'), U(11, 'boats'),
   ],
   5: [
     P(1, 'boats'), P(1, 'mines'), P(2, 'aa_gun'), U(3, 'boats'), P(4, 'martyr'), P(5, 'missile'),
     U(6, 'mines'), U(7, 'aa_gun'), P(8, 'jammer'), U(9, 'missile'), P(10, 'shahed'), U(11, 'boats'),
     U(12, 'martyr'), P(13, 'missile'), U(14, 'shahed'), U(15, 'aa_gun'), U(16, 'mines'), U(17, 'missile'),
-    ...tail(12, ['missile', 'shahed', 'boats']),
+    P(12, 'missile'), U(12, 'missile'),
   ],
   6: [
-    P(1, 'boats'), P(1, 'boats'), P(1, 'mines'), P(2, 'radar'), P(3, 'aa_gun'), U(3, 'boats'), U(4, 'boats'),
+    P(1, 'boats'), P(1, 'boats'), P(1, 'mines'), P(2, 'radar'), P(3, 'aa_gun'), P(5, 'radar'), U(3, 'boats'), U(4, 'boats'),
     P(4, 'ghadir'), P(5, 'martyr'), U(6, 'boats'), P(6, 'missile'), U(7, 'mines'), U(8, 'aa_gun'),
     U(9, 'boats'), P(10, 'shahed'), U(11, 'missile'), U(12, 'ghadir'), P(13, 'jammer'), U(14, 'martyr'),
     U(15, 'radar'), U(16, 'shahed'), U(17, 'missile'),
-    ...tail(12, ['missile', 'shahed', 'boats', 'aa_gun']),
+    P(12, 'missile'), U(12, 'missile'),
   ],
   7: [
     P(1, 'boats'), P(1, 'boats'), P(1, 'mines'), P(2, 'aa_gun'), P(3, 'martyr'), U(3, 'boats'), P(4, 'radar'),
@@ -88,24 +87,24 @@ export const BUILDS: Record<number, Action[]> = {
     ...tail(12, ['missile', 'shahed', 'boats', 'martyr']),
   ],
   8: [
-    P(1, 'boats'), P(1, 'boats'), P(1, 'mines'), P(1, 'martyr'), P(2, 'aa_gun'), U(3, 'boats'), U(3, 'boats'),
-    P(4, 'missile'), P(5, 'radar'), P(5, 'sam'), U(6, 'boats'), U(7, 'sam'), P(8, 'minaret'), U(9, 'missile'),
+    P(1, 'boats'), P(1, 'boats'), P(1, 'mines'), P(1, 'martyr'), P(2, 'aa_gun'), P(3, 'aa_gun'), U(3, 'boats'), U(3, 'boats'),
+    P(4, 'missile'), P(5, 'radar'), P(5, 'sam'), P(6, 'radar'), U(6, 'boats'), U(7, 'sam'), P(8, 'minaret'), U(9, 'missile'),
     P(10, 'sam'), U(11, 'mines'), P(12, 'shahed'), U(13, 'martyr'), U(14, 'sam'), P(15, 'jammer'),
     U(16, 'boats'), U(17, 'shahed'), U(18, 'missile'), U(19, 'sam'), P(20, 'missile'), U(21, 'radar'),
     U(22, 'minaret'),
-    ...tail(12, ['missile', 'shahed', 'sam', 'boats', 'missile']),
+    ...tail(12, ['missile']), P(14, 'shahed'),
   ],
   9: [
-    P(1, 'boats'), P(1, 'boats'), P(1, 'mines'), P(1, 'martyr'), P(2, 'aa_gun'), U(3, 'boats'), U(3, 'boats'),
-    P(4, 'missile'), P(5, 'radar'), P(5, 'sam'), U(6, 'boats'), U(7, 'sam'), P(8, 'minaret'), U(9, 'missile'),
+    P(1, 'boats'), P(1, 'boats'), P(1, 'mines'), P(1, 'martyr'), P(2, 'aa_gun'), P(3, 'aa_gun'), U(3, 'boats'), U(3, 'boats'),
+    P(4, 'missile'), P(5, 'radar'), P(5, 'sam'), P(6, 'radar'), U(6, 'boats'), U(7, 'sam'), P(8, 'minaret'), U(9, 'missile'),
     P(10, 'sam'), U(11, 'mines'), P(12, 'shahed'), U(13, 'martyr'), U(14, 'sam'), P(15, 'jammer'),
     U(16, 'boats'), U(17, 'shahed'), U(18, 'missile'), U(19, 'sam'), P(20, 'missile'), U(21, 'radar'),
     U(22, 'minaret'), U(23, 'martyr'), U(24, 'shahed'),
-    ...tail(10, ['missile', 'shahed', 'sam', 'boats', 'missile', 'martyr', 'missile']),
+    ...tail(10, ['missile', 'shahed', 'sam', 'boats', 'missile', 'martyr']),
   ],
   10: [
     P(1, 'boats'), P(1, 'boats'), P(1, 'mines'), P(1, 'martyr'), P(2, 'aa_gun'), U(3, 'boats'), U(3, 'boats'),
-    P(4, 'missile'), P(5, 'radar'), P(5, 'sam'), U(6, 'boats'), U(7, 'sam'), P(8, 'minaret'), U(9, 'missile'),
+    P(4, 'missile'), P(5, 'radar'), P(5, 'sam'), P(6, 'radar'), U(6, 'boats'), U(7, 'sam'), P(8, 'minaret'), U(9, 'missile'),
     P(10, 'sam'), U(11, 'mines'), P(12, 'shahed'), U(13, 'martyr'), U(14, 'sam'), P(15, 'jammer'),
     U(16, 'boats'), U(17, 'shahed'), U(18, 'missile'), U(19, 'sam'), P(20, 'missile'), U(21, 'radar'),
     U(22, 'minaret'), U(23, 'martyr'), U(24, 'shahed'), P(25, 'missile'), U(26, 'missile'), U(26, 'missile'),

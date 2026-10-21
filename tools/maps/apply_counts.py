@@ -9,10 +9,13 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 p = os.path.join(HERE, 'levels_src.py')
 s = open(p).read()
 data = json.load(sys.stdin)
-for n, waves in data.items():
+for n, entry in data.items():
     n = int(n)
-    if n == 1:
-        continue
+    waves = entry['waves'] if isinstance(entry, dict) else entry
+    if isinstance(entry, dict):
+        blk0 = s.index(f"    {n}: dict(")
+        end0 = s.index("brief=", blk0)
+        s = s[:blk0] + re.sub(r"cash=\d+", f"cash={entry['cash']}", s[blk0:end0]) + s[end0:]
     blk = s.index(f"    {n}: dict(")
     w0 = s.index("waves=waves(", blk) + len("waves=waves(\n")
     w1 = s.index("        ),\n    ),", w0)

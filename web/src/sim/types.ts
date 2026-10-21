@@ -134,6 +134,8 @@ export interface TowerDef {
 export interface WaveGroup {
   kind: EnemyKey;
   n: number;
+  /** Which lane: an index, or 'alt' (default) to alternate lanes enemy by enemy. Air groups default to the level's airLane. */
+  lane?: number | 'alt';
   /** Seconds between spawns. */
   gap: number;
   /** Seconds after the wave starts before the first spawn. */
@@ -154,8 +156,14 @@ export interface LevelDef {
   brief: string;
   /** 16 rows of 25 legend characters (see grid.ts). */
   rows: string[];
-  /** Lane waypoints as cell coords; consecutive points are joined along a straight (or 45 degree) line. */
-  lane: [number, number][];
+  /**
+   * One to three lanes, each a list of waypoints in cell coords joined along straight or 45 degree
+   * runs. Every lane starts off the map and ends orthogonally beside the Ayatower; lanes may share
+   * cells where they merge.
+   */
+  lanes: [number, number][][];
+  /** The lane aircraft fly by default (e.g. a straight air corridor); otherwise they alternate like ships. */
+  airLane?: number;
   startCash: number;
   lives: number;
   towers: TowerKey[];
@@ -176,8 +184,11 @@ export interface Enemy extends Status {
   def: EnemyDef;
   hp: number;
   maxHp: number;
-  /** Distance along the lane. */
+  /** Which lane it sails, and how far along it. */
+  lane: number;
   d: number;
+  /** Distance still to sail to the Ayatower (lane length - d), kept up to date as it moves. */
+  left: number;
   lateral: number;
   x: number;
   y: number;
@@ -210,10 +221,10 @@ export interface Tower {
   incomeAcc: number;
   pulseAcc: number;
   kills: number;
-  /** Lane distances within range (mine layer drop spots). */
-  laneSpots: number[];
-  /** Lane distance nearest the tower (martyr boats join the lane here). */
-  entryD: number;
+  /** Lane points within range (mine layer drop spots). */
+  laneSpots: LanePoint[];
+  /** The lane point nearest the tower (martyr boats join the lane here). */
+  entry: LanePoint;
 }
 
 export interface Projectile {
@@ -237,7 +248,8 @@ export interface Projectile {
   ttl: number;
   hitsSea: boolean;
   hitsAir: boolean;
-  /** Mines and boats: lane distance; splash shells: landing point. */
+  /** Mines and boats: lane and distance along it; splash shells: landing point in tx/ty. */
+  lane: number;
   d: number;
   tx: number;
   ty: number;
@@ -246,6 +258,11 @@ export interface Projectile {
   ignoreHp: number;
   subMult: number;
   alive: boolean;
+}
+
+export interface LanePoint {
+  lane: number;
+  d: number;
 }
 
 export type AbilityKey = 'staff' | 'fatwa';

@@ -33,6 +33,11 @@ function threat(level: LevelDef): number {
   return level.waves.reduce((a, w) => a + w.groups.reduce((b, g) => b + g.n * walk(g.kind), 0), 0);
 }
 
+/** Lives the canned, unoptimised build should lose per level: a real fight, not a walkover. */
+const LOSS_TARGET: Record<number, [number, number]> = {
+  1: [5, 15], 2: [8, 20], 3: [12, 30], 4: [12, 30], 5: [15, 45], 6: [15, 45], 7: [15, 45], 8: [15, 45], 9: [15, 45], 10: [20, 60],
+};
+
 describe('levels', () => {
   it('are the ten campaign levels, in order', () => {
     expect(LEVELS.length).toBe(LEVEL_COUNT);
@@ -42,7 +47,7 @@ describe('levels', () => {
   for (const level of LEVELS) {
     describe(`level ${level.n} ${level.name}`, () => {
       const grid = parseRows(level.rows);
-      const lane = new Lane(level.lane);
+      const lanes = level.lanes.map((l) => new Lane(l));
 
       it('is a 25x16 grid of legend characters with row 0 unplaceable', () => {
         expect(level.rows).toHaveLength(16);
@@ -56,41 +61,51 @@ describe('levels', () => {
         }
       });
 
-      it('has a lane that stays on water and matches the = cells', () => {
-        for (let d = 0; d <= lane.length; d += 2) {
-          const [x, y] = lane.posAt(d);
-          const k = cellKind(grid, Math.floor(x / 32), Math.floor(y / 32));
-          expect(['lane', 'water', 'void'], `d=${d} at ${x.toFixed(0)},${y.toFixed(0)} is ${k}`).toContain(k);
-        }
-        const cells = new Set(denseCells(level.lane).map(([c, r]) => `${c},${r}`));
+      it('has 1-3 lanes that stay on water and match the = cells', () => {
+        expect(lanes.length).toBeGreaterThanOrEqual(1);
+        expect(lanes.length).toBeLessThanOrEqual(3);
+        if (level.airLane !== undefined) expect(level.airLane).toBeLessThan(lanes.length);
+        lanes.forEach((lane, li) => {
+          for (let d = 0; d <= lane.length; d += 2) {
+            const [x, y] = lane.posAt(d);
+            const k = cellKind(grid, Math.floor(x / 32), Math.floor(y / 32));
+            expect(['lane', 'water', 'void'], `lane ${li} d=${d} at ${x.toFixed(0)},${y.toFixed(0)} is ${k}`).toContain(k);
+          }
+        });
+        const cells = new Set(level.lanes.flatMap((l) => denseCells(l)).map(([c, r]) => `${c},${r}`));
         for (let r = 0; r < 16; r++) {
           for (let c = 0; c < 25; c++) {
-            const onLane = cells.has(`${c},${r}`);
-            expect(grid[r][c] === 'lane', `cell ${c},${r}`).toBe(onLane);
+            expect(grid[r][c] === 'lane', `cell ${c},${r}`).toBe(cells.has(`${c},${r}`));
           }
         }
       });
 
-      it('starts off the map and ends beside the Ayatower', () => {
-        const [c0, r0] = level.lane[0];
-        expect(c0 < 0 || r0 < 0 || c0 >= 25 || r0 >= 16).toBe(true);
+      it('starts every lane off the map and ends it beside the Ayatower', () => {
         const ayas: [number, number][] = [];
         grid.forEach((row, r) => row.forEach((k, c) => k === 'aya' && ayas.push([c, r])));
         expect(ayas).toHaveLength(1);
-        const [ce, re] = level.lane[level.lane.length - 1];
-        expect(Math.abs(ce - ayas[0][0]) + Math.abs(re - ayas[0][1])).toBe(1);
+        for (const l of level.lanes) {
+          const [c0, r0] = l[0];
+          expect(c0 < 0 || r0 < 0 || c0 >= 25 || r0 >= 16).toBe(true);
+          const [ce, re] = l[l.length - 1];
+          expect(Math.abs(ce - ayas[0][0]) + Math.abs(re - ayas[0][1])).toBe(1);
+        }
       });
 
-      it('keeps every tower spot off the lane itself', () => {
+      it('keeps tower spots off the lanes, and prime spots scarce', () => {
         let spots = 0;
+        let prime = 0;
         for (let r = 0; r < 16; r++) {
           for (let c = 0; c < 25; c++) {
             if (!isPlaceable(grid, c, r, 'land') && !isPlaceable(grid, c, r, 'shallow')) continue;
             spots++;
-            expect(lane.distanceTo(c * 32 + 16, r * 32 + 16), `cell ${c},${r}`).toBeGreaterThanOrEqual(24);
+            const near = Math.min(...lanes.map((l) => l.distanceTo(c * 32 + 16, r * 32 + 16)));
+            expect(near, `cell ${c},${r}`).toBeGreaterThanOrEqual(24);
+            if (near <= 110) prime++;
           }
         }
         expect(spots).toBeGreaterThan(20);
+        expect(prime / spots, `${prime}/${spots} spots within 110 px of a lane`).toBeLessThanOrEqual(0.45);
       });
 
       it('has at least 8 waves, bosses only on 5 and 10, and a start purse that buys a tower', () => {
@@ -106,13 +121,18 @@ describe('levels', () => {
         expect(level.startCash).toBeGreaterThanOrEqual(cheapest);
       });
 
-      it('the canned build wins it, and doing nothing loses it', () => {
+      it('the canned build wins it losing a fair share of PATIENCE, and doing nothing loses it', () => {
         expect(BUILDS[level.n], 'no canned build').toBeDefined();
         const r = runBuild(level, TOWERS, ENEMIES);
         expect(r.sim.phase, r.log.join('\n')).toBe('won');
         expect(r.skipped, 'actions never afforded').toBe(0);
+        const [lo, hi] = LOSS_TARGET[level.n];
+        const lost = level.lives - r.sim.lives;
+        expect(lost, `lost ${lost} lives\n${r.log.join('\n')}`).toBeGreaterThanOrEqual(lo);
+        expect(lost, `lost ${lost} lives\n${r.log.join('\n')}`).toBeLessThanOrEqual(hi);
         const idle = runBuild(level, TOWERS, ENEMIES, []);
         expect(idle.sim.phase).toBe('lost');
+        if (level.n === 1) expect(idle.sim.wave, 'idle should fall early on level 1').toBeLessThanOrEqual(3);
       });
     });
   }

@@ -5,7 +5,7 @@ import { sec } from '../sim/const';
 import type { EnemyDef, EnemyKey } from '../sim/types';
 
 export const ENEMIES: Record<EnemyKey, EnemyDef> = {
-  rhib: { key: 'rhib', name: 'RHIB', short: 'RHIB', layer: 'sea', hp: 1, speed: 1.0, leak: 1, cash: 2, score: 10, radius: 6, introLevel: 1, sprite: 'rhib' },
+  rhib: { key: 'rhib', name: 'RHIB', short: 'RHIB', layer: 'sea', hp: 1, speed: 1.2, leak: 1, cash: 2, score: 10, radius: 6, introLevel: 1, sprite: 'rhib' },
   patrol: {
     key: 'patrol', name: 'MK VI PATROL BOAT', short: 'PATROL', layer: 'sea', hp: 3, speed: 1.1, leak: 2, cash: 4, score: 25, radius: 8,
     children: [{ kind: 'rhib', n: 1 }], introLevel: 1, sprite: 'patrol',
@@ -43,7 +43,7 @@ export const ENEMIES: Record<EnemyKey, EnemyDef> = {
   seahawk: { key: 'seahawk', name: 'MH-60 SEAHAWK', short: 'SEAHAWK', layer: 'air', hp: 8, speed: 1.0, leak: 3, cash: 8, score: 60, radius: 8, introLevel: 6, sprite: 'seahawk' },
   hornet: { key: 'hornet', name: 'F/A-18 SUPER HORNET', short: 'HORNET', layer: 'air', hp: 6, speed: 2.0, leak: 4, cash: 8, score: 60, radius: 8, fast: true, introLevel: 7, sprite: 'hornet' },
   b2: {
-    key: 'b2', name: 'B-2 SPIRIT', short: 'B-2', layer: 'air', hp: 40, speed: 1.2, leak: 15, cash: 30, score: 300, radius: 12, stealth: true,
+    key: 'b2', name: 'B-2 SPIRIT', short: 'B-2', layer: 'air', hp: 40, speed: 1.2, leak: 10, cash: 30, score: 300, radius: 12, stealth: true,
     children: [{ kind: 'hornet', n: 2 }], introLevel: 8, sprite: 'b2',
   },
   boss_yacht: {

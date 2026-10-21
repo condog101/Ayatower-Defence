@@ -16,11 +16,12 @@ from levels_src import META  # noqa: E402
 
 
 def emit(n):
-    k, lane = LEVELS[n]()
+    k, lanes, air = LEVELS[n]()
     m = META[n]
     uses_boss = 'boss(' in m['waves']
     imports = 'boss, rush, wave' if uses_boss else 'rush, wave'
     boss_line = f"\n  bossName: '{m['bossName']}'," if m.get('bossName') else ''
+    air_line = f"\n  airLane: {air}," if air is not None else ''
     src = f"""import type {{ LevelDef }} from '../../sim/types';
 import {{ {imports} }} from './recipes';
 
@@ -28,9 +29,9 @@ export const LEVEL_{n:02d}: LevelDef = {{
   n: {n},
   name: '{m['name']}',
   sub: '{m['sub']}',
-  brief: '{m['brief']}',
+  brief: {m['brief']!r},
 {ts(k.rows())}
-  lane: [{', '.join(f'[{c}, {r}]' for c, r in lane)}],
+  lanes: [{', '.join('[' + ', '.join(f'[{c}, {r}]' for c, r in l) + ']' for l in lanes)}],{air_line}
   startCash: {m['cash']},
   lives: 100,
   towers: [{', '.join(repr(t) for t in m['towers'])}],
