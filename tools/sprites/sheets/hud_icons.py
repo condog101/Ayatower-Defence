@@ -26,19 +26,21 @@ def finish(img, bev=True):
 
 
 def lives():
-    """The Grey Turban: wrapped grey turban with fold lines over a white beard tuft."""
+    """The Grey Turban: tiny bust with a big grey turban, face, spectacles and a white beard."""
     img = icon()
-    ellipse(img, 1, 1, 10, 8, C["smoke_lt"])
-    rect(img, 1, 6, 10, 8, C["smoke_lt"])
-    for x0, y in ((2, 3), (3, 5)):  # wrap folds sweeping down-right
-        for k in range(7):
-            px(img, x0 + k, y + k // 4, C["smoke"])
-    rect(img, 2, 8, 9, 8, C["smoke"])
-    rect(img, 3, 9, 8, 10, C["white"])  # beard peeking out under the brim
-    px(img, 4, 10, C["chrome"])
-    px(img, 7, 10, C["chrome"])
-    bevel(img, light=0.3, dark=-0.2)
-    px(img, 3, 2, C["white"])
+    ellipse(img, 1, 0, 10, 5, C["smoke"])  # turban
+    rect(img, 1, 3, 10, 5, C["smoke"])
+    for k in range(8):
+        px(img, 2 + k, 2 + k // 4, C["smoke_lt"])  # wrap fold
+    rect(img, 1, 5, 10, 5, C["iron"])
+    px(img, 3, 1, C["white"])
+    rect(img, 3, 6, 8, 7, C["skin_lt"])  # face
+    px(img, 4, 6, C["iron"])  # spectacles
+    px(img, 7, 6, C["iron"])
+    poly(img, [(2, 7), (9, 7), (8, 10), (5.5, 11), (3, 10)], C["white"])  # beard
+    px(img, 5, 9, C["chrome"])
+    px(img, 7, 9, C["chrome"])
+    rect(img, 4, 8, 7, 8, C["chrome"])
     return outline(img)
 
 
@@ -87,14 +89,27 @@ def chevrons(n):
     return finish(img)
 
 
+AUTO = [
+    "...####...",
+    ".##....#..",
+    ".#....###.",
+    "#......#..",
+    "#.........",
+    ".........#",
+    "..#......#",
+    ".###....#.",
+    "..#....##.",
+    "...####...",
+]
+
+
 def auto():
+    """Two chasing arrows round a circle (auto-start waves)."""
     img = icon()
-    circle(img, 5.5, 5.5, 3.6, INK, thickness=1.6)
-    # gaps + arrow heads at top-right and bottom-left
-    for x, y in ((7, 1), (8, 2), (3, 9), (4, 9), (3, 10), (8, 1)):
-        px(img, x, y, (0, 0, 0, 0))
-    poly(img, [(6, 0), (9, 2), (6, 4)], INK)
-    poly(img, [(5, 7), (2, 9), (5, 11)], INK)
+    for y, row in enumerate(AUTO):
+        for x, ch in enumerate(row):
+            if ch == "#":
+                px(img, x + 1, y + 1, INK)
     return finish(img, bev=False)
 
 

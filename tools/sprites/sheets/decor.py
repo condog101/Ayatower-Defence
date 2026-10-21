@@ -1,7 +1,7 @@
 """Map dressing, 16x16 transparent, light from the top-left with soft shadows down-right:
 0 date palm, 1 Persian village house with a badgir (wind tower), 2 mosque (turquoise dome +
 minaret), 3 offshore oil platform standing in the water."""
-from draw import disc, ellipse, new, outline, poly, px, rect, strip
+from draw import disc, ellipse, new, outline, px, rect, strip
 from palette import C
 
 NAME = "decor"

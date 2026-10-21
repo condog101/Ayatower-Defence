@@ -4,9 +4,7 @@ animation (the submarine has 4: surfaced x2, submerged x2).
 Haze-grey hulls with a lit top rim and shaded bottom rim, darker decks, light superstructures,
 1px dark outline. Silhouette length and superstructure layout carry the class identity.
 """
-from draw import (
-    bevel, circle, disc, dither, ellipse, fade, frame_rect, new, outline, poly, px, rect, ring, strip,
-)
+from draw import circle, frame_rect, new, outline, poly, px, rect, strip
 from palette import C
 
 CLEAR = (0, 0, 0, 0)
@@ -140,22 +138,28 @@ def wake(img, x0, cy, half, frame, length=None, spread=1):
         if 0 <= x < w and 0 <= y < h and img.getpixel((x, y))[3] == 0:
             img.putpixel((x, y), c)
 
+    core = max(1, min(2, k0 - 1))
     for x in range(x0 - 1, x0 - 1 - length, -1):
         d = x0 - 1 - x  # distance behind the stern
-        band = max(1, k0 - 1 + d // 3)
-        for y in range(cy - band, cy + band):
+        fade_ = max(90, 245 - d * 30)
+        # bright prop-wash core on the centreline, churning between frames
+        for y in range(cy - core, cy + core):
             m = (x + y + frame) % 3
-            core = abs(y - cy + 0.5) < band * 0.55
-            if core and m != 0:
-                put(x, y, a(C["white"] if m == 1 else C["foam"], 220 - d * 12))
-            elif (x * 3 + y + frame * 2) % 4 == 0:
-                put(x, y, a(C["foam"], 150 - d * 10))
-    # quarter wake: a pixel trail just outside the hull outline for the aft third
-    for x in range(x0, x0 + max(3, int(spread * 4))):
+            put(x, y, a(C["white"] if m else C["foam"], fade_))
+        # V edges spreading outward with distance
+        spread_y = core + 1 + d // 2
+        if (x + frame) % 2 == 0:
+            put(x, cy - spread_y, a(C["foam"], fade_ - 40))
+            put(x, cy + spread_y - 1, a(C["foam"], fade_ - 40))
+        else:
+            put(x, cy - spread_y + 1, a(C["shallow"], fade_ - 60))
+            put(x, cy + spread_y - 2, a(C["shallow"], fade_ - 60))
+    # quarter wake: a pixel trail just outside the hull outline for the aft part
+    for x in range(x0, x0 + max(3, int(spread * 5))):
         k = half(x)
         if (x + frame) % 2 == 0:
-            put(x, cy - k - 2, a(C["foam"], 150))
-            put(x, cy + k + 1, a(C["foam"], 150))
+            put(x, cy - k - 2, a(C["foam"], 170))
+            put(x, cy + k + 1, a(C["foam"], 170))
 
 
 def spray(img, x1, cy, half, frame, n=4):
@@ -514,8 +518,9 @@ class Lhd(Ship):
             px(img, x, 2, C["hull_dk"])
         # helicopter landing spots along the port side
         for i, sx in enumerate(range(8, 40, 7)):
-            circle(img, sx, 4.5, 1.5, C["fire_yellow"], thickness=0.7)
-            px(img, sx, 4, C["white"])
+            for dx, dy in ((0, -1), (-1, 0), (1, 0), (0, 1)):
+                px(img, sx + dx, 4 + dy, C["hull_lt"])
+            px(img, sx, 4, C["fire_yellow"])
         # island superstructure on the starboard side
         rect(img, 26, 11, 35, 14, C["deck"])
         block(img, 25, 10, 34, 13)
@@ -580,18 +585,21 @@ class Carrier(Ship):
         img = new(*cls.FRAME)
         cy = cls.CY
         paint_hull2(img, cy, cls.X0, cls.X1, cls.top, cls.bot, C["hull"], C["deck"], C["hull_lt"], C["iron"])
-        # angled landing area: from the stern centreline up toward the port bow
-        for x in range(5, 42):
-            yc = cy - 1 - (x - 5) * 0.2
-            for off, col in ((-3, C["white"]), (3, C["white"])):
-                if (x // 2) % 2 == 0:
-                    px(img, x, round(yc + off), col)
-            if (x // 3) % 2 == 0:
-                px(img, x, round(yc), C["fire_yellow"])
-        # arrestor wires
-        for x in (10, 12, 14):
+        # angled landing area: a slightly lighter strip from the stern centreline toward the port bow
+        for x in range(4, 44):
+            yc = cy + 1 - (x - 4) / 6.0
+            for d in range(-3, 4):
+                y = round(yc + d)
+                if img.getpixel((x, y)) == C["deck"]:
+                    if abs(d) == 3:
+                        px(img, x, y, C["hull_lt"])
+                    elif d == 0 and (x // 2) % 2 == 0:
+                        px(img, x, y, C["fire_yellow"])
+        # arrestor wires across the landing strip
+        for x in (11, 13, 15):
+            yc = cy + 1 - (x - 4) / 6.0
             for d in range(-2, 3):
-                px(img, x, round(cy - 1 - (x - 5) * 0.2 + d), C["hull_dk"])
+                px(img, x, round(yc + d), C["hull_dk"])
         # bow catapults
         for y in (cy - 3, cy + 1):
             for x in range(44, 60):
@@ -601,20 +609,21 @@ class Carrier(Ship):
             for x in range(28, 42):
                 px(img, x, y - (x - 28) // 6, C["hull_dk"])
         # island to starboard
-        rect(img, 39, 16, 46, 18, C["iron"])
-        block(img, 38, 15, 45, 17)
-        rect(img, 40, 16, 41, 16, C["hull"])
-        px(img, 40, 16, C["iron"])
-        rect(img, 43, 15, 43, 17, C["iron"])  # mast
-        px(img, 44, 16, C["tie"])
+        block(img, 37, 14, 46, 17)
+        rect(img, 39, 15, 40, 16, C["hull"])  # stack
+        px(img, 39, 15, C["iron"])
+        rect(img, 43, 15, 43, 16, C["iron"])  # mast
+        px(img, 44, 15, C["tie"])
+        rect(img, 46, 15, 46, 16, C["water_dk"])  # bridge windows
         # parked jets (tiny Hornets) along the bow and the aft starboard deck
-        for jx, jy in ((52, cy + 4), (56, cy + 4), (48, cy + 6), (20, cy + 5), (24, cy + 5), (28, cy + 5)):
-            px(img, jx, jy, C["hull_lt"])
-            px(img, jx + 1, jy, C["hull_lt"])
-            px(img, jx + 2, jy, C["hull"])
-            px(img, jx + 1, jy - 1, C["hull"])
+        for jx, jy in ((50, cy + 5), (54, cy + 5), (58, cy + 4), (20, cy + 6), (25, cy + 6), (30, cy + 6)):
+            rect(img, jx, jy, jx + 3, jy, C["hull_lt"])  # fuselage, nose east
+            px(img, jx + 3, jy, C["white"])
+            px(img, jx + 1, jy - 1, C["hull_lt"])  # wings
             px(img, jx + 1, jy + 1, C["hull"])
-            px(img, jx, jy - 1, C["hull_dk"])
+            px(img, jx + 2, jy - 1, C["hull"])
+            px(img, jx + 2, jy + 1, C["hull_dk"])
+            px(img, jx, jy - 1, C["hull"])  # tails
             px(img, jx, jy + 1, C["hull_dk"])
         # hull number on the bow deck
         for x in (58, 59):

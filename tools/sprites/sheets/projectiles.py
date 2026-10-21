@@ -1,6 +1,6 @@
 """Projectiles, all facing EAST (nose right): tracer, rockets, missiles, Shahed, torpedo, mine,
 martyr drone boat, SAM, and the muzzle flash."""
-from draw import disc, new, outline, poly, px, rect, strip
+from draw import disc, new, poly, px, rect, strip
 from palette import C
 
 

@@ -2,7 +2,7 @@
 Hornet and B-2 Spirit. 2 frames each (prop blur / rotor position / afterburner / stealth shimmer)."""
 import math
 
-from draw import bevel, disc, ellipse, line, new, outline, poly, px, rect, strip
+from draw import bevel, ellipse, new, outline, poly, px, rect, strip
 from palette import C
 
 
@@ -160,27 +160,28 @@ class B2:
     @staticmethod
     def frame(f):
         img = new(24, 12)
-        # leading edge: straight lines from the nose (22, 5.5) back to the tips (3, 0)/(3, 11)
-        # trailing edge sawtooth: tip -> in -> out -> centre notch
-        top = [(22, 5), (21, 5), (3, 0), (4, 1), (8, 2), (6, 3), (10, 4), (9, 5)]
-        bot = [(9, 6), (10, 7), (6, 8), (8, 9), (4, 10), (3, 11), (21, 6), (22, 6)]
+        # straight swept leading edge from the nose to the wingtips, double-W sawtooth trailing edge
+        top = [(20, 5), (5, 0), (5, 1), (11, 2.5), (8, 3.5), (12, 4.5), (10, 5)]
+        bot = [(10, 6), (12, 6.5), (8, 7.5), (11, 8.5), (5, 10), (5, 11), (20, 6)]
         poly(img, top + bot, C["iron"])
-        rect(img, 9, 5, 21, 6, C["iron"])
-        # cockpit + spine
-        rect(img, 14, 5, 19, 6, C["deck"])
-        px(img, 19, 5, C["water_dk"])
-        px(img, 20, 5, C["water_dk"])
-        # engine intakes
-        px(img, 15, 4, C["black"])
-        px(img, 15, 7, C["black"])
+        rect(img, 10, 5, 20, 6, C["iron"])
+        # cockpit hump + spine
+        rect(img, 14, 5, 18, 6, C["deck"])
+        px(img, 18, 5, C["water_dk"])
+        px(img, 17, 5, C["water_dk"])
+        # engine humps with intakes
+        rect(img, 11, 4, 13, 4, C["deck"])
+        rect(img, 11, 7, 13, 7, C["deck"])
+        px(img, 13, 4, C["black"])
+        px(img, 13, 7, C["black"])
         bevel(img, light=0.25, dark=-0.4)
         outline(img)
         if f == 1:  # stealth shimmer: a faint diagonal glint sweeping the wing
-            for x, y in ((12, 3), (13, 4), (14, 3), (11, 8), (12, 7), (14, 8)):
+            for x, y in ((9, 2), (10, 3), (12, 3), (9, 9), (10, 8), (12, 8)):
                 if img.getpixel((x, y))[3]:
                     px(img, x, y, C["hull_dk"])
         else:
-            for x, y in ((7, 2), (8, 3), (7, 9), (8, 8)):
+            for x, y in ((6, 1), (7, 2), (6, 10), (7, 9)):
                 if img.getpixel((x, y))[3]:
                     px(img, x, y, C["deck"])
         return img

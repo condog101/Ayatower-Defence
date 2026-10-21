@@ -2,7 +2,7 @@
 a gold-and-black supercarrier with the flaming Eye painted across its flight deck."""
 import math
 
-from draw import circle, dither, ellipse, new, outline, poly, px, rect, strip
+from draw import circle, ellipse, new, px, rect, strip
 from palette import C
 
 from .enemies_sea import block, finish, paint_hull, paint_hull2, taper
