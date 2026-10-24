@@ -11,6 +11,7 @@ import { LevelIntroScene } from './scenes/LevelIntro';
 import { LoginScene } from './scenes/Login';
 import { TitleScene } from './scenes/Title';
 import { Audio } from './systems/Audio';
+import { showInstallHint } from './systems/InstallHint';
 import { Music } from './systems/Music';
 
 async function start() {
@@ -45,6 +46,7 @@ async function start() {
   });
   // touchstart doesn't count as a user gesture for audio on mobile; these do.
   for (const ev of ['pointerup', 'touchend', 'keydown']) window.addEventListener(ev, () => Audio.unlock());
+  showInstallHint();
   if (import.meta.env.DEV) Object.assign(window, { game, Music });
 }
 

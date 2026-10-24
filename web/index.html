@@ -5,7 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <!-- black-translucent lets the canvas run under the status bar; Layout.ts keeps controls in the safe area -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Ayatower" />
+    <meta name="theme-color" content="#0d2a33" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <title>Ayatower Defence</title>
     <meta name="description" content="Ayatower Defence: You Shah-ll not pass! A satirical tower defence in the Strait of Hormuz, starring the Grey Turban and Sour-don the Orange." />
     <link rel="icon" href="assets/sprites/seal.png" />
@@ -61,6 +66,25 @@
       @media (pointer: coarse) and (orientation: portrait) and (max-width: 700px) {
         #rotate { display: flex; }
       }
+      /* iOS Safari only (InstallHint.ts): Home Screen launches drop Safari's bars. */
+      #install {
+        position: fixed;
+        left: 50%;
+        bottom: calc(8px + var(--sab));
+        transform: translateX(-50%);
+        z-index: 11;
+        width: min(520px, 90vw);
+        box-sizing: border-box;
+        padding: 10px 12px;
+        background: #0b0a08;
+        border: 2px solid #ffd84a;
+        color: #f3ead7;
+        font-size: 9px;
+        line-height: 1.8;
+        text-align: center;
+      }
+      #install b { color: #ffd84a; font-weight: normal; }
+      #install .dismiss { display: block; margin-top: 4px; color: #8c8577; }
       #login {
         position: fixed;
         left: 50%;
@@ -127,6 +151,7 @@
   <body>
     <div id="game"></div>
     <div id="rotate"><div>ROTATE YOUR PHONE<br /><span style="color:#8c8577;font-size:10px">AYATOWER DEFENCE PLAYS SIDEWAYS</span></div></div>
+    <div id="install" hidden>FOR FULL SCREEN: TAP <b>SHARE</b>, THEN <b>ADD TO HOME SCREEN</b><span class="dismiss">TAP TO DISMISS</span></div>
     <form id="login" hidden autocomplete="off">
       <div class="title">SWEAR THE OATH</div>
       <div class="fields">
