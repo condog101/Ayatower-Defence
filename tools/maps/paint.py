@@ -203,6 +203,36 @@ def finish(k, lanes, aya, air=None, keep=(), target=0.40):
     return k, lanes, air
 
 
+def flank(k, lanes, ch, step=6, src='.#P'):
+    """Every `step` cells along each lane, the cells beside it on both sides become `ch` if they are
+    one of `src` and clear of every lane's ring: two off a straight run (64 px), a knight's move off
+    a diagonal (68 px)."""
+    ring = {(c + dc, r + dr) for l in lanes for c, r in dense(l) for dc in (-1, 0, 1) for dr in (-1, 0, 1)}
+    for l in lanes:
+        cells = dense(l)
+        for i in range(step // 2, len(cells) - 1, step):
+            (c0, r0), (c1, r1) = cells[i], cells[i + 1]
+            dc, dr = c1 - c0, r1 - r0
+            for s_ in (1, -1):
+                if dc and dr:
+                    nc, nr = c0 - 2 * dr * s_, r0 + dc * s_
+                else:
+                    nc, nr = c0 - dr * 2 * s_, r0 + dc * 2 * s_
+                if 0 <= nc < COLS and 1 <= nr < ROWS and (nc, nr) not in ring and k.g[nr][nc] in src:
+                    k.g[nr][nc] = ch
+    return k
+
+
+def reefs(k, lanes, step=6):
+    """Shallows beside the lanes, so the mines can reach every stretch."""
+    return flank(k, lanes, ',', step)
+
+
+def islets(k, lanes, step=3):
+    """Little islands beside the lanes in open water, so the AA pits can reach every stretch."""
+    return flank(k, lanes, '.', step, src='~,')
+
+
 @level(1)
 def l1():
     # Jask: one lane sweeps in from the north-east, round a sandbar islet in the bay, to the tower.
@@ -414,6 +444,207 @@ def l10():
     k, lanes, air = finish(k, lanes, (18, 8))
     k.rect(19, 7, 20, 9, '#')
     k.put([(2, 6), (5, 6), (2, 10), (5, 10)], '.')  # islets in the outer bay for the AA pits
+    thin(k, lanes, air=air)
+    return k, lanes, air
+
+
+# ---------------------------------------------------------------------------
+# Act II: the Gulf. All towers from the start; difficulty comes from geometry and the fleet.
+
+
+@level(11)
+def l11():
+    # Kish: the lane runs along the north shore and turns south to the tower beside the resort.
+    lanes = [[(-1, 2), (14, 2), (14, 9)]]
+    k = Canvas()
+    k.rect(0, 0, 24, 15, '.').rect(0, 0, 24, 0, '#')
+    k.rect(17, 4, 22, 9, ',').rect(18, 5, 21, 8, '~').rect(2, 9, 9, 14, ',').rect(3, 10, 8, 13, '~')  # the resort lagoons
+    k.put([(17, 3), (22, 3), (17, 10), (22, 10), (1, 8), (10, 9), (24, 12), (0, 14)], 'P')
+    k.put([(19, 11), (20, 11), (11, 13)], 'T')
+    k.put([(5, 6)], 'M')
+    k, lanes, air = finish(k, lanes, (14, 10))
+    reefs(k, lanes, 5)
+    thin(k, lanes, air=air)
+    return k, lanes, air
+
+
+@level(12)
+def l12():
+    # Lavan shoals: a lane from the west and one from the south run over wide shallows and merge late.
+    lanes = [
+        [(-1, 4), (10, 4), (14, 8), (19, 8)],
+        [(8, 16), (8, 13), (13, 8), (19, 8)],
+    ]
+    k = Canvas()
+    k.rect(0, 0, 24, 15, ',').rect(0, 0, 24, 0, '#')
+    k.rect(0, 7, 5, 15, '.').rect(13, 11, 24, 15, '.').rect(16, 0, 24, 5, '.').rect(22, 6, 24, 10, '.')
+    k.rect(2, 10, 4, 13, '~').rect(18, 13, 21, 15, '~')
+    k.put([(1, 8), (4, 14), (15, 13), (23, 14), (18, 2), (23, 3), (22, 7)], 'P')
+    k.put([(1, 12), (17, 12), (20, 1), (21, 1)], 'T')
+    k.put([(23, 9)], 'M')
+    k.put([(12, 1), (3, 2)], 'O')
+    k, lanes, air = finish(k, lanes, (20, 8))
+    k.rect(21, 7, 21, 9, '#')
+    islets(k, lanes, 3)
+    thin(k, lanes, air=air)
+    return k, lanes, air
+
+
+@level(13)
+def l13():
+    # Abu Musa: three hunters come from the north, the west and the south, join mid-strait and run
+    # together to the tower on the east shore.
+    lanes = [
+        [(4, -1), (4, 3), (9, 8), (21, 8)],
+        [(-1, 8), (21, 8)],
+        [(4, 16), (4, 13), (9, 8), (21, 8)],
+    ]
+    k = Canvas()
+    k.rect(0, 0, 24, 15, '.').rect(0, 0, 24, 0, '#')
+    k.rect(0, 1, 1, 4, ',').rect(0, 12, 1, 15, ',').rect(15, 1, 24, 3, '~').rect(15, 13, 24, 15, '~')
+    k.rect(16, 2, 23, 2, ',').rect(16, 14, 23, 14, ',')
+    k.put([(1, 6), (1, 10), (8, 2), (8, 14), (14, 4), (14, 12), (20, 5), (20, 11)], 'P')
+    k.put([(11, 2), (11, 14), (23, 6)], 'T')
+    k.put([(23, 10)], 'M')
+    k, lanes, air = finish(k, lanes, (22, 8))
+    reefs(k, lanes, 6)
+    thin(k, lanes, air=air)
+    return k, lanes, air
+
+
+@level(14)
+def l14():
+    # Siri: two sea lanes slant in from the north corners and meet the sky road just above the tower;
+    # the jets fly the sky road straight down the middle.
+    lanes = [
+        [(3, -1), (3, 3), (11, 11), (12, 12), (12, 13)],
+        [(21, -1), (21, 3), (13, 11), (12, 12), (12, 13)],
+        [(12, -1), (12, 13)],
+    ]
+    k = Canvas()
+    k.rect(0, 0, 24, 15, '.').rect(0, 0, 24, 0, '#')
+    k.rect(0, 12, 4, 15, ',').rect(20, 12, 24, 15, ',').rect(1, 13, 2, 14, '~').rect(22, 13, 23, 14, '~')
+    k.put([(1, 6), (23, 6), (4, 10), (20, 10), (8, 1), (16, 1)], 'P')
+    k.put([(2, 9), (22, 9)], 'T')
+    k.put([(7, 14), (17, 14)], 'O')
+    k, lanes, air = finish(k, lanes, (12, 14), air=2)
+    reefs(k, lanes, 5)
+    thin(k, lanes, air=air)
+    return k, lanes, air
+
+
+@level(15)
+def l15():
+    # Asaluyeh: two lanes among the gas platforms and a sky road straight down the middle (the boss flies it).
+    lanes = [
+        [(25, 2), (18, 2), (13, 7), (2, 7)],
+        [(25, 14), (18, 14), (13, 9), (2, 9)],
+        [(25, 8), (3, 8)],
+    ]
+    k = Canvas()
+    k.rect(0, 0, 24, 15, '.').rect(0, 0, 24, 0, '#')
+    k.rect(19, 4, 24, 4, ',').rect(19, 12, 24, 12, ',')
+    k.put([(8, 2), (11, 3), (21, 4), (8, 13), (11, 12), (21, 12), (2, 3), (2, 12)], 'O')
+    k.put([(5, 2), (5, 13), (15, 4), (15, 12)], 'P')
+    k.put([(1, 4), (1, 11)], 'T')
+    k, lanes, air = finish(k, lanes, (2, 8), air=2)
+    reefs(k, lanes, 6)
+    thin(k, lanes, air=air)
+    return k, lanes, air
+
+
+@level(16)
+def l16():
+    # Bushehr roads: one lane bending back through the mudflats, with the dead marshes to the south.
+    lanes = [[(-1, 2), (19, 2), (19, 7), (4, 7)]]
+    k = Canvas()
+    k.rect(0, 0, 24, 15, '.').rect(0, 0, 24, 0, '#')
+    k.rect(0, 13, 24, 15, ',').rect(3, 14, 6, 15, '~').rect(12, 14, 15, 15, '~').rect(19, 14, 22, 15, '~')
+    k.rect(0, 12, 24, 12, '.').put([(1, 13), (9, 14), (17, 13), (23, 13), (24, 14)], '.')
+    k.put([(7, 11), (16, 11), (23, 3), (23, 7)], 'P')
+    k.put([(1, 10), (23, 5)], 'T')
+    k, lanes, air = finish(k, lanes, (3, 7))
+    reefs(k, lanes, 5)
+    thin(k, lanes, air=air)
+    return k, lanes, air
+
+
+@level(17)
+def l17():
+    # Farsi Island: three fleets from the north, the east and the south join off the island and run in
+    # to the tower on its east tip; most of the fight is in the water.
+    lanes = [
+        [(20, -1), (20, 3), (15, 8), (9, 8)],
+        [(25, 8), (9, 8)],
+        [(20, 16), (20, 13), (15, 8), (9, 8)],
+    ]
+    k = Canvas()
+    k.rect(0, 0, 24, 15, ',').rect(0, 0, 24, 0, '~')
+    k.rect(0, 3, 7, 12, '.').rect(1, 5, 5, 10, '#').rect(2, 6, 4, 9, '.')  # the island
+    k.rect(9, 1, 14, 2, '~').rect(9, 14, 14, 15, '~').rect(22, 1, 24, 2, '.').rect(22, 14, 24, 15, '.')
+    k.rect(10, 4, 12, 5, '.').rect(10, 11, 12, 12, '.')
+    k.put([(1, 4), (6, 11), (3, 7)], 'P')
+    k.put([(2, 11)], 'T')
+    k.put([(17, 1), (17, 15), (24, 5)], 'O')
+    k, lanes, air = finish(k, lanes, (8, 8))
+    islets(k, lanes, 3)
+    thin(k, lanes, air=air)
+    return k, lanes, air
+
+
+@level(18)
+def l18():
+    # Kharg Terminal: two lanes cross mid-strait and meet again at the tower.
+    lanes = [
+        [(-1, 2), (3, 2), (15, 14), (21, 8), (22, 8)],
+        [(-1, 14), (3, 14), (15, 2), (21, 8), (22, 8)],
+    ]
+    k = Canvas()
+    k.rect(0, 0, 24, 15, '.').rect(0, 0, 24, 0, '#')
+    k.rect(0, 6, 2, 10, ',').rect(23, 1, 24, 4, ',').rect(23, 12, 24, 15, ',')
+    k.put([(1, 5), (1, 11), (9, 3), (9, 13), (20, 1), (20, 15)], 'P')
+    k.put([(0, 8), (24, 6)], 'T')
+    k.put([(24, 10)], 'M')
+    k.put([(9, 0)], 'O')
+    k, lanes, air = finish(k, lanes, (23, 8))
+    reefs(k, lanes, 6)
+    thin(k, lanes, air=air)
+    return k, lanes, air
+
+
+@level(19)
+def l19():
+    # Khor Musa: a tidal channel that doubles back three times before the tower.
+    lanes = [[(2, -1), (2, 10), (6, 10), (6, 2), (10, 2), (10, 10), (14, 10), (14, 4)]]
+    k = Canvas()
+    k.rect(0, 0, 24, 15, '.').rect(0, 0, 24, 0, '#')
+    k.rect(18, 3, 24, 12, ',').rect(20, 5, 23, 10, '~')
+    k.rect(1, 13, 14, 15, ',').rect(4, 14, 11, 15, '~')
+    k.put([(17, 1), (22, 2), (17, 14), (23, 14)], 'P')
+    k.put([(20, 13), (21, 13)], 'T')
+    k.put([(22, 4)], 'O')
+    k, lanes, air = finish(k, lanes, (14, 3))
+    reefs(k, lanes, 5)
+    thin(k, lanes, air=air)
+    return k, lanes, air
+
+
+@level(20)
+def l20():
+    # Arvand Rud: three channels funnel into one short final run to the tower (no sky road: the
+    # resort's jets fly every lane).
+    lanes = [
+        [(-1, 2), (10, 2), (16, 8), (21, 8)],
+        [(-1, 8), (21, 8)],
+        [(-1, 14), (10, 14), (16, 8), (21, 8)],
+    ]
+    k = Canvas()
+    k.rect(0, 0, 24, 15, '.').rect(0, 0, 24, 0, '#')
+    k.rect(18, 1, 24, 3, ',').rect(18, 13, 24, 15, ',')
+    k.put([(20, 5), (20, 11), (14, 2), (14, 14), (23, 6)], 'P')
+    k.put([(22, 4), (22, 12)], 'T')
+    k, lanes, air = finish(k, lanes, (22, 8))
+    reefs(k, lanes, 6)
     thin(k, lanes, air=air)
     return k, lanes, air
 

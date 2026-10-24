@@ -39,7 +39,7 @@ export interface GameRects {
   cards: Rect[];
   /** The right strip's content area (tower panel / placing panel). */
   side: Rect;
-  /** Buttons stacked at the foot of the side area (upgrade / sell / target, or place / cancel). */
+  /** Four buttons stacked at the foot of the side area (path A / path B / sell / target, or place / cancel in the last two). */
   sideButtons: Rect[];
   close: Rect;
 }
@@ -126,9 +126,11 @@ function gameRects(left: Rect, right: Rect, touch: boolean): GameRects {
     cards.push(r(right.x + pad + c * (cw + cgap), right.y + 4 + rr * (ch + cgap), cw, ch));
   }
   const side = r(right.x + pad, right.y + 4, right.w - 2 * pad, right.h - 8);
-  const bh = touch ? 60 : 44;
+  // four stacked buttons at the foot of the tower panel: PATH A, PATH B, SELL, TARGET (PLACE / CANCEL use the last two)
+  const bh = touch ? 52 : 44;
+  const sgap = touch ? 10 : 12;
   const sideButtons: Rect[] = [];
-  for (let i = 0; i < 3; i++) sideButtons.push(r(side.x, side.y + side.h - (3 - i) * (bh + gap) + gap, side.w, bh));
+  for (let i = 0; i < 4; i++) sideButtons.push(r(side.x, side.y + side.h - (4 - i) * (bh + sgap) + sgap, side.w, bh));
   const cs = touch ? 44 : 26;
   const close = r(side.x + side.w - cs, side.y, cs, cs);
   return { start, speed, auto, pause, staff, fatwa, cards, side, sideButtons, close };

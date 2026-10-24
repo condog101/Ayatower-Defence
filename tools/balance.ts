@@ -11,7 +11,7 @@ for (const level of LEVELS) {
   if (only && level.n !== only) continue;
   const r = runBuild(level, TOWERS, ENEMIES);
   const idle = runBuild(level, TOWERS, ENEMIES, []);
-  const towers = r.sim.towers.map((t) => `${t.def.key}${t.tier + 1}@${t.c},${t.r}`).join(' ');
+  const towers = r.sim.towers.map((t) => `${t.def.key}${t.tier + 1}${t.tier ? (t.path ? "B" : "A") : ""}@${t.c},${t.r}`).join(" ");
   console.log(
     `L${level.n} ${r.sim.phase.padEnd(4)} wave ${r.sim.wave}/${level.waves.length} lives ${r.sim.lives} leaks ${r.sim.leaks} cash ${r.sim.cash} score ${r.sim.score} skipped ${r.skipped} | idle ${idle.sim.phase} w${idle.sim.wave}`,
   );

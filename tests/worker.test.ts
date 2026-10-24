@@ -188,7 +188,7 @@ describe('progress', () => {
       body: { highestLevel: 1e9, levelBest: { '999': 5 }, bestRun: 'lots' },
     });
     expect(r.status).toBe(200);
-    expect(r.data.progress.highestLevel).toBe(10);
+    expect(r.data.progress.highestLevel).toBe(20);
     expect(r.data.progress.levelBest).toEqual({});
     expect(r.data.progress.bestRun).toBe(0);
   });
@@ -224,10 +224,10 @@ describe('runs and leaderboard', () => {
     const cRun = await call('/api/runs', { token: c.token, body: validRun(7000) });
     expect(cRun.data.rank).toBe(2);
 
-    // There is no endless mode: level 11 runs are rejected.
+    // There is no endless mode: level 21 runs are rejected.
     const endless = await call('/api/runs', {
       token: b.token,
-      body: { score: 5000, startLevel: 11, levelReached: 11, durationMs: 60_000, kills: 30 },
+      body: { score: 5000, startLevel: 21, levelReached: 21, durationMs: 60_000, kills: 30 },
     });
     expect(endless.status).toBe(400);
 

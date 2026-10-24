@@ -2,6 +2,7 @@ import { fireAt, launchBoat, layMine } from './projectiles';
 import type { Sim } from './sim';
 import { eligible, pickTargets } from './targeting';
 import type { Tower } from './types';
+import { tierOf } from './tiers';
 
 /** How often a jammer re-applies its slow, ticks. */
 const PULSE = 10;
@@ -11,12 +12,12 @@ const PULSE = 10;
  * support tower whose range covers it. Called on place / upgrade / sell.
  */
 export function refreshBuffs(sim: Sim) {
-  const supports = sim.towers.filter((t) => t.def.tiers[t.tier].buff);
+  const supports = sim.towers.filter((t) => tierOf(t).buff);
   for (const t of sim.towers) {
     const b = { range: 1, rate: 1, dmg: 1, bounty: 1 };
     if (t.def.role === 'attack') {
       for (const s of supports) {
-        const tier = s.def.tiers[s.tier];
+        const tier = tierOf(s);
         if ((s.x - t.x) ** 2 + (s.y - t.y) ** 2 > tier.range ** 2) continue;
         const sb = tier.buff!;
         b.range = Math.max(b.range, sb.range ?? 1);
@@ -26,7 +27,7 @@ export function refreshBuffs(sim: Sim) {
       }
     }
     t.buff = b;
-    const tier = t.def.tiers[t.tier];
+    const tier = tierOf(t);
     t.laneSpots = tier.projectile === 'mine' ? sim.spotsWithin(t.x, t.y, tier.range * b.range) : [];
     const near = sim.nearestLanePoint(t.x, t.y);
     t.entry = { lane: near.lane, d: near.d };
@@ -34,7 +35,7 @@ export function refreshBuffs(sim: Sim) {
 }
 
 function supportStep(sim: Sim, t: Tower) {
-  const tier = t.def.tiers[t.tier];
+  const tier = tierOf(t);
   if (tier.income && sim.phase === 'wave' && ++t.incomeAcc >= tier.income.everyTicks) {
     t.incomeAcc = 0;
     sim.cash += tier.income.amount;
@@ -49,6 +50,10 @@ function supportStep(sim: Sim, t: Tower) {
       if (!e.alive || !inRange(e.def.layer) || (e.x - t.x) ** 2 + (e.y - t.y) ** 2 > r2) continue;
       e.slowMult = e.slowTicks > 0 ? Math.min(e.slowMult, tier.slow.mult) : tier.slow.mult;
       e.slowTicks = Math.max(e.slowTicks, tier.slow.ticks);
+      if (tier.paint) {
+        e.paintMult = e.paintTicks > 0 ? Math.max(e.paintMult, tier.paint.mult) : tier.paint.mult;
+        e.paintTicks = Math.max(e.paintTicks, tier.paint.ticks);
+      }
     }
   }
   if (tier.stun) {
@@ -74,7 +79,7 @@ export function stepTowers(sim: Sim) {
       supportStep(sim, t);
       continue;
     }
-    const tier = t.def.tiers[t.tier];
+    const tier = tierOf(t);
     if (t.cooldown > 0) t.cooldown--;
     // Turrets track their current target between shots.
     const cur = t.targetId ? sim.enemyById(t.targetId) : undefined;

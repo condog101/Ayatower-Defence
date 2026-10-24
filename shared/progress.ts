@@ -1,7 +1,7 @@
 // Player progress, shared by the client (localStorage + sync) and the Worker (D1).
 // Merging is monotonic: nothing a player has earned can regress.
 
-export const LEVEL_COUNT = 10;
+export const LEVEL_COUNT = 20;
 
 export interface Settings {
   sfx: number; // 0..1

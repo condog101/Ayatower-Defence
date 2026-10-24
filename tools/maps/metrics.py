@@ -17,7 +17,7 @@ from levels_src import META  # noqa: E402
 from paint import COLS, LEVELS, ROWS, dense, lane_dist, lane_samples  # noqa: E402
 
 # Kinds that are, or carry or launch, aircraft (enemies.ts layer/children/spawns).
-AIR_TREE = {'reaper', 'seahawk', 'hornet', 'b2', 'lhd', 'carrier', 'boss_yacht', 'boss_don'}
+AIR_TREE = {'reaper', 'seahawk', 'hornet', 'b2', 'f35', 'lhd', 'carrier', 'boss_yacht', 'boss_don', 'boss_af1', 'boss_resort'}
 # Mirrors tests/levels.test.ts.
 AIR_RUN_MAX = 128
 AIR_UNCOVERED_MAX = 0.25

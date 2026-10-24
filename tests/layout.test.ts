@@ -60,7 +60,9 @@ describe('layout', () => {
           expect(overlaps(grow(cs[i][1], l.slop), grow(cs[j][1], l.slop)), `${cs[i][0]} vs ${cs[j][0]}`).toBe(false);
         }
       }
+      expect(l.game.sideButtons).toHaveLength(4);
       for (const b of l.game.sideButtons) expect(inside(b, l.right)).toBe(true);
+      for (let i = 1; i < l.game.sideButtons.length; i++) expect(overlaps(l.game.sideButtons[i - 1], l.game.sideButtons[i])).toBe(false);
       // the 960x540 menu frame fits
       expect(l.ox).toBeGreaterThanOrEqual(0);
       expect(l.oy).toBeGreaterThanOrEqual(0);

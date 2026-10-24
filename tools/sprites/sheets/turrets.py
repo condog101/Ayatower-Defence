@@ -1,13 +1,22 @@
 """Aimed turret tops, 32x32 transparent (drawn at 1x, twice the world's pixel density), centred on the frame so they overlay the tower base.
 
-frame = ((aimedIndex * 3 + tier) * 8) + dir, dir 0 = east, clockwise in 45 degree steps
-(2 = south, 4 = west, 6 = north).
+frame = ((aimedIndex * 5 + slot) * 8) + dir, dir 0 = east, clockwise in 45 degree steps
+(2 = south, 4 = west, 6 = north). slot 0 = base, 1-2 = Path A tiers 1-2, 3-4 = Path B tiers 1-2.
+Path A tops out in gold/bronze; Path B is picked out in red (tie/maroon) and mithril.
 
 Aimed towers, all iron, bronze and timber siege engines:
-0 boats   (light deck ballista -> repeating ballista with a bolt magazine -> gilded repeater),
-1 aa_gun  (heavy ballista -> double-bow scorpion -> gold-banded triple-bolt scorpion),
-2 missile (the great bow: yew -> iron-shod with a war bolt -> golden bow with a flaming bolt),
-3 sam     (siege crossbow battery: 2 -> 3 -> 4 bolts on one bronze bow-bar).
+0 boats   base light deck ballista;
+          A: repeating ballista with a bolt magazine -> gilded repeater;
+          B: FLAK SKIFFS, twin light repeating crossbows -> three, with a red-banded magazine.
+1 aa_gun  base heavy ballista;
+          A: double-bow scorpion -> gold-banded triple-bolt scorpion;
+          B: FLAK, a squat bombard on a yoke -> twin mithril-banded bombards.
+2 missile base great yew bow;
+          A: iron-shod with a war bolt -> golden bow with a flaming bolt;
+          B: CRUISE, twin launch rails with red-fletched bolts -> longer rails, mithril heads.
+3 sam     base siege crossbow battery of 2 bolts on one bronze bow-bar;
+          A: 3 -> 4 bolts;
+          B: POINT DEFENCE, a red-framed fan of 5 -> 7 small bolts.
 
 Each turret is described once, pointing east, as vector primitives in local coordinates
 (u forward, v to the right, origin at the frame centre, UNIT px per unit). Every direction is
@@ -21,7 +30,7 @@ from palette import C
 
 NAME = "turrets"
 FRAME = (32, 32)
-FRAMES = 96
+FRAMES = 160
 
 CX = CY = 16.0
 SS = 4
@@ -102,6 +111,31 @@ def render(shape, direction):
 WOOD, WOODD = C["wood"], C["wood_dk"]
 IRON, BLK, GOLD, BRONZE = C["iron"], C["black"], C["gold"], C["gold_dk"]
 STEEL, STEEL_LT, STRING = C["smoke"], C["smoke_lt"], C["cream"]
+RED, MAROON, MITH, MITH_LT = C["tie"], C["maroon"], C["mithril"], C["mithril_lt"]
+
+
+def xf(prims, du=0.0, dv=0.0, ang=0.0):
+    """Rotate (degrees, clockwise towards +v) then translate line/disc primitives; rects
+    are only translated, so rotated parts must be built from lines and discs."""
+    a = math.radians(ang)
+    ca, sa = math.cos(a), math.sin(a)
+
+    def t(u, v):
+        return u * ca - v * sa + du, u * sa + v * ca + dv
+
+    out = []
+    for p in prims:
+        if p[0] == "line":
+            _, u0, v0, u1, v1, w, c = p
+            out.append(L(*t(u0, v0), *t(u1, v1), w, c))
+        elif p[0] == "disc":
+            _, cu, cv, r, c = p
+            out.append(D(*t(cu, cv), r, c))
+        else:
+            assert ang == 0, "rects cannot rotate"
+            _, u0, v0, u1, v1, c = p
+            out.append(R(u0 + du, v0 + dv, u1 + du, v1 + dv, c))
+    return out
 
 
 def bow_arms(u, span, sweep, c, w=1.4, tip=None, string_to=None):
@@ -136,7 +170,9 @@ def turntable(cu, r, c, rivet=None, n=6):
     return out
 
 
-def boats(tier):
+def boats(tier, path=0):
+    if path:
+        return boats_b(tier)
     if tier == 0:  # light deck ballista: timber stock, wooden arms
         return [
             *turntable(-1.0, 2.2, IRON),
@@ -174,7 +210,9 @@ def boats(tier):
     ]
 
 
-def aa_gun(tier):
+def aa_gun(tier, path=0):
+    if path:
+        return aa_gun_b(tier)
     if tier == 0:  # heavy bastion ballista on a turntable
         return [
             *turntable(0, 2.8, IRON, n=8),
@@ -220,7 +258,9 @@ def great_bow(span, c, tip, w=1.7):
     ]
 
 
-def missile(tier):
+def missile(tier, path=0):
+    if path:
+        return missile_b(tier)
     span = 6.6 if tier == 0 else 7.0
     pull = -3.5 if tier == 0 else -4.2
     if tier == 0:  # the great yew bow on a swivel, a long iron-headed bolt nocked
@@ -242,9 +282,11 @@ def missile(tier):
     return shape
 
 
-def sam(tier):
+def sam(tier, path=0):
     """Siege crossbow battery (a polybolos): n bolts racked in an iron frame under one wide
     bronze bow whose swept arms span the whole battery."""
+    if path:
+        return sam_b(tier)
     n = tier + 2
     pitch = 2.0
     band = pitch * (n - 1)
@@ -275,14 +317,147 @@ def sam(tier):
     return shape
 
 
+# ---------------------------------------------------------------------------
+# Path B designs (tier 1 or 2), picked out in red and mithril
+
+
+def light_xbow(head, arm=IRON, tip=None):
+    """A thin, quick repeating light crossbow along +u at v = 0, built from lines and discs
+    only so it can be angled with xf."""
+    return [
+        L(-0.4, -2.5, -1.8, 0, 0.4, STRING), L(-0.4, 2.5, -1.8, 0, 0.4, STRING),
+        L(2.6, 0, -0.4, -2.5, 0.9, arm), L(2.6, 0, -0.4, 2.5, 0.9, arm),
+        *([D(-0.4, -2.5, 0.5, tip), D(-0.4, 2.5, 0.5, tip)] if tip else []),
+        L(-4.4, 0, 3.8, 0, 1.2, WOOD),
+        L(-1.6, 0, 5.2, 0, 0.55, STEEL_LT),
+        L(4.7, -0.7, 6.0, 0, 0.65, head), L(4.7, 0.7, 6.0, 0, 0.65, head),
+        D(-4.4, 0, 0.7, IRON),
+    ]
+
+
+def boats_b(tier):
+    """FLAK SKIFFS: twin (tier 1) or triple (tier 2) light repeating crossbows splayed side by side."""
+    if tier == 1:
+        return [
+            *turntable(-1.0, 2.4, IRON, RED),
+            R(-3.4, -3.2, -2.0, 3.2, MAROON),  # red yoke the bows hang from
+            *xf(light_xbow(STEEL_LT, tip=RED), 0.0, -2.2, -8),
+            *xf(light_xbow(STEEL_LT, tip=RED), 0.0, 2.2, 8),
+            D(-2.7, -2.8, 0.4, STEEL_LT), D(-2.7, 2.8, 0.4, STEEL_LT),
+        ]
+    return [
+        *turntable(-1.0, 2.6, IRON, MITH_LT, n=8),
+        R(-3.6, -4.2, -2.0, 4.2, MAROON),
+        *xf(light_xbow(MITH_LT, arm=MITH, tip=RED), -0.8, -3.0, -16),
+        *xf(light_xbow(MITH_LT, arm=MITH, tip=RED), -0.8, 3.0, 16),
+        *xf(light_xbow(MITH_LT, arm=MITH, tip=RED), 0.4, 0, 0),
+        # red-banded bolt magazine on the centre stock
+        R(-3.8, -1.4, -0.8, 1.4, WOODD),
+        R(-3.8, -1.4, -0.8, -0.7, WOOD),
+        R(-3.2, -1.4, -2.6, 1.4, RED), R(-2.0, -1.4, -1.4, 1.4, RED),
+        D(-2.8, -3.8, 0.4, MITH_LT), D(-2.8, 3.8, 0.4, MITH_LT),
+    ]
+
+
+def bombard(u0, u1, v, r, band):
+    """A short fat bombard barrel along +u centred on v, half-width r, with a flared muzzle."""
+    return [
+        R(u0, v - r, u1, v + r, IRON),
+        R(u0, v - r, u1, v - r * 0.35, STEEL),  # lit upper flank
+        D(u0, v, r, IRON),  # rounded breech
+        R(u1 - 0.2, v - r - 0.45, u1 + 0.9, v + r + 0.45, band),  # muzzle ring
+        R(u0 + 1.2, v - r - 0.2, u0 + 2.0, v + r + 0.2, band),  # reinforcing band
+        R(u1 + 0.4, v - r * 0.55, u1 + 0.9, v + r * 0.55, BLK),  # bore
+    ]
+
+
+def aa_gun_b(tier):
+    """FLAK: a squat bombard on a red yoke (tier 1); twin mithril-banded bombards (tier 2)."""
+    if tier == 1:
+        return [
+            *turntable(0, 3.0, IRON, RED, n=8),
+            R(-1.6, -3.6, 1.4, -2.4, MAROON), R(-1.6, 2.4, 1.4, 3.6, MAROON),  # yoke cheeks
+            R(-1.0, -3.4, 0.8, 3.4, RED),  # trunnion bar
+            *bombard(-3.0, 3.6, 0, 2.4, RED),
+            D(-0.1, -3.0, 0.5, STEEL_LT), D(-0.1, 3.0, 0.5, STEEL_LT),  # trunnion caps
+        ]
+    return [
+        *turntable(0, 3.2, IRON, MITH_LT, n=8),
+        R(-1.8, -4.8, 1.4, -3.6, MAROON), R(-1.8, 3.6, 1.4, 4.8, MAROON),
+        R(-1.2, -4.6, 0.8, 4.6, RED),
+        *bombard(-3.2, 3.8, -2.0, 1.8, MITH),
+        *bombard(-3.2, 3.8, 2.0, 1.8, MITH),
+        R(-2.4, -0.3, 2.4, 0.3, MAROON),  # coupling between the barrels
+        R(1.4, -3.9, 1.9, 3.9, MITH_LT),
+        D(-0.2, -4.2, 0.5, MITH_LT), D(-0.2, 4.2, 0.5, MITH_LT),
+    ]
+
+
+def missile_b(tier):
+    """CRUISE: twin long launch rails each holding a slim red-fletched bolt; tier 2 lengthens the
+    rails and tips the bolts with mithril."""
+    u0, u1 = (-4.6, 4.2) if tier == 1 else (-5.6, 5.0)
+    head = STEEL_LT if tier == 1 else MITH_LT
+    rv = 1.7
+    shape = [
+        *turntable(-0.5, 2.6, IRON, RED if tier == 1 else MITH_LT),
+        R(u0, -rv - 0.9, u0 + 1.0, rv + 0.9, MAROON),  # rear cross-tie
+        R(1.0, -rv - 0.9, 1.8, rv + 0.9, MAROON),  # front cross-tie
+    ]
+    for v in (-rv, rv):
+        shape += [R(u0, v - 0.75, u1, v + 0.75, IRON), R(u0, v - 0.75, u1, v - 0.35, STEEL)]
+    for v in (-rv, rv):
+        shape += bolt(u0 + 1.0, u1 + 0.8, v=v, head=head, fletch=RED)
+    if tier == 2:
+        shape += [R(-1.4, -rv - 0.9, -0.6, rv + 0.9, MITH),
+                  D(u1 + 1.6, -rv, 0.4, MITH_LT), D(u1 + 1.6, rv, 0.4, MITH_LT)]
+    return shape
+
+
+def sam_b(tier):
+    """POINT DEFENCE: a compact red-framed fan of 5 (tier 1) or 7 (tier 2) small bolts."""
+    n = 5 if tier == 1 else 7
+    spread = 64.0 if tier == 1 else 84.0
+    pivot = -2.4
+    frame_r = 3.6 if tier == 1 else 4.2
+    head = STEEL_LT if tier == 1 else MITH_LT
+    shape = [*turntable(-1.6, 2.4, IRON, RED)]
+    # red fan-shaped frame: a thick arc of short segments plus two side struts
+    segs = 8
+    for k in range(segs):
+        a0 = math.radians(-spread / 2 - 6 + (spread + 12) * k / segs)
+        a1 = math.radians(-spread / 2 - 6 + (spread + 12) * (k + 1) / segs)
+        shape.append(L(pivot + frame_r * math.cos(a0), frame_r * math.sin(a0),
+                       pivot + frame_r * math.cos(a1), frame_r * math.sin(a1), 1.4, RED))
+    for sgn in (-1, 1):
+        a = math.radians(sgn * (spread / 2 + 6))
+        shape.append(L(pivot, 0, pivot + frame_r * math.cos(a), frame_r * math.sin(a), 1.2, MAROON))
+    shape.append(D(pivot, 0, 1.3, MAROON))
+    length = 9.6 if tier == 1 else 10.0
+    for i in range(n):
+        ang = -spread / 2 + spread * i / (n - 1)
+        shape += xf([
+            L(0.6, 0, length - 1.6, 0, 0.6, C["parch"]),
+            L(length - 2.4, -0.7, length - 1.2, 0, 0.6, head),
+            L(length - 2.4, 0.7, length - 1.2, 0, 0.6, head),
+        ], pivot, 0, ang)
+    shape.append(D(pivot, 0, 0.6, MITH if tier == 2 else STEEL_LT))
+    if tier == 2:  # mithril studs on the frame
+        for sgn in (-1, 1):
+            a = math.radians(sgn * (spread / 2 + 6))
+            shape.append(D(pivot + frame_r * math.cos(a), frame_r * math.sin(a), 0.45, MITH_LT))
+    return shape
+
+
 AIMED = [boats, aa_gun, missile, sam]
 
 
 def build():
     frames = []
     for fn in AIMED:
-        for tier in range(3):
-            shape = fn(tier)
+        for slot in range(5):
+            # slot 0 = base, 1-2 = Path A tiers 1-2, 3-4 = Path B tiers 1-2
+            shape = fn(slot) if slot < 3 else fn(slot - 2, path=1)
             frames += [render(shape, d) for d in range(8)]
     assert len(frames) == FRAMES
     return strip(frames)

@@ -2,8 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { ENEMIES } from '../web/src/data/enemies';
 import { LEVELS } from '../web/src/data/levels';
 import { QUOTES } from '../web/src/data/quotes';
-import { BEATS, ENDING, MISSIVES, type InputText } from '../web/src/data/story';
+import { BEATS, ENDING, INTERLUDE, MISSIVES, type InputText } from '../web/src/data/story';
 import { TOWERS } from '../web/src/data/towers';
+import { allTiers } from '../web/src/sim/tiers';
 
 // Leftovers from the sibling game's hip-hop and social-media framing must not come back.
 const BANNED = ['REPOSTS', 'LIKES', 'COMMUNITY NOTE', '@', 'CHARTS', 'CALLSIGN', 'GUARD', 'INCOMING', 'POSTED', '3 AM', 'FAKE NEWS'];
@@ -14,9 +15,9 @@ const variants = (t: InputText) => (typeof t === 'string' ? [t] : [t.desktop, t.
 const dataText: string[] = [
   ...QUOTES.map((q) => q.text),
   ...BEATS.flatMap((b) => [b.aya, b.don]),
-  ...[...Object.values(MISSIVES).flat(), ...ENDING].flatMap((m) => [...variants(m.text), m.seal ?? '', m.reply?.text ?? '']),
+  ...[...Object.values(MISSIVES).flat(), ...INTERLUDE, ...ENDING].flatMap((m) => [...variants(m.text), m.seal ?? '', m.reply?.text ?? '']),
   ...LEVELS.flatMap((l) => [l.name, l.sub, l.brief, l.bossName ?? '']),
-  ...Object.values(TOWERS).flatMap((t) => [t.name, t.basis, t.pro, t.con, ...t.tiers.flatMap((x) => [x.name, x.blurb])]),
+  ...Object.values(TOWERS).flatMap((t) => [t.name, t.basis, t.pro, t.con, ...t.paths.map((p) => p.name), ...allTiers(t).flatMap((x) => [x.name, x.blurb])]),
   ...Object.values(ENEMIES).flatMap((e) => [e.name, e.short]),
 ];
 

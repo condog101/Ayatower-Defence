@@ -3,23 +3,31 @@
 
 import { isPlaceable } from '../../web/src/sim/grid';
 import { Sim } from '../../web/src/sim/sim';
-import type { EnemyDef, EnemyKey, LevelDef, Targeting, Tower, TowerDef, TowerKey } from '../../web/src/sim/types';
+import { tierOf } from '../../web/src/sim/tiers';
+import type { EnemyDef, EnemyKey, LevelDef, PathIndex, Targeting, Tower, TowerDef, TowerKey } from '../../web/src/sim/types';
 
 /**
  * place: build `place` at `at`, or (no `at`) on the free spot whose range covers the most lane.
- * upgrade: a cell, or a tower kind (its lowest-tier tower, first built on ties).
+ * upgrade: a cell, or a tower kind (its lowest-tier tower, first built on ties), along `path`
+ * (default A; only the first upgrade of a tower picks, later ones follow the path it took).
  */
 export type Action =
   | { wave: number; place: TowerKey; at?: [number, number]; mode?: Targeting }
-  | { wave: number; upgrade: [number, number] | TowerKey };
+  | { wave: number; upgrade: [number, number] | TowerKey; path?: PathIndex };
 
 const P = (wave: number, place: TowerKey, c?: number, r?: number, mode?: Targeting): Action =>
   ({ wave, place, at: c === undefined || r === undefined ? undefined : [c, r], mode });
 const U = (wave: number, c: number | TowerKey, r?: number): Action => ({ wave, upgrade: typeof c === 'string' ? c : [c, r!] });
+/** Upgrade along path B. */
+const UB = (wave: number, kind: TowerKey): Action => ({ wave, upgrade: kind, path: 1 });
 
 /** From `wave` on, one more tower of each kind per wave, each taken straight to tier 3. */
 const tail = (wave: number, kinds: TowerKey[]): Action[] =>
   kinds.flatMap((k, i) => [P(wave + i, k), U(wave + i, k), U(wave + i, k)]);
+
+/** The same, taking each one down path B. */
+const tailB = (wave: number, kinds: TowerKey[]): Action[] =>
+  kinds.flatMap((k, i) => [P(wave + i, k), UB(wave + i, k), UB(wave + i, k)]);
 
 /**
  * The free spot for `key`: first the lane that towers of its kind cover least (aircraft-only
@@ -28,7 +36,7 @@ const tail = (wave: number, kinds: TowerKey[]): Action[] =>
  */
 export function bestSpot(sim: Sim, key: TowerKey): [number, number] | null {
   const def = sim.towerDefs[key];
-  const t0 = def.tiers[0];
+  const t0 = def.base;
   const range = t0.range;
   const air = sim.level.airLane;
   const airOnly = t0.hitsAir && !t0.hitsSea;
@@ -38,8 +46,8 @@ export function bestSpot(sim: Sim, key: TowerKey): [number, number] | null {
   // Attack towers balance against towers that hit the same layer; support towers (radar, jammer,
   // minaret) against their own kind, so a second radar goes to the lane the first one can't see.
   const same = (t: Tower) =>
-    def.role === 'support' ? t.def.key === key : t.def.role === 'attack' && (t.def.tiers[0].hitsAir === t0.hitsAir || t.def.tiers[0].hitsSea === t0.hitsSea);
-  const cover = (lane: number) => sim.towers.filter(same).reduce((n, t) => n + covers(t.x, t.y, t.def.tiers[t.tier].range, lane), 0);
+    def.role === 'support' ? t.def.key === key : t.def.role === 'attack' && (t.def.base.hitsAir === t0.hitsAir || t.def.base.hitsSea === t0.hitsSea);
+  const cover = (lane: number) => sim.towers.filter(same).reduce((n, t) => n + covers(t.x, t.y, tierOf(t).range, lane), 0);
   const target = lanes.reduce((best, l) => (cover(l) < cover(best) ? l : best), lanes[0]);
   let best: [number, number] | null = null;
   let bestScore = 0;
@@ -57,6 +65,33 @@ export function bestSpot(sim: Sim, key: TowerKey): [number, number] | null {
   }
   return best;
 }
+
+/**
+ * Act II: every tower is open, so each level shares one opener and then a long tail of fully upgraded
+ * towers; `b` lists the kinds that level takes down path B (the rest go down A). Three-lane maps
+ * (`lanes` 3) open with a pier per lane, three-lane or sky-road maps (`radars` 3) add a third radar
+ * (at `radarAt` when given: bestSpot keeps ship-hitting towers off a sky road, but a radar must watch
+ * it), and `late` towers from LATE extend the tail (a negative `late` trims it instead).
+ */
+const act2 = (
+  b: TowerKey[],
+  tailKinds: TowerKey[],
+  { lanes = 2, radars = 2, late = 0, from = 4, radarAt }: { lanes?: number; radars?: number; late?: number; from?: number; radarAt?: [number, number] } = {},
+): Action[] => {
+  const up = (wave: number, k: TowerKey) => (b.includes(k) ? UB(wave, k) : U(wave, k));
+  return [
+    ...(lanes === 3 ? [P(1, 'boats'), up(2, 'boats')] : []),
+    ...(radars === 3 ? [P(2, 'radar', radarAt?.[0], radarAt?.[1])] : []),
+    P(1, 'boats'), P(1, 'boats'), P(1, 'radar'), P(1, 'aa_gun'), P(1, 'mines'), P(1, 'martyr'), up(2, 'boats'), up(2, 'boats'),
+    P(3, 'missile'), P(3, 'sam'), up(3, 'aa_gun'), P(4, 'radar'), up(4, 'missile'), up(4, 'mines'), P(5, 'minaret'), up(5, 'sam'),
+    up(5, 'martyr'), P(6, 'jammer'), P(6, 'ghadir'), up(6, 'radar'), up(7, 'missile'), up(7, 'sam'), up(8, 'jammer'), up(8, 'ghadir'),
+    up(9, 'minaret'), P(9, 'shahed'), up(10, 'shahed'), up(10, 'radar'), up(11, 'shahed'), up(11, 'jammer'), up(12, 'minaret'),
+    ...[...tailKinds.slice(0, tailKinds.length + Math.min(0, late)), ...LATE.slice(0, Math.max(0, late))].flatMap((k, i) => [P(from + i, k), up(from + i, k), up(from + i, k)]),
+  ];
+};
+
+/** Act II tails run on with these (land towers: shallows run out first) so late-game cash keeps turning into towers. */
+const LATE: TowerKey[] = ['missile', 'sam', 'shahed', 'missile', 'boats', 'missile', 'sam', 'shahed', 'missile', 'aa_gun', 'missile'];
 
 export const BUILDS: Record<number, Action[]> = {
   1: [P(1, 'boats'), P(2, 'mines'), P(5, 'boats'), U(9, 'boats')],
@@ -111,6 +146,16 @@ export const BUILDS: Record<number, Action[]> = {
     P(27, 'shahed'),
     ...tail(8, ['missile', 'shahed', 'sam', 'boats', 'missile', 'martyr', 'missile', 'shahed', 'missile', 'sam']),
   ],
+  11: act2(['missile', 'radar'], ['missile', 'shahed', 'boats', 'missile', 'martyr', 'sam', 'missile', 'mines', 'shahed', 'missile', 'boats', 'missile'], { late: -5 }),
+  12: act2(['mines', 'martyr'], ['mines', 'martyr', 'missile', 'boats', 'shahed', 'mines', 'missile', 'sam', 'martyr', 'missile', 'boats', 'missile', 'mines'], { late: 3 }),
+  13: act2(['aa_gun', 'boats'], ['sam', 'missile', 'aa_gun', 'boats', 'missile', 'radar', 'shahed', 'sam', 'missile', 'aa_gun', 'missile', 'boats', 'missile'], { lanes: 3, radars: 3, late: -5 }),
+  14: act2(['aa_gun', 'sam'], ['sam', 'aa_gun', 'missile', 'sam', 'boats', 'missile', 'aa_gun', 'sam', 'shahed', 'missile', 'sam', 'missile', 'aa_gun'], { radars: 3, radarAt: [14, 5], late: 6 }),
+  15: act2(['sam', 'boats'], ['sam', 'sam', 'missile', 'aa_gun', 'sam', 'boats', 'missile', 'sam', 'aa_gun', 'missile', 'sam', 'shahed', 'missile', 'sam'], { radars: 3, radarAt: [19, 6], late: 3 }),
+  16: act2(['ghadir', 'mines'], ['ghadir', 'mines', 'missile', 'ghadir', 'shahed', 'missile', 'mines', 'sam', 'ghadir', 'missile', 'boats', 'missile', 'mines', 'missile'], { late: -5 }),
+  17: act2(['martyr', 'ghadir'], ['martyr', 'mines', 'missile', 'ghadir', 'martyr', 'sam', 'missile', 'mines', 'martyr', 'missile', 'shahed', 'missile', 'ghadir', 'missile', 'mines'], { lanes: 3, late: 3 }),
+  18: act2(['missile', 'jammer'], ['missile', 'shahed', 'sam', 'missile', 'boats', 'martyr', 'missile', 'mines', 'sam', 'missile', 'shahed', 'missile', 'aa_gun', 'missile', 'boats'], { late: -5 }),
+  19: act2(['jammer', 'shahed'], ['shahed', 'missile', 'jammer', 'shahed', 'sam', 'missile', 'boats', 'shahed', 'missile', 'mines', 'sam', 'missile', 'shahed', 'missile', 'martyr', 'missile'], { late: -5 }),
+  20: act2(['minaret', 'missile'], ['missile', 'missile', 'sam', 'shahed', 'missile', 'boats', 'mines', 'missile', 'sam', 'shahed', 'missile', 'martyr', 'missile', 'aa_gun', 'missile', 'sam', 'missile'], { late: -2 }),
 };
 
 export interface BuildResult {
@@ -142,7 +187,7 @@ export function runBuild(
         continue;
       }
       if ('place' in a) {
-        if (sim.cash < sim.towerDefs[a.place].tiers[0].cost) return;
+        if (sim.cash < sim.towerDefs[a.place].base.cost) return;
         const at = a.at ?? bestSpot(sim, a.place);
         if (!at) throw new Error(`L${level.n}: nowhere to put ${a.place}`);
         const why = sim.canPlace(a.place, at[0], at[1]);
@@ -152,12 +197,13 @@ export function runBuild(
         if (a.mode) sim.setTargeting(t, a.mode);
       } else {
         const kind = a.upgrade;
+        const path = a.path ?? 0;
         const t =
           typeof kind === 'string'
-            ? placed.filter((x) => x.def.key === kind && x.tier < 2).sort((x, y) => x.tier - y.tier)[0]
+            ? placed.filter((x) => x.def.key === kind && x.tier < 2 && (x.tier === 0 || x.path === path)).sort((x, y) => x.tier - y.tier)[0]
             : sim.towerAt(kind[0], kind[1]);
         if (!t) throw new Error(`L${level.n}: no tower to upgrade at ${a.upgrade}`);
-        if (!sim.upgrade(t)) return;
+        if (!sim.upgrade(t, path)) return;
       }
       pending.splice(i, 1);
     }

@@ -15,11 +15,11 @@ export function levelClearBonus(level: number, lives: number, leaked: boolean): 
 }
 
 /** Every kill (children and boss launches at their cap included) plus every wave reward, per level. */
-export const LEVEL_MAX_PLAY_SCORE = [9690, 11937, 52045, 58733, 109020, 218050, 281310, 284860, 681590, 1249230];
+export const LEVEL_MAX_PLAY_SCORE = [9690, 11937, 52045, 58733, 109020, 218050, 281310, 284860, 681590, 1249230, 1435570, 1360355, 1449495, 1438055, 1692445, 1886950, 1906755, 2076510, 2237855, 3115525];
 /** Every enemy a level can produce. */
-export const LEVEL_ENEMY_COUNT = [585, 544, 2250, 2166, 3033, 6238, 7580, 6958, 16661, 29622];
+export const LEVEL_ENEMY_COUNT = [585, 544, 2250, 2166, 3033, 6238, 7580, 6958, 16661, 29622, 33883, 33454, 35509, 32754, 38642, 37864, 45352, 49121, 51811, 67919];
 /** Shortest possible level: all spawn spans back to back at 3x speed, minus 10%. */
-export const LEVEL_MIN_MS = [33855, 38295, 139050, 82560, 50045, 97290, 99420, 72870, 106590, 159480];
+export const LEVEL_MIN_MS = [33855, 38295, 139050, 82560, 50045, 97290, 99420, 72870, 106590, 159480, 168780, 195365, 209085, 214210, 231960, 240625, 221165, 228045, 247130, 266410];
 
 const levelsIn = (from: number, to: number): number[] => {
   const out: number[] = [];
@@ -46,8 +46,8 @@ export function maxRunKills(startLevel: number, levelReached: number): number {
 
 export interface RunSubmission {
   score: number;
-  startLevel: number; // level the run began on (1..10)
-  levelReached: number; // level the run ended on (10 on victory)
+  startLevel: number; // level the run began on (1..20)
+  levelReached: number; // level the run ended on (20 on victory)
   durationMs: number;
   kills: number;
 }

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { LEVEL_COUNT } from '../shared/progress';
 import { TOWER_KEYS } from '../web/src/data/towers';
 import { QUOTES, TWO_VOICE_TAGS, type QuoteTag } from '../web/src/data/quotes';
-import { BEATS, ENDING, MISSIVES, type InputText } from '../web/src/data/story';
+import { BEATS, ENDING, INTERLUDE, MISSIVES, type InputText } from '../web/src/data/story';
 
 const TAGS: QuoteTag[] = [
   'start', 'waveStart', 'leak', 'lowLives', 'bossIntro', 'bossDead', 'clear', 'defeat', 'victory',
@@ -11,7 +11,7 @@ const TAGS: QuoteTag[] = [
 
 const inGame = [...QUOTES.map((q) => q.text), ...BEATS.flatMap((b) => [b.aya, b.don])];
 const variants = (t: InputText) => (typeof t === 'string' ? [t] : [t.desktop, t.touch]);
-const tweets = [...Object.values(MISSIVES).flat(), ...ENDING];
+const tweets = [...Object.values(MISSIVES).flat(), ...INTERLUDE, ...ENDING];
 const allText = [...inGame, ...tweets.flatMap((t) => [...variants(t.text), t.reply?.text ?? '', t.seal ?? ''])];
 
 describe('line bank', () => {
@@ -79,7 +79,7 @@ describe('story', () => {
     for (const b of BEATS) {
       expect(b.level).toBeGreaterThanOrEqual(1);
       expect(b.level).toBeLessThanOrEqual(LEVEL_COUNT);
-      if (b.at === 'boss') expect([5, 10]).toContain(b.level);
+      if (b.at === 'boss') expect([5, 10, 15, 20]).toContain(b.level);
       else expect(Number(b.at.split(':')[1])).toBeGreaterThan(0);
     }
   });

@@ -63,8 +63,8 @@ export class Dialogue {
         if (e.def.boss && !this.bossSaid) {
           this.bossSaid = true;
           if (!this.beat('boss')) this.ticker.trigger('bossIntro', true);
-        } else if (e.def.layer === 'air') this.once('firstAir', 'firstAir');
-        else if (e.def.stealth) this.once('firstStealth', 'firstStealth');
+        } else if (e.def.stealth) this.once('firstStealth', 'firstStealth');
+        else if (e.def.layer === 'air') this.once('firstAir', 'firstAir');
         else if (e.def.armoured) this.once('firstArmoured', 'firstArmoured');
         break;
       }

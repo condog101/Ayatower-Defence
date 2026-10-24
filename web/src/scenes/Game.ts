@@ -18,7 +18,8 @@ import { TowerPanel } from '../game/TowerPanel';
 import { TowerView } from '../game/TowerView';
 import { FATWA, STAFF } from '../sim/abilities';
 import { Sim } from '../sim/sim';
-import type { AbilityKey, LevelDef, SimEvent, Tower, TowerKey } from '../sim/types';
+import { tierOf } from '../sim/tiers';
+import type { AbilityKey, LevelDef, PathIndex, SimEvent, Tower, TowerKey } from '../sim/types';
 import { Audio, type Sfx } from '../systems/Audio';
 import { byInput, TOUCH } from '../systems/Device';
 import { Fx } from '../systems/Fx';
@@ -78,6 +79,8 @@ export class GameScene extends Phaser.Scene {
   private hint!: Phaser.GameObjects.Text;
   /** Desktop: the shop card under the pointer, shown on the hint line. */
   private hoverKey: TowerKey | null = null;
+  /** Desktop: the hovered path button's name and blurb, shown on the hint line. */
+  private pathHint: string | null = null;
   private resumed = false;
   private wasPaused = false;
   private aim!: Phaser.GameObjects.Graphics;
@@ -141,10 +144,14 @@ export class GameScene extends Phaser.Scene {
       },
     });
     this.panel = new TowerPanel(this, sim, {
-      upgrade: (t) => this.upgrade(t),
+      upgrade: (t, path) => this.upgrade(t, path),
       sell: (t) => this.sell(t),
       target: (t) => this.retarget(t),
       close: () => this.deselect(),
+      hint: (s) => {
+        this.pathHint = s;
+        this.setInfo();
+      },
     });
     this.placement = new Placement(this, sim, () => this.commit(), () => this.cancelPlacement());
     // The hint line sits in the bottom strip under the ticker, clear of the map.
@@ -247,7 +254,10 @@ export class GameScene extends Phaser.Scene {
           this.arm('fatwa');
           break;
         case 'KeyU':
-          if (this.panel.tower) this.upgrade(this.panel.tower);
+          if (this.panel.tower) this.upgrade(this.panel.tower, this.panel.tower.tier === 0 ? 0 : this.panel.tower.path);
+          break;
+        case 'KeyI':
+          if (this.panel.tower?.tier === 0) this.upgrade(this.panel.tower, 1);
           break;
         case 'KeyX':
           if (this.panel.tower) this.sell(this.panel.tower);
@@ -368,7 +378,7 @@ export class GameScene extends Phaser.Scene {
     if (!cell || !key) return;
     const t = this.sim.place(key, cell[0], cell[1]);
     if (!t) return;
-    if (keep && this.sim.cash >= TOWERS[key].tiers[0].cost) {
+    if (keep && this.sim.cash >= TOWERS[key].base.cost) {
       this.map.showPlacement(TOWERS[key], (c, r) => !!this.sim.towerAt(c, r));
       return;
     }
@@ -399,9 +409,11 @@ export class GameScene extends Phaser.Scene {
     this.setInfo();
   }
 
-  private upgrade(t: Tower) {
-    if (!this.sim.upgrade(t)) return;
+  private upgrade(t: Tower, path: PathIndex) {
+    if (!this.sim.upgrade(t, path)) return;
+    this.pathHint = null;
     this.panel.show(t);
+    this.setInfo();
   }
 
   private sell(t: Tower) {
@@ -452,7 +464,11 @@ export class GameScene extends Phaser.Scene {
     else if (this.placement?.active)
       s = this.placement.mode === 'tap' ? 'TAP A HATCHED SPOT, THEN PLACE (OR DRAG THE CARD)' : 'CLICK A HATCHED SPOT. SHIFT KEEPS PLACING. ESC CANCELS';
     else if (this.hoverKey) s = towerTip(this.hoverKey);
-    else if (this.panel?.tower) s = byInput('U UPGRADE  X SELL  T TARGET  ESC CLOSE', 'UPGRADE, SELL OR RETARGET. X CLOSES');
+    else if (this.pathHint) s = this.pathHint;
+    else if (this.panel?.tower?.tier === 0) {
+      const [a, b] = this.panel.tower.def.paths;
+      s = byInput('U PATH A  I PATH B  X SELL  T TARGET  ESC CLOSE', `A ${a.name}. B ${b.name}.`);
+    } else if (this.panel?.tower) s = byInput('U UPGRADE  X SELL  T TARGET  ESC CLOSE', 'UPGRADE, SELL OR RETARGET. X CLOSES');
     else if (this.sim.wave === 0) s = byInput('BUILD, THEN START THE FIRST WAVE (SPACE)', 'DRAG A CARD ONTO THE MAP, THEN START THE FIRST WAVE');
     else s = byInput('SPACE WAVE  F SPEED  A AUTO  1/2 ABILITIES  P PAUSE', 'TAP A TOWER TO UPGRADE IT');
     this.hint?.setText(s);
@@ -533,7 +549,7 @@ export class GameScene extends Phaser.Scene {
         break;
       case 'jam': {
         const t = this.sim.towerById(ev.tower);
-        if (t) fx.ring(MAP_X + t.x, MAP_Y + t.y, t.def.tiers[t.tier].range, 0x9ff0ff, 600);
+        if (t) fx.ring(MAP_X + t.x, MAP_Y + t.y, tierOf(t).range, 0x9ff0ff, 600);
         Audio.play('freeze');
         break;
       }

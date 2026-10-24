@@ -26,7 +26,7 @@ export const ENEMIES: Record<EnemyKey, EnemyDef> = {
     key: 'burke', name: 'ARLEIGH BURKE DESTROYER', short: 'BURKE', layer: 'sea', hp: 30, speed: 0.9, leak: 8, cash: 12, score: 200, radius: 16, armoured: true,
     children: [{ kind: 'frigate', n: 2 }], introLevel: 5, sprite: 'burke',
   },
-  sub: { key: 'sub', name: 'VIRGINIA SUBMARINE', short: 'SUB', layer: 'sea', hp: 24, speed: 1.0, leak: 8, cash: 16, score: 200, radius: 12, stealth: true, introLevel: 6, sprite: 'sub' },
+  sub: { key: 'sub', name: 'VIRGINIA SUBMARINE', short: 'SUB', layer: 'sea', hp: 24, speed: 1.0, leak: 8, cash: 16, score: 200, radius: 12, stealth: true, sub: true, introLevel: 6, sprite: 'sub' },
   tico: {
     key: 'tico', name: 'TICONDEROGA CRUISER', short: 'CRUISER', layer: 'sea', hp: 60, speed: 0.8, leak: 12, cash: 16, score: 350, radius: 18, armoured: true,
     children: [{ kind: 'burke', n: 2 }], introLevel: 8, sprite: 'tico',
@@ -46,6 +46,19 @@ export const ENEMIES: Record<EnemyKey, EnemyDef> = {
     key: 'b2', name: 'B-2 SPIRIT', short: 'B-2', layer: 'air', hp: 40, speed: 1.2, leak: 10, cash: 30, score: 300, radius: 12, stealth: true,
     children: [{ kind: 'hornet', n: 2 }], introLevel: 8, sprite: 'b2',
   },
+  zumwalt: {
+    key: 'zumwalt', name: 'ZUMWALT STEALTH DESTROYER', short: 'ZUMWALT', layer: 'sea', hp: 120, speed: 1.0, leak: 12, cash: 24, score: 450, radius: 18, armoured: true, stealth: true,
+    children: [{ kind: 'burke', n: 2 }], introLevel: 11, sprite: 'zumwalt',
+  },
+  lcac: {
+    key: 'lcac', name: 'LCAC HOVERCRAFT', short: 'LCAC', layer: 'sea', hp: 25, speed: 2.4, leak: 5, cash: 10, score: 120, radius: 10, fast: true,
+    children: [{ kind: 'patrol', n: 3 }], introLevel: 12, sprite: 'lcac',
+  },
+  f35: { key: 'f35', name: 'F-35 LIGHTNING', short: 'F-35', layer: 'air', hp: 16, speed: 2.0, leak: 6, cash: 14, score: 150, radius: 8, stealth: true, fast: true, introLevel: 13, sprite: 'f35' },
+  ohio: {
+    key: 'ohio', name: 'OHIO MISSILE SUBMARINE', short: 'OHIO', layer: 'sea', hp: 300, speed: 0.7, leak: 24, cash: 50, score: 900, radius: 16, stealth: true, sub: true, big: true,
+    children: [{ kind: 'sub', n: 3 }], introLevel: 16, sprite: 'ohio',
+  },
   boss_yacht: {
     key: 'boss_yacht', name: '"MAR-A-LAGO" GOLDEN YACHT', short: 'YACHT', layer: 'sea', hp: 1200, speed: 0.45, leak: 100, cash: 300, score: 5000, radius: 24,
     armoured: true, boss: true, big: true,
@@ -59,6 +72,20 @@ export const ENEMIES: Record<EnemyKey, EnemyDef> = {
     children: [{ kind: 'carrier', n: 2 }],
     spawns: { kind: 'hornet', everyTicks: sec(5), max: 30 },
     introLevel: 10, sprite: 'boss_don',
+  },
+  boss_af1: {
+    key: 'boss_af1', name: '"AIR FARCE ONE" GOLDEN JUMBO', short: 'AIR FARCE ONE', layer: 'air', hp: 3000, speed: 0.5, leak: 100, cash: 600, score: 8000, radius: 28,
+    boss: true, big: true,
+    children: [{ kind: 'b2', n: 2 }],
+    spawns: { kind: 'f35', everyTicks: sec(6), max: 20 },
+    introLevel: 15, sprite: 'boss_af1',
+  },
+  boss_resort: {
+    key: 'boss_resort', name: '"MORDOR-A-LAGO" FLOATING RESORT', short: 'RESORT', layer: 'sea', hp: 9000, speed: 0.35, leak: 999, cash: 1500, score: 20000, radius: 44,
+    armoured: true, boss: true, big: true,
+    children: [{ kind: 'carrier', n: 2 }, { kind: 'zumwalt', n: 2 }],
+    spawns: { kind: 'f35', everyTicks: sec(4), max: 40 },
+    introLevel: 20, sprite: 'boss_resort',
   },
 };
 

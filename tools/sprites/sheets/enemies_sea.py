@@ -753,3 +753,210 @@ class Carrier(Ship):
     @classmethod
     def frame(cls, f):
         return finish(cls.body(f), cls.X0, cls.X1, cls.CY, cls.half, f, spray_n=6)
+
+
+class Zumwalt(Ship):
+    """Black stealth wedge (the Zumwalt): a long tumblehome hull narrowing in a straight knife
+    wedge to the bow, dark iron deck with faint red seams converging along the chines, a low
+    faceted keep with the Eye and no masts, flush bolt grates along both deck edges and a
+    shrouded ballista forward."""
+
+    NAME = "zumwalt"
+    FRAME = (36, 10)
+    X0, X1, HW, BOW = 3, 34, 4, 15
+
+    @classmethod
+    def half(cls, x):
+        if x < cls.X0 or x > cls.X1:
+            return 0
+        if x <= 18:
+            return 4
+        return max(1, -(-4 * (cls.X1 - x + 1) // (cls.X1 - 18)))  # straight wedge, ceil
+
+    @classmethod
+    def draw(cls, img, f=0):
+        cy = 5
+        paint_hull(img, cy, cls.X0, cls.X1, cls.half, rim=C["iron"], deck=C["stone_dk"], lit=C["stone"],
+                   shade=C["black"])
+        # chines: faint red seams just inside each deck edge, converging on the bow
+        for x in range(5, cls.X1 - 1):
+            k = cls.half(x)
+            if k >= 2 and x % 3:
+                px(img, x, cy - k + 1, C["maroon"])
+                px(img, x, cy + k - 2, C["maroon"])
+        # flush bolt grates (peripheral VLS) aft and forward of the keep
+        for x0 in (6, 9, 22):
+            px(img, x0, cy - 2, C["black"])
+            px(img, x0 + 1, cy - 2, C["fire_red"])
+            px(img, x0, cy + 1, C["fire_red"])
+            px(img, x0 + 1, cy + 1, C["black"])
+        rect(img, 4, cy - 1, 5, cy, C["black"])  # stern boat-ramp notch
+        # low faceted keep: sloped sides meeting in a forward point
+        pts = [(12, 2), (19, 2), (22, 4), (22, 5), (19, 7), (12, 7)]
+        poly(img, [(x + 1, y + 1) for x, y in pts], C["black"])
+        poly(img, pts, C["iron"])
+        rect(img, 12, 2, 19, 3, C["smoke"])  # sunlit north facet
+        px(img, 20, 3, C["smoke"])
+        px(img, 21, 4, C["smoke"])
+        rect(img, 12, 6, 19, 7, C["black"])  # shadowed south facet
+        px(img, 20, 6, C["black"])
+        rect(img, 12, 2, 12, 7, C["smoke_lt"])
+        for x in (15, 18):
+            px(img, x, 3, C["maroon"])
+            px(img, x, 6, C["maroon"])
+        eye(img, 16, 4, 0)
+        window(img, 21, 5, 5)
+        # shrouded ballista: a low angular gun house, no barrel showing
+        rect(img, 25, cy - 1, 26, cy, C["iron"])
+        px(img, 25, cy - 1, C["smoke"])
+        px(img, 27, cy - 1, C["stone"])
+        px(img, cls.X1, cy - 1, C["smoke_lt"])  # knife tip
+
+    @classmethod
+    def frame(cls, f):
+        return finish(cls.body(f), cls.X0, cls.X1, 5, cls.half, f, spray_n=3)
+
+
+class Lcac(Ship):
+    """Iron hover-raft (the LCAC): a squat rectangular grey rubber skirt round an iron cargo well,
+    a little Eye-marked pilot keep to starboard and two big ducted fans aft spinning in their
+    shrouds; foam boils out all round the skirt."""
+
+    NAME = "lcac"
+    FRAME = (20, 10)
+    X0, X1 = 4, 18
+    CY = 5
+
+    @classmethod
+    def half(cls, x):
+        if x < cls.X0 or x > cls.X1:
+            return 0
+        if x in (cls.X0, cls.X1):
+            return 2
+        return 3
+
+    @classmethod
+    def draw(cls, img, f=0):
+        cy = cls.CY
+        paint_hull(img, cy, cls.X0, cls.X1, cls.half, rim=C["stone"], deck=C["stone"], lit=C["stone_lt"],
+                   shade=C["stone_dk"])
+        for x in range(5, 18, 2):  # skirt fingers
+            px(img, x, cy + 2, C["stone_dk"])
+        # iron deck with the open cargo well and a few orc helmets
+        rect(img, 8, cy - 2, 17, cy + 1, C["iron"])
+        rect(img, 10, cy - 2, 16, cy, C["black"])
+        rect(img, 10, cy - 2, 16, cy - 2, C["stone_dk"])
+        px(img, 11, cy - 1, C["maroon"])
+        px(img, 13, cy, C["maroon"])
+        px(img, 15, cy - 1, C["maroon"])
+        rect(img, 17, cy - 2, 17, cy + 1, C["smoke"])  # bow ramp
+        # pilot keep on the starboard side with the Eye
+        rect(img, 12, cy + 1, 16, cy + 1, C["smoke"])
+        eye(img, 14, cy + 1, 0)
+        # two big ducted fans aft: round shrouds overhanging the skirt, blades turning
+        for fy in (cy - 4, cy):
+            ring = [(1, 0), (2, 0), (0, 1), (3, 1), (0, 2), (3, 2), (1, 3), (2, 3)]
+            for dx, dy in ring:
+                px(img, 3 + dx, fy + dy, C["smoke_lt"] if dy == 0 or (dx == 0 and dy == 1) else C["iron"])
+            rect(img, 4, fy + 1, 5, fy + 2, C["black"])
+            blade = ((4, fy + 1), (5, fy + 2)) if f == 0 else ((5, fy + 1), (4, fy + 2))
+            for bx, by in blade:
+                px(img, bx, by, C["chrome"])
+        px(img, 7, cy - 2, C["tie"])  # red rudder vanes behind the fans
+        px(img, 7, cy + 1, C["tie"])
+
+    @classmethod
+    def frame(cls, f):
+        cy = cls.CY
+        img = finish(cls.body(f), cls.X0, cls.X1, cy, cls.half, f, wake_len=3, spray_n=0)
+        w, h = img.size
+
+        def put(x, y, c):
+            if 0 <= x < w and 0 <= y < h and img.getpixel((x, y))[3] == 0:
+                img.putpixel((x, y), c)
+
+        # spray boiling out from under the whole skirt
+        for x in range(cls.X0 + 3, cls.X1 + 2):
+            top, bot = (cy - 5, cy + 4) if (x + f) % 3 else (cy - 4 - 1, cy + 4)
+            if (x + f) % 2 == 0:
+                put(x, top, a(C["foam"], 210))
+                put(x, bot, a(C["foam"], 210))
+            elif (x + f) % 4 == 1:
+                put(x, top, a(C["white"], 150))
+                put(x, bot, a(C["white"], 150))
+        for y in range(cy - 3, cy + 3):
+            put(cls.X1 + 2, y, a(C["foam"] if (y + f) % 2 else C["white"], 170 if (y + f) % 2 else 110))
+        return img
+
+
+class Ohio(Sub):
+    """The Leviathan (the Ohio-class missile sub): the Deep Watcher's bigger kin, a longer black
+    iron hull whose hump carries a double row of ember-lit missile hatches behind the Eye-marked
+    sail. 0-1 surfaced, 2-3 submerged, same convention as Sub."""
+
+    NAME = "ohio"
+    FRAME = (32, 8)
+    FRAMES = 4
+    X0, X1, HW, BOW = 3, 31, 3, 5
+    SAIL = 22  # sail x0 (3 px wide)
+
+    @classmethod
+    def half(cls, x):
+        if x < cls.X0 or x > cls.X1:
+            return 0
+        if x < 7:
+            return max(1, 1 + (x - cls.X0) // 2)
+        if x > cls.X1 - 3:
+            return max(1, 3 - (x - (cls.X1 - 3)))
+        return 3
+
+    @classmethod
+    def draw(cls, img, f=0):
+        cy = 4
+        paint_hull(img, cy, cls.X0, cls.X1, cls.half, rim=C["iron"], deck=C["iron"], lit=C["smoke"],
+                   shade=C["black"])
+        # the hump: a raised stone-dark deck with two rows of missile hatches
+        rect(img, 8, 3, 20, 4, C["stone_dk"])
+        for i, x in enumerate(range(9, 21, 2)):
+            glow = C["fire_red"] if (i + f) % 3 == 0 else C["maroon"]
+            px(img, x, 3, C["black"])
+            px(img, x, 4, glow)
+        for x in range(8, 21, 4):
+            px(img, x, 2, C["smoke_lt"])  # dorsal spines along the hump edge
+        for x in range(27, 30, 2):
+            px(img, x, 2, C["smoke_lt"])
+        for y in (1, 6):  # cruciform stern planes + screw
+            px(img, 4, y, C["iron"])
+        px(img, 4, 2, C["iron"])
+        px(img, 4, 5, C["iron"])
+        px(img, 2, 3, C["stone_dk"])
+        px(img, 2, 4, C["stone_dk"])
+        s = cls.SAIL
+        rect(img, s, 3, s + 2, 4, C["black"])  # sail
+        rect(img, s, 3, s + 2, 3, C["stone_dk"])
+        px(img, s + 1, 2, C["iron"])
+        px(img, s + 1, 5, C["iron"])
+        eye(img, s + 1, 4, 0)
+        px(img, cls.X1, 3, C["smoke_lt"])  # ram tip
+        px(img, cls.X1, 4, C["smoke"])
+
+    @classmethod
+    def frame(cls, f):
+        cy = 4
+        if f < 2:
+            return finish(cls.body(f), cls.X0, cls.X1, cy, cls.half, f, spray_n=3)
+        body = new(*cls.FRAME)
+        for x in range(cls.X0, cls.X1 + 1):
+            k = cls.half(x)
+            for y in range(cy - k, cy + k):
+                edge = y == cy - k or y == cy + k - 1 or x in (cls.X0, cls.X1)
+                body.putpixel((x, y), a(C["water_dk"] if edge else C["black"], 110 if edge else 125))
+        s = cls.SAIL
+        rect(body, s, 3, s + 2, 4, a(C["black"], 150))
+        px(body, s + 1, 4, a(C["tie"], 120))
+        ph = f - 2
+        px(body, s + 2, 3, C["smoke_lt"])
+        px(body, s + 3, 3, a(C["white"], 230))
+        for i, (x, y) in enumerate([(s + 1, 2), (s + 1, 4), (s - 1, 2 - ph), (s - 1, 5 + ph), (s - 3, 1), (s - 3, 6)]):
+            px(body, x - ph, y, a(C["foam"], 210 - i * 25))
+        return body

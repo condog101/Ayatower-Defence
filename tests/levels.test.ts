@@ -3,6 +3,7 @@ import { LEVEL_COUNT } from '../shared/progress';
 import { ENEMIES } from '../web/src/data/enemies';
 import { LEVELS } from '../web/src/data/levels';
 import { TOWERS } from '../web/src/data/towers';
+import { allTiers } from '../web/src/sim/tiers';
 import { cellKind, isPlaceable, LEGEND, parseRows } from '../web/src/sim/grid';
 import { denseCells, Lane } from '../web/src/sim/path';
 import type { EnemyKey, LevelDef } from '../web/src/sim/types';
@@ -37,6 +38,7 @@ function threat(level: LevelDef): number {
 /** Lives the canned, unoptimised build should lose per level: a real fight, not a walkover. */
 const LOSS_TARGET: Record<number, [number, number]> = {
   1: [5, 15], 2: [8, 20], 3: [12, 30], 4: [12, 30], 5: [15, 45], 6: [15, 45], 7: [15, 45], 8: [15, 45], 9: [15, 45], 10: [20, 60],
+  11: [20, 60], 12: [20, 60], 13: [20, 60], 14: [20, 60], 15: [25, 65], 16: [25, 65], 17: [25, 65], 18: [25, 65], 19: [25, 65], 20: [25, 65],
 };
 
 /** Lane coverage: a lane aircraft fly needs AA-capable land in reach along its length; sea lanes need shallows for the mines. */
@@ -67,7 +69,7 @@ function uncovered(lane: Lane, cells: [number, number][], range: number): { shar
 }
 
 describe('levels', () => {
-  it('are the ten campaign levels, in order', () => {
+  it('are the twenty campaign levels, in order', () => {
     expect(LEVELS.length).toBe(LEVEL_COUNT);
     LEVELS.forEach((l, i) => expect(l.n).toBe(i + 1));
   });
@@ -161,16 +163,16 @@ describe('levels', () => {
         });
       });
 
-      it('has at least 8 waves, bosses only on 5 and 10, and a start purse that buys a tower', () => {
+      it('has at least 8 waves, bosses only on 5, 10, 15 and 20, and a start purse that buys a tower', () => {
         expect(level.waves.length).toBeGreaterThanOrEqual(8);
         const bossWaves = level.waves.filter((w) => w.boss || w.groups.some((g) => ENEMIES[g.kind].boss));
-        if (level.n === 5 || level.n === 10) {
+        if ([5, 10, 15, 20].includes(level.n)) {
           expect(bossWaves.length).toBeGreaterThan(0);
           expect(level.waves[level.waves.length - 1].boss).toBe(true);
           expect(level.bossName).toBeTruthy();
         } else expect(bossWaves).toHaveLength(0);
         for (const w of level.waves) expect(w.reward).toBeGreaterThan(0);
-        const cheapest = Math.min(...level.towers.map((k) => TOWERS[k].tiers[0].cost));
+        const cheapest = Math.min(...level.towers.map((k) => TOWERS[k].base.cost));
         expect(level.startCash).toBeGreaterThanOrEqual(cheapest);
       });
 
@@ -218,7 +220,7 @@ describe('levels', () => {
       const has = (k: string) => l.towers.includes(k as never);
       if (kinds.some((e) => e.layer === 'air')) expect(has('aa_gun') || has('sam'), `L${l.n} air`).toBe(true);
       if (kinds.some((e) => e.armoured)) {
-        const piercing = l.towers.some((k) => TOWERS[k].tiers.some((t) => t.dmgKind !== 'bullet' && t.damage > 0));
+        const piercing = l.towers.some((k) => allTiers(TOWERS[k]).some((t) => t.dmgKind !== 'bullet' && t.damage > 0));
         expect(piercing, `L${l.n} armour`).toBe(true);
       }
       if (kinds.some((e) => e.stealth)) expect(has('radar'), `L${l.n} stealth`).toBe(true);

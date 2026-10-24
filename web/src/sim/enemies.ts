@@ -1,6 +1,7 @@
 import { BASE_SPEED, DT } from './const';
 import type { Sim } from './sim';
 import type { DmgKind, Enemy, EnemyKey, Tower } from './types';
+import { tierOf } from './tiers';
 
 /** Lateral spread of ships across the lane, px either side of the centre line. */
 const LATERAL = 10;
@@ -29,6 +30,8 @@ export function spawnEnemy(sim: Sim, kind: EnemyKey, d: number, wave: number, la
     slowTicks: 0,
     stunTicks: 0,
     markTicks: 0,
+    paintTicks: 0,
+    paintMult: 1,
   };
   place(sim, e);
   sim.enemies.push(e);
@@ -53,6 +56,7 @@ export function stepEnemies(sim: Sim) {
     const e = sim.enemies[i];
     if (!e.alive) continue;
     if (e.markTicks > 0) e.markTicks--;
+    if (e.paintTicks > 0 && --e.paintTicks === 0) e.paintMult = 1;
     if (e.slowTicks > 0 && --e.slowTicks === 0) e.slowMult = 1;
     const sp = e.def.spawns;
     if (sp && e.spawned < sp.max && ++e.spawnAcc >= sp.everyTicks) {
@@ -96,7 +100,8 @@ export function damage(sim: Sim, e: Enemy, amount: number, kind: DmgKind, tower?
     return false;
   }
   let amt = amount * (e.markTicks > 0 ? 1.5 : 1) * (tower ? tower.buff.dmg : 1);
-  if (e.def.key === 'sub') amt *= subMult;
+  if (e.def.sub) amt *= subMult;
+  if (e.paintTicks > 0) amt *= e.paintMult;
   e.hp -= amt;
   sim.emit({ t: 'hit', id: e.id, x: e.x, y: e.y, dmg: amt });
   if (e.hp <= 0) {
@@ -132,7 +137,7 @@ function kill(sim: Sim, e: Enemy, tower?: Tower) {
 /** Stealth enemies are only targetable inside a radar's reveal radius, a Ghadir's sub detection, or while marked. */
 export function revealPass(sim: Sim) {
   const eyes = sim.towers.filter((t) => {
-    const tier = t.def.tiers[t.tier];
+    const tier = tierOf(t);
     return tier.reveal || tier.detectsSub;
   });
   for (const e of sim.enemies) {
@@ -140,10 +145,10 @@ export function revealPass(sim: Sim) {
     let seen = e.markTicks > 0;
     for (let i = 0; !seen && i < eyes.length; i++) {
       const t = eyes[i];
-      const tier = t.def.tiers[t.tier];
+      const tier = tierOf(t);
       const d2 = (e.x - t.x) ** 2 + (e.y - t.y) ** 2;
       if (tier.reveal && d2 <= tier.reveal ** 2) seen = true;
-      else if (tier.detectsSub && e.def.key === 'sub' && d2 <= tier.detectsSub ** 2) seen = true;
+      else if (tier.detectsSub && e.def.sub && d2 <= tier.detectsSub ** 2) seen = true;
     }
     e.revealed = seen;
   }

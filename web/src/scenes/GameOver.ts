@@ -23,7 +23,7 @@ export class GameOverScene extends Phaser.Scene {
     panel(this, OX + 140, 50, 680, 440);
     text(this, CX, 92, victory ? 'YOU SHAH-LL NOT PASS!' : 'THE EYE HAS PASSED', 24, victory ? COLORS.gold : COLORS.red);
     if (victory) {
-      text(this, CX, 128, 'THE STRAIT HELD. SOUR-DON CALLS IT THE GREATEST RETREAT IN HISTORY.', 8, COLORS.green).setWordWrapWidth(620);
+      text(this, CX, 128, 'THE GULF HELD. MORDOR-A-LAGO SANK, AND SOUR-DON SAYS IT WAS ALWAYS A SUBMARINE.', 8, COLORS.green).setWordWrapWidth(620);
     } else {
       Audio.play('death');
     }

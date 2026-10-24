@@ -4,7 +4,9 @@ A satirical tower defence in the Strait of Hormuz. The Ayatollah is Gandalf (the
 Grey Turban), the US Navy is Sauron's host, and **Sour-don the Orange**, the Eye of Mordor-a-Lago, wants his
 fleet through. Place towers loosely based on Iran's coastal arsenal (speedboats, mines, drone boats,
 AA guns, Shahed drones, coastal missiles, midget subs, radar, jammers, SAMs, a propaganda minaret) to
-stop ships and aircraft sailing the lanes to your tower. Ten levels (some with two lanes or a separate air corridor), two bosses, a chiptune score, phone-first layout.
+stop ships and aircraft sailing the lanes to your tower. Twenty levels in two acts (the Strait, 1-10; the Gulf,
+11-20; some with two or three lanes or a separate air corridor), four bosses, two upgrade paths per tower,
+a chiptune score, phone-first layout.
 
 Live: https://ayatower-defence.hormuz-run.workers.dev
 
@@ -22,10 +24,12 @@ and weapon stats are game numbers, not real capabilities. Swearing is always ble
 - **Waves**: START WAVE (Space). Sink ships for RIALS; every ship that reaches the Ayatower costs
   PATIENCE (lives). Ships alternate between a level's lanes. Send the next wave early once the
   current one has finished spawning. F cycles 1x/2x/3x, A toggles AUTO, P/Esc pauses.
-- **Upgrade**: click a tower for its panel: three tiers each, sell for 70%, cycle targeting
-  (FIRST / LAST / STRONG / CLOSE). Keys U / X / T.
-- **Rules worth knowing**: armour ignores bullets; aircraft can only be hit by the AA pit and the SAM;
-  stealth (submarines, the B-2) can't be targeted until a radar (or, for subs, a Ghadir) sees it,
+- **Upgrade**: click a tower for its panel. After the base tier every tower offers two paths of two
+  steps each (e.g. the pier's ROCKETS or FLAK SKIFFS, the jammer's CONTROL or TARGETING); the first
+  upgrade picks one for good, and the tier pips turn gold (path A) or red (path B). Sell for 70%,
+  cycle targeting (FIRST / LAST / STRONG / CLOSE). Keys U (path A, or the next step) / I (path B) / X / T.
+- **Rules worth knowing**: armour ignores bullets; aircraft can only be hit by the AA pit, the SAM and the pier's FLAK SKIFFS path;
+  stealth (submarines, the B-2, the Zumwalt and the F-35) can't be targeted until a radar (or, for subs, a Ghadir) sees it,
   though mines always hit. Support towers' buffs never stack: each takes the best one covering it.
 - **Abilities**: YOU SHAH-LL NOT PASS! (key 1, from level 1) stuns everything near the tap; FATWA
   (key 2, from level 6) marks one ship for +50% damage and makes every tower target it.
@@ -57,7 +61,8 @@ npm run test:py        # sprite generator contract
 The headless suite includes a balance harness: `tests/fixtures/builds.ts` holds one plausible,
 unoptimised build per level (towers on auto-chosen spots that spread across lanes), and
 `tests/levels.test.ts` replays each one deterministically and requires it to win while losing a
-set share of PATIENCE (5-15 on level 1 up to 20-60 on level 10), and doing nothing to lose. For tuning:
+set share of PATIENCE (5-15 on level 1, 20-60 on levels 10-14, 25-65 on 15-20), and doing nothing to
+lose. Act II builds take some towers down path B, so both paths are exercised. For tuning:
 
 ```bash
 npx esbuild tools/balance.ts --bundle --platform=node --format=esm --outfile=/tmp/b.mjs && VERBOSE=1 node /tmp/b.mjs 7

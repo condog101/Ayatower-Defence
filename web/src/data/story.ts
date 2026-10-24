@@ -36,7 +36,7 @@ export const MISSIVES: Record<number, Missive[]> = {
         touch: 'My Nazgul report the old man fights by DRAGGING a little card from the right onto the sand. Piers on land, mines in the shallow water. Hatched squares only. So complicated. Sad!',
       },
       seal: 'SEEN IN THE STONE · BY NINE NAZGUL AND ONE INTERN',
-      reply: { who: 'aya', text: 'He is not wrong, for once. Click or tap a tower you built to upgrade it, sell it or retarget it.' },
+      reply: { who: 'aya', text: 'He is not wrong, for once. Click or tap a tower you built to upgrade it down one of two roads, or sell it.' },
     },
     {
       who: 'don',
@@ -170,10 +170,146 @@ export const MISSIVES: Record<number, Missive[]> = {
       reply: { who: 'don', text: 'His STICK cannot stop a CARRIER. Can it? Somebody check.' },
     },
   ],
+  11: [
+    {
+      who: 'don',
+      text: 'SURPRISE! The greatest retreat was a FEINT. A genius feint. I am back, up the whole Gulf, with ZUMWALT destroyers. Stealthy AND armoured. You cannot see them and you cannot hurt them. Checkmate.',
+      seal: 'SEEN IN THE STONE · THE EYE IS BACK',
+      reply: { who: 'aya', text: 'A ship that hides and wears plate. Then the seeing-stone finds it and the bolts open it.' },
+    },
+    {
+      who: 'aya',
+      text: 'Kish is a resort island, all sand and pleasure-domes, and the lane winds right round it. Hear me: every tower now has TWO ROADS of upgrade. Choose one. You cannot walk both.',
+      seal: 'SEALED ON KISH',
+      reply: { who: 'don', text: 'Two roads? I take both roads. I take ALL the roads. I own roads.' },
+    },
+  ],
+  12: [
+    {
+      who: 'don',
+      text: 'Hovercraft! They do not even TOUCH the water. They fly over it, very low, very fast, full of patrol boats. My hovercraft are faster than anything. Except jets. And some ducks.',
+      seal: 'SEEN IN THE STONE · BLURRY, THEY ARE FAST',
+      reply: { who: 'aya', text: 'Then let them run into the mines. The water need not be touched to burn.' },
+    },
+    {
+      who: 'aya',
+      text: 'The Lavan shoals are wide and shallow: two lanes, one from the west and one from the south, meeting late. Good ground for mines and docks. The depth-charge road suits big hulls.',
+      seal: 'SEALED ON THE SHOALS',
+    },
+  ],
+  13: [
+    {
+      who: 'don',
+      text: 'The F-35. The most expensive plane ever made. It is invisible, it is fast, and it is very, very expensive. Did I say expensive? I am saying it because it is a good thing.',
+      seal: 'SEEN IN THE STONE · THE PRICE TAG ALONE',
+      reply: { who: 'aya', text: 'Invisible and fast. So: a seeing-stone near every AA pit.' },
+    },
+    {
+      who: 'aya',
+      text: 'Abu Musa. Three lanes come at us, from the north, the east and the south, and almost no ground to stand on. Build where you can see all three, and let nothing hide.',
+      seal: 'SEALED ON ABU MUSA',
+      reply: { who: 'don', text: 'Three lanes! Three hunters! Like that film. Which I also own.' },
+    },
+  ],
+  14: [
+    {
+      who: 'don',
+      text: 'I have made a SKY ROAD over Siri. Straight. Very straight. My jets go down it like a golf cart down the eighteenth fairway. Wide fairway. Beautiful fairway. Nobody plays it better.',
+      seal: 'SEEN IN THE STONE · FROM THE CLUBHOUSE',
+      reply: { who: 'aya', text: 'A road that does not bend is a road a ballista can wait on.' },
+    },
+    {
+      who: 'aya',
+      text: 'Siri: two sea lanes and the sky road between them. Line the sky road with the twin ballistae and the flak. The cannon road of the AA pit stays useful at sea.',
+      seal: 'SEALED ON SIRI',
+    },
+  ],
+  15: [
+    {
+      who: 'don',
+      text: 'I am coming PERSONALLY. Again. On AIR FARCE ONE. It is a golden jumbo jet. It is the biggest plane. It has a ballroom, and a smaller plane inside the ballroom. For emergencies.',
+      seal: 'SEEN IN THE STONE · FIRST CLASS',
+      reply: { who: 'aya', text: 'He flies. So the piers and mines sit idle, and the sky towers must do it all.' },
+    },
+    {
+      who: 'aya',
+      text: 'Asaluyeh\'s gas fields: two lanes among the oil platforms and a sky road over all. The jumbo flies the sky road, spilling bombers and jets. Every SAM and AA pit we have, on that road.',
+      seal: 'SEALED AMONG THE FLARES',
+      reply: { who: 'don', text: 'Gas field? It is a GOLF field. Long holes. Very windy. Like me.' },
+    },
+  ],
+  16: [
+    {
+      who: 'don',
+      text: 'The OHIO. The biggest submarine. It is a submarine FULL of submarines. When you sink it, more submarines come out. Submarines all the way down. I invented this. Probably.',
+      seal: 'SEEN IN THE STONE · FROM BELOW',
+      reply: { who: 'aya', text: 'Then the Ghadirs hunt, and the mines wait, and the seeing-stone keeps watch.' },
+    },
+    {
+      who: 'aya',
+      text: 'The Bushehr roads run long through mudflats and dead marshes. One lane, very long, many shallows. Do not follow the lights in the water. Follow the mines instead.',
+      seal: 'SEALED IN THE MARSHES',
+      reply: { who: 'don', text: 'Dead marshes? They are not dead. They are resting. Like my ratings.' },
+    },
+  ],
+  17: [
+    {
+      who: 'don',
+      text: 'Farsi Island. It is a tiny island. Very tiny. Hardly an island. I will surround it with THREE fleets and he will have nowhere to stand. He will have to stand in the water. Like a duck.',
+      seal: 'SEEN IN THE STONE · VERY SMUG',
+      reply: { who: 'aya', text: 'Then we stand in the water. The docks and the mines were made for it.' },
+    },
+    {
+      who: 'aya',
+      text: 'The last homely rock: a scrap of land and three lanes round it. Most of our strength must go in the shallows. Martyr docks, mines and Ghadirs, and the radar on the one good rock.',
+      seal: 'SEALED ON THE LAST ROCK',
+    },
+  ],
+  18: [
+    {
+      who: 'don',
+      text: 'Kharg Terminal. Where the oil comes out. I am taking it. Every ship I have, two lanes, crossing twice so he gets dizzy. He is very old. Old men get dizzy. I never get dizzy.',
+      seal: 'SEEN IN THE STONE · NOT DIZZY',
+      reply: { who: 'aya', text: 'Where the lanes cross, one tower reaches both. Build at the crossings.' },
+    },
+    {
+      who: 'aya',
+      text: 'The Siege of Kharg. Everything he has thrown at us before, and more of it. Two lanes that cross twice. Mix your roads: some towers for the plated, some for the swarms, some for the sky.',
+      seal: 'SEALED AT THE TERMINAL',
+      reply: { who: 'don', text: 'A siege? I love sieges. Sieges are like golf. You surround the hole.' },
+    },
+  ],
+  19: [
+    {
+      who: 'don',
+      text: 'Khor Musa. A very long channel. It doubles back THREE times. My fleet will sail so long he will fall asleep. Then: WIN. I call it the endurance strategy. I have great endurance.',
+      seal: 'SEEN IN THE STONE · STILL GOING',
+      reply: { who: 'aya', text: 'Long lanes give long towers long work. Slow them, and keep slowing them.' },
+    },
+    {
+      who: 'aya',
+      text: 'The paths of the drowned: one tidal channel that folds three times. Jammers at the folds, and the targeting road where the fleet bunches. Patience, now, of every kind.',
+      seal: 'SEALED AT THE FOLD',
+    },
+  ],
+  20: [
+    {
+      who: 'don',
+      text: 'MORDOR-A-LAGO. My floating resort. Gold hotel, pool, a giant Eye on top, and a golf course. It sails up the Arvand Rud with carriers, Zumwalts and forty jets. If it docks at his tower, the Gulf is mine.',
+      seal: 'SEEN IN THE STONE · FROM THE PENTHOUSE',
+      reply: { who: 'aya', text: 'Then it must not dock. Three lanes, one last run. Everything, now.' },
+    },
+    {
+      who: 'aya',
+      text: 'Arvand Rud: three channels that funnel into one short final run before the tower. Build deep at the funnel, where all three meet. This is the last road. Walk it well.',
+      seal: 'SEALED AT THE MOUTH OF THE RIVER',
+      reply: { who: 'don', text: 'Last road? I have many roads. I told you. I own roads.' },
+    },
+  ],
 };
 
-/** Shown after level 10, before the victory screen. */
-export const ENDING: Missive[] = [
+/** Shown after level 10, between the acts: Sour-don's greatest retreat (which was a feint). */
+export const INTERLUDE: Missive[] = [
   {
     who: 'don',
     text: 'We have completed the GREATEST RETREAT in the history of Middle-earth. Nobody has ever retreated this well. Many experts call it a win. I am all of the experts.',
@@ -188,6 +324,26 @@ export const ENDING: Missive[] = [
   {
     who: 'aya',
     text: 'The Strait was never his to open, nor mine to close. It is a strait. It sits there. Thank you, friend. Now: tea.',
+    seal: 'SEALED FROM THE TOP OF THE AYATOWER',
+  },
+];
+
+/** Shown after level 20, before the victory screen. */
+export const ENDING: Missive[] = [
+  {
+    who: 'don',
+    text: 'Mordor-a-Lago has SUNK. It was not sinking, it was diving. It is a submarine now. A golden submarine. It was always a submarine. Ask anyone. Ask me.',
+    seal: 'THE STONE IS UNDERWATER',
+    reply: { who: 'aya', text: 'Enjoy the depths, Sour-don. The fish will be honest with you.' },
+  },
+  {
+    who: 'don',
+    text: 'I am leaving the Gulf. It is a terrible gulf. I am getting a better gulf, with a golf course, and lava. And no old men in towers. None at all. Not one.',
+    seal: 'THE STONE HAS GONE VERY DARK',
+  },
+  {
+    who: 'aya',
+    text: 'Twenty battles, and the water still runs where it always ran. Rest now, friend. The tea is hot, the tower stands, and nobody passed.',
     seal: 'SEALED FROM THE TOP OF THE AYATOWER',
   },
 ];
@@ -249,5 +405,65 @@ export const BEATS: Beat[] = [
     at: 'boss',
     aya: 'So. The Eye itself comes down the Strait. One ship past me and all is lost. Everything we have!',
     don: 'IT IS ME! On the BIGGEST ship! Gold deck, giant Eye, a very flattering angle. Out of my WAY!',
+  },
+  {
+    level: 11,
+    at: 'wave:4',
+    aya: 'Plate and shadow together. The seeing-stone finds the Zumwalt; bolts and fire break it open.',
+    don: 'They cannot see my ship. It is so stealthy, even I cannot see it. Where did it go?',
+  },
+  {
+    level: 12,
+    at: 'wave:5',
+    aya: 'Fast hulls on a cushion of air. Slow them, and let the mines rise to meet them.',
+    don: 'Hovercraft never stop. Mine do not even have brakes. That is a FEATURE.',
+  },
+  {
+    level: 13,
+    at: 'wave:6',
+    aya: 'Invisible wings. A radar beside every AA pit, or they pass unseen.',
+    don: 'Invisible AND expensive. The two best things a plane can be.',
+  },
+  {
+    level: 14,
+    at: 'wave:6',
+    aya: 'The sky road fills. Let the flak burst among them; one shell, many jets.',
+    don: 'Formation flying! Like a golf foursome. In the sky. Faster.',
+  },
+  {
+    level: 15,
+    at: 'boss',
+    aya: 'The jumbo comes on the sky road, shedding bombers and jets. Only the sky towers can touch it now!',
+    don: 'AIR FARCE ONE! Gold wings, gold engines, gold seatbelts. Fasten them. For me.',
+  },
+  {
+    level: 16,
+    at: 'wave:8',
+    aya: 'Many small shadows under the marsh. The Ghadirs know this hunt; the mines know it too.',
+    don: 'My submarine had submarines. It is like a family. A family of submarines.',
+  },
+  {
+    level: 17,
+    at: 'wave:7',
+    aya: 'Little ground and three lanes. Our strength is in the water now; let the docks work.',
+    don: 'He is standing in the sea. I said he would. Ducks everywhere. I am never wrong.',
+  },
+  {
+    level: 18,
+    at: 'wave:10',
+    aya: 'At the crossings one tower reaches two lanes. Hold the crossings and the siege breaks.',
+    don: 'Twice they cross! He is dizzy now. I can tell. I can always tell.',
+  },
+  {
+    level: 19,
+    at: 'wave:12',
+    aya: 'The channel folds and folds again. Slow them at every fold; patience wins the long road.',
+    don: 'Still sailing. Still winning. In my mind I have already won twice.',
+  },
+  {
+    level: 20,
+    at: 'boss',
+    aya: 'There. Gold hotel, a pool, and the Eye on its tower. It must not dock. Everything we have, at the funnel!',
+    don: 'WELCOME TO MORDOR-A-LAGO! Pool is open. Golf is open. Your tower is closed!',
   },
 ];

@@ -22,8 +22,14 @@ export type EnemyKey =
   | 'seahawk'
   | 'hornet'
   | 'b2'
+  | 'zumwalt'
+  | 'lcac'
+  | 'f35'
+  | 'ohio'
   | 'boss_yacht'
-  | 'boss_don';
+  | 'boss_don'
+  | 'boss_af1'
+  | 'boss_resort';
 
 export type TowerKey =
   | 'boats'
@@ -56,6 +62,8 @@ export interface EnemyDef {
   radius: number;
   armoured?: boolean;
   stealth?: boolean;
+  /** A submarine: Ghadirs detect it and hit it harder, it dives and surfaces. */
+  sub?: boolean;
   boss?: boolean;
   fast?: boolean;
   big?: boolean;
@@ -78,7 +86,7 @@ export interface Buff {
 
 export interface TierDef {
   name: string;
-  /** Place cost (tier 0) or upgrade cost (tiers 1, 2). */
+  /** Place cost (base) or upgrade cost (path steps). */
   cost: number;
   range: number;
   cooldown: number;
@@ -101,6 +109,8 @@ export interface TierDef {
   slow?: { mult: number; ticks: number };
   /** Jammer T3: every `every` ticks freeze everything in range for `ticks` (bosses a third). */
   stun?: { ticks: number; every: number };
+  /** Jammer path B: enemies in range take `mult`x damage (does not reveal stealth). */
+  paint?: { mult: number; ticks: number };
   /** Reveals stealth enemies within this radius. */
   reveal?: number;
   /** Reveals submarines (only) within this radius. */
@@ -125,10 +135,22 @@ export interface TowerDef {
   placement: 'land' | 'shallow';
   role: 'attack' | 'support';
   unlockLevel: number;
-  /** Frame index in towers.png is index*3 + tier; aimed towers also have turret strips. */
+  /**
+   * towers.png frame = index * 5 + slot (slot 0 base, 1-2 path A, 3-4 path B, see tierSlot);
+   * aimed towers: turrets.png frame = (aimedIndex * 5 + slot) * 8 + direction.
+   */
   index: number;
   aimed: boolean;
-  tiers: [TierDef, TierDef, TierDef];
+  base: TierDef;
+  /** Two upgrade paths of two steps each; the first upgrade picks one for good. */
+  paths: [UpgradePath, UpgradePath];
+}
+
+export type PathIndex = 0 | 1;
+
+export interface UpgradePath {
+  name: string;
+  tiers: [TierDef, TierDef];
 }
 
 export interface WaveGroup {
@@ -177,6 +199,8 @@ export interface Status {
   slowTicks: number;
   stunTicks: number;
   markTicks: number;
+  paintTicks: number;
+  paintMult: number;
 }
 
 export interface Enemy extends Status {
@@ -206,6 +230,8 @@ export interface Tower {
   id: number;
   def: TowerDef;
   tier: 0 | 1 | 2;
+  /** The upgrade path; 0 until the first upgrade picks one. */
+  path: PathIndex;
   c: number;
   r: number;
   x: number;
@@ -277,7 +303,7 @@ export type SimEvent =
   | { t: 'projDie'; id: number; x: number; y: number }
   | { t: 'waveStart'; wave: number }
   | { t: 'waveEnd'; wave: number; reward: number }
-  | { t: 'tower'; op: 'place' | 'upgrade' | 'sell'; id: number; key: TowerKey; tier: number }
+  | { t: 'tower'; op: 'place' | 'upgrade' | 'sell'; id: number; key: TowerKey; tier: number; path: PathIndex }
   | { t: 'jam'; tower: number; freeze: boolean }
   | { t: 'income'; tower: number; amount: number }
   | { t: 'ability'; key: AbilityKey; x: number; y: number; target?: number }

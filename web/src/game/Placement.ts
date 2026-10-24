@@ -51,8 +51,8 @@ export class Placement {
       .text(4, 6, '', { fontFamily: FONT, fontSize: `${uiSize(8)}px`, color: COLORS.text, lineSpacing: 4, wordWrap: { width: side.w - 8 } })
       .setOrigin(0);
     this.panel = s.add.container(side.x, side.y, [bg, this.panelText]).setDepth(DEPTH.hud).setVisible(false);
-    this.placeBtn = rectButton(s, L.game.sideButtons[1], 'PLACE', () => this.valid() && this.onCommit(), 12, DEPTH.hud + 1).setVisible(false);
-    this.cancelBtn = rectButton(s, L.game.sideButtons[2], 'CANCEL', () => this.onCancel(), 10, DEPTH.hud + 1).setVisible(false);
+    this.placeBtn = rectButton(s, L.game.sideButtons[2], 'PLACE', () => this.valid() && this.onCommit(), 12, DEPTH.hud + 1).setVisible(false);
+    this.cancelBtn = rectButton(s, L.game.sideButtons[3], 'CANCEL', () => this.onCancel(), 10, DEPTH.hud + 1).setVisible(false);
   }
 
   get active(): boolean {
@@ -63,14 +63,14 @@ export class Placement {
     this.key = key;
     this.cell = null;
     this.ghost.removeAll(true);
-    const { base, turret } = TowerView.make(this.scene, TOWERS[key], 0, 0, 0, 0);
+    const { base, turret } = TowerView.make(this.scene, TOWERS[key], 0, 0, 0, 0, 0);
     this.ghost.add(base);
     if (turret) this.ghost.add(turret);
     this.ghost.setVisible(false);
     this.ring.clear();
     this.why.setVisible(false);
     const d = TOWERS[key];
-    this.panelText.setText(`${d.name}\n${d.tiers[0].cost} RIALS\n\n+ ${d.pro}\n- ${d.con}\n\n${d.tiers[0].blurb}`);
+    this.panelText.setText(`${d.name}\n${d.base.cost} RIALS\n\n+ ${d.pro}\n- ${d.con}\n\n${d.base.blurb}`);
     this.setMode(mode);
   }
 
@@ -120,7 +120,7 @@ export class Placement {
     const cy = MAP_Y + r * TILE + TILE / 2;
     const check = this.sim.canPlace(this.key, c, r);
     this.ghost.setPosition(cx, cy).setVisible(true);
-    TowerView.drawRange(this.ring, cx, cy, TOWERS[this.key].tiers[0].range, check.ok);
+    TowerView.drawRange(this.ring, cx, cy, TOWERS[this.key].base.range, check.ok);
     this.ring.lineStyle(2, check.ok ? 0x6dff8f : 0xff4a4a, 1).strokeRect(cx - TILE / 2, cy - TILE / 2, TILE, TILE);
     const why = check.ok ? '' : REASON[check.reason!];
     this.why.setText(why).setPosition(cx, cy - 28 < MAP_Y + 10 ? cy + 28 : cy - 28).setVisible(!!why);

@@ -1,22 +1,24 @@
 import Phaser from 'phaser';
 import { DEPTH, MAP_X, MAP_Y, TOWER_PX } from '../data/balance';
-import type { Tower, TowerDef } from '../sim/types';
+import { tierOf, tierSlot } from '../sim/tiers';
+import type { PathIndex, Tower, TowerDef } from '../sim/types';
 
 /** Aimed towers in turrets.png order. */
 const AIMED = ['boats', 'aa_gun', 'missile', 'sam'];
 
-export const baseFrame = (def: TowerDef, tier: number) => def.index * 3 + tier;
+export const baseFrame = (def: TowerDef, tier: number, path: PathIndex) => def.index * 5 + tierSlot(tier, path);
 
-/** turrets.png frame for an aimed tower at a tier, pointing at `angle` (0 = east, clockwise). */
-export function turretFrame(def: TowerDef, tier: number, angle: number): number {
+/** turrets.png frame for an aimed tower at a tier on a path, pointing at `angle` (0 = east, clockwise). */
+export function turretFrame(def: TowerDef, tier: number, path: PathIndex, angle: number): number {
   const dir = ((Math.round(angle / (Math.PI / 4)) % 8) + 8) % 8;
-  return (AIMED.indexOf(def.key) * 3 + tier) * 8 + dir;
+  return (AIMED.indexOf(def.key) * 5 + tierSlot(tier, path)) * 8 + dir;
 }
 
 interface View {
   base: Phaser.GameObjects.Image;
   turret: Phaser.GameObjects.Image | null;
   tier: number;
+  path: PathIndex;
 }
 
 /** Tower sprites (base + 8-way turret), the selection ring and the tier pips. */
@@ -32,9 +34,9 @@ export class TowerView {
   }
 
   /** Base and turret images for a tower def (also used by the shop and the placement ghost). */
-  static make(scene: Phaser.Scene, def: TowerDef, tier: number, x: number, y: number, depth: number, scale = TOWER_PX) {
-    const base = scene.add.image(x, y, 'towers', baseFrame(def, tier)).setScale(scale).setDepth(depth);
-    const turret = def.aimed ? scene.add.image(x, y, 'turrets', turretFrame(def, tier, -Math.PI / 2)).setScale(scale).setDepth(depth + 0.1) : null;
+  static make(scene: Phaser.Scene, def: TowerDef, tier: number, path: PathIndex, x: number, y: number, depth: number, scale = TOWER_PX) {
+    const base = scene.add.image(x, y, 'towers', baseFrame(def, tier, path)).setScale(scale).setDepth(depth);
+    const turret = def.aimed ? scene.add.image(x, y, 'turrets', turretFrame(def, tier, path, -Math.PI / 2)).setScale(scale).setDepth(depth + 0.1) : null;
     return { base, turret };
   }
 
@@ -47,20 +49,22 @@ export class TowerView {
       const x = MAP_X + t.x;
       const y = MAP_Y + t.y;
       if (!v) {
-        const { base, turret } = TowerView.make(this.scene, t.def, t.tier, x, y, DEPTH.towers + t.r * 0.01);
-        v = { base, turret, tier: t.tier };
+        const { base, turret } = TowerView.make(this.scene, t.def, t.tier, t.path, x, y, DEPTH.towers + t.r * 0.01);
+        v = { base, turret, tier: t.tier, path: t.path };
         this.views.set(t.id, v);
         this.scene.tweens.add({ targets: [base, turret].filter(Boolean), scale: { from: TOWER_PX * 1.4, to: TOWER_PX }, duration: 180, ease: 'Back.easeOut' });
       }
-      if (v.tier !== t.tier) {
+      if (v.tier !== t.tier || v.path !== t.path) {
         v.tier = t.tier;
-        v.base.setFrame(baseFrame(t.def, t.tier));
+        v.path = t.path;
+        v.base.setFrame(baseFrame(t.def, t.tier, t.path));
       }
-      v.turret?.setFrame(turretFrame(t.def, t.tier, t.angle));
-      // tier pips under the tower
+      v.turret?.setFrame(turretFrame(t.def, t.tier, t.path, t.angle));
+      // tier pips under the tower: gold on path A, red on path B
+      const pip = t.tier > 0 && t.path === 1 ? 0xe0403a : 0xffd84a;
       for (let i = 0; i <= t.tier; i++) {
         this.pips.fillStyle(0x000000, 1).fillRect(x - 8 + i * 6, y + 11, 5, 4);
-        this.pips.fillStyle(0xffd84a, 1).fillRect(x - 7 + i * 6, y + 12, 3, 2);
+        this.pips.fillStyle(pip, 1).fillRect(x - 7 + i * 6, y + 12, 3, 2);
       }
     }
     for (const [id, v] of this.views) {
@@ -72,7 +76,7 @@ export class TowerView {
     this.ring.clear();
     const sel = this.selected !== null ? towers.find((t) => t.id === this.selected) : undefined;
     if (sel) {
-      const tier = sel.def.tiers[sel.tier];
+      const tier = tierOf(sel);
       TowerView.drawRange(this.ring, MAP_X + sel.x, MAP_Y + sel.y, tier.range * sel.buff.range, true);
     } else this.selected = null;
   }

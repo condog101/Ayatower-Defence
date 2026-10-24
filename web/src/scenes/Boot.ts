@@ -26,12 +26,18 @@ const SHEETS: [string, number, number][] = [
   ['tico', 36, 12],
   ['lhd', 48, 16],
   ['carrier', 64, 20],
+  ['zumwalt', 36, 10],
+  ['lcac', 20, 10],
+  ['ohio', 32, 8],
   ['boss_yacht', 48, 14],
   ['boss_don', 80, 24],
+  ['boss_af1', 40, 28],
+  ['boss_resort', 72, 28],
   ['reaper', 16, 12],
   ['seahawk', 16, 12],
   ['hornet', 16, 12],
   ['b2', 24, 12],
+  ['f35', 16, 12],
   ['p_bullet', 4, 4],
   ['p_rocket', 6, 3],
   ['p_missile', 8, 3],
@@ -60,7 +66,12 @@ const SHEETS: [string, number, number][] = [
   ['scroll', 48, 48],
 ];
 
-const SHIPS = ['rhib', 'patrol', 'cyclone', 'lcs', 'frigate', 'burke', 'tico', 'lhd', 'carrier', 'boss_yacht', 'boss_don', 'reaper', 'seahawk', 'hornet', 'b2'];
+const SHIPS = [
+  'rhib', 'patrol', 'cyclone', 'lcs', 'frigate', 'burke', 'tico', 'lhd', 'carrier', 'zumwalt', 'lcac',
+  'boss_yacht', 'boss_don', 'boss_af1', 'boss_resort', 'reaper', 'seahawk', 'hornet', 'b2', 'f35',
+];
+/** Submarines: frames 0-1 surfaced (`${key}_up`), 2-3 submerged (`${key}_down`). */
+const SUBS = ['sub', 'ohio'];
 const MISSILES = ['p_rocket', 'p_missile', 'p_shahed', 'p_torpedo', 'p_boat', 'p_sam'];
 
 export class BootScene extends Phaser.Scene {
@@ -86,8 +97,10 @@ export class BootScene extends Phaser.Scene {
     const strip = (key: string, start: number, end: number, frameRate: number, repeat = -1, anim = key) =>
       a.create({ key: anim, frames: a.generateFrameNumbers(key, { start, end }), frameRate, repeat });
     for (const k of SHIPS) strip(k, 0, 1, 5);
-    strip('sub', 0, 1, 5, -1, 'sub_up');
-    strip('sub', 2, 3, 3, -1, 'sub_down');
+    for (const k of SUBS) {
+      strip(k, 0, 1, 5, -1, `${k}_up`);
+      strip(k, 2, 3, 3, -1, `${k}_down`);
+    }
     for (const k of MISSILES) strip(k, 0, 1, 12);
     strip('p_mine', 0, 1, 2);
     strip('explosion_sm', 0, 5, 16, 0);

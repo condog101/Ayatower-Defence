@@ -7,7 +7,8 @@ import type { EnemyKey, LevelDef, WaveDef } from '../../web/src/sim/types';
 /** Smallest group of each kind worth sending. */
 export const MIN_N: Record<EnemyKey, number> = {
   rhib: 6, patrol: 6, cyclone: 6, reaper: 6, lcs: 4, hornet: 4, seahawk: 4, frigate: 3, sub: 3,
-  burke: 2, b2: 2, tico: 2, lhd: 2, carrier: 2, boss_yacht: 1, boss_don: 1,
+  burke: 2, b2: 2, tico: 2, lhd: 2, carrier: 2, zumwalt: 2, lcac: 4, f35: 4, ohio: 2,
+  boss_yacht: 1, boss_don: 1, boss_af1: 1, boss_resort: 1,
 };
 
 /** A wave's lead group is at least this share of the most of its kind that led an earlier wave. */

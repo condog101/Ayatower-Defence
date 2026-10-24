@@ -13,6 +13,8 @@ export interface Button {
   setLabel(s: string): Button;
   setHighlight(on: boolean): Button;
   setVisible(on: boolean): Button;
+  /** Called with true on pointer over, false on out (desktop hints). */
+  onHover(fn: (on: boolean) => void): Button;
 }
 
 /** A flat pixel button. Fires on pointerdown (snappy on touch); the hit area gets SLOP on touch. */
@@ -58,6 +60,11 @@ export function button(
       root.setVisible(on);
       if (on) bg.setInteractive();
       else bg.disableInteractive();
+      return b;
+    },
+    onHover(fn) {
+      bg.on('pointerover', () => fn(true));
+      bg.on('pointerout', () => fn(false));
       return b;
     },
   };

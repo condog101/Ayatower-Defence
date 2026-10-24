@@ -14,6 +14,7 @@ import type { LevelDef } from '../web/src/sim/types';
 /** Lives the canned build should lose (mirrors LOSS_TARGET in tests/levels.test.ts, aiming inside it). */
 const TARGET: Record<number, [number, number]> = {
   1: [7, 13], 2: [10, 18], 3: [15, 26], 4: [15, 26], 5: [20, 40], 6: [20, 40], 7: [20, 40], 8: [20, 40], 9: [20, 40], 10: [25, 55],
+  11: [25, 55], 12: [25, 55], 13: [25, 55], 14: [25, 55], 15: [30, 60], 16: [30, 60], 17: [30, 60], 18: [30, 60], 19: [30, 60], 20: [30, 60],
 };
 const PER_WAVE_CAP = 15;
 /** A group's gap may widen to this many times its hand-written value. */

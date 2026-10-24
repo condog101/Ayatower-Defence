@@ -14,6 +14,7 @@ import {
   type EnemyKey,
   type LanePoint,
   type LevelDef,
+  type PathIndex,
   type Phase,
   type Projectile,
   type SimEvent,
@@ -196,7 +197,7 @@ export class Sim {
     if (c < 0 || r < 0 || c >= this.grid[0].length || r >= this.grid.length) return { ok: false, reason: 'bounds' };
     if (!isPlaceable(this.grid, c, r, def.placement)) return { ok: false, reason: 'terrain' };
     if (this.towerAt(c, r)) return { ok: false, reason: 'occupied' };
-    if (this.cash < def.tiers[0].cost) return { ok: false, reason: 'cash' };
+    if (this.cash < def.base.cost) return { ok: false, reason: 'cash' };
     return { ok: true };
   }
 
@@ -208,11 +209,12 @@ export class Sim {
       id: this.nextId++,
       def,
       tier: 0,
+      path: 0,
       c,
       r,
       x,
       y,
-      spent: def.tiers[0].cost,
+      spent: def.base.cost,
       cooldown: 0,
       targetId: 0,
       targeting: 'first',
@@ -226,27 +228,31 @@ export class Sim {
       laneSpots: [],
       entry: { lane: 0, d: 0 },
     };
-    this.cash -= def.tiers[0].cost;
+    this.cash -= def.base.cost;
     this.towers.push(t);
     this.towerIndex.set(t.id, t);
     this.towersBuilt++;
     refreshBuffs(this);
-    this.emit({ t: 'tower', op: 'place', id: t.id, key, tier: 0 });
+    this.emit({ t: 'tower', op: 'place', id: t.id, key, tier: 0, path: 0 });
     return t;
   }
 
-  upgradeCost(t: Tower): number | null {
-    return t.tier < 2 ? t.def.tiers[t.tier + 1].cost : null;
+  /** Cost of the next step: at the base, along `path`; once on a path, along that path (`path` is ignored). */
+  upgradeCost(t: Tower, path: PathIndex = t.path): number | null {
+    if (t.tier >= 2) return null;
+    return t.def.paths[t.tier === 0 ? path : t.path].tiers[t.tier as 0 | 1].cost;
   }
 
-  upgrade(t: Tower): boolean {
-    const cost = this.upgradeCost(t);
+  /** Upgrade one step; the first upgrade chooses the path (default A) for good. */
+  upgrade(t: Tower, path?: PathIndex): boolean {
+    const cost = this.upgradeCost(t, path ?? t.path);
     if (cost === null || this.cash < cost || !this.towerIndex.has(t.id)) return false;
+    if (t.tier === 0) t.path = path ?? 0;
     this.cash -= cost;
     t.spent += cost;
     t.tier = (t.tier + 1) as 1 | 2;
     refreshBuffs(this);
-    this.emit({ t: 'tower', op: 'upgrade', id: t.id, key: t.def.key, tier: t.tier });
+    this.emit({ t: 'tower', op: 'upgrade', id: t.id, key: t.def.key, tier: t.tier, path: t.path });
     return true;
   }
 
@@ -267,7 +273,7 @@ export class Sim {
       }
     }
     refreshBuffs(this);
-    this.emit({ t: 'tower', op: 'sell', id: t.id, key: t.def.key, tier: t.tier });
+    this.emit({ t: 'tower', op: 'sell', id: t.id, key: t.def.key, tier: t.tier, path: t.path });
     return true;
   }
 
@@ -330,7 +336,7 @@ export class Sim {
       wave: this.wave,
       phase: this.phase,
       enemies: this.enemies.map((e) => [e.id, e.def.key, e.lane, r(e.hp), r(e.d)]),
-      towers: this.towers.map((t) => [t.id, t.def.key, t.tier, t.kills]),
+      towers: this.towers.map((t) => [t.id, t.def.key, t.tier, t.path, t.kills]),
       projectiles: this.projectiles.map((p) => [p.id, p.kind, r(p.x), r(p.y)]),
     };
   }

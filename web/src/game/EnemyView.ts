@@ -73,7 +73,7 @@ export class EnemyView {
         this.views.set(e.id, v);
       }
       const [x, y] = EnemyView.screen(e);
-      const anim = e.def.key === 'sub' ? (e.revealed ? 'sub_up' : 'sub_down') : e.def.sprite;
+      const anim = e.def.sub ? `${e.def.sprite}_${e.revealed ? 'up' : 'down'}` : e.def.sprite;
       if (v.anim !== anim) {
         v.sprite.play({ key: anim, startFrame: e.id % 2 });
         v.anim = anim;
@@ -81,7 +81,7 @@ export class EnemyView {
       v.sprite.setPosition(x, y).setRotation(e.angle);
       v.shadow?.setPosition(MAP_X + e.x + SHADOW_DX, MAP_Y + e.y + SHADOW_DY).setRotation(e.angle).setFrame(v.sprite.frame.name);
       const ghost = e.def.stealth && !e.revealed;
-      v.sprite.setAlpha(ghost ? (e.def.key === 'sub' ? 0.55 : 0.3) : 1);
+      v.sprite.setAlpha(ghost ? (e.def.sub ? 0.55 : 0.3) : 1);
       if (e.markTicks > 0) v.sprite.setTint(0xff6060);
       else if (e.stunTicks > 0) v.sprite.setTint(0xffffff, 0xffffff, 0xb0e0ff, 0xb0e0ff);
       else if (e.slowTicks > 0) v.sprite.setTint(0x9ff0ff);

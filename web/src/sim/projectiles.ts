@@ -3,6 +3,7 @@ import { damage } from './enemies';
 import type { Sim } from './sim';
 import { canHit } from './targeting';
 import type { Enemy, Projectile, TierDef, Tower } from './types';
+import { tierOf } from './tiers';
 
 /** Homing turn rate, rad per tick. */
 const TURN = 7 * DT;
@@ -17,7 +18,8 @@ const BOAT_CONTACT = 12;
 export function projectileSprite(t: Tower): string {
   switch (t.def.key) {
     case 'boats':
-      return t.tier === 0 ? 'p_bullet' : 'p_rocket';
+    case 'aa_gun':
+      return tierOf(t).dmgKind === 'bullet' ? 'p_bullet' : 'p_rocket';
     case 'mines':
       return 'p_mine';
     case 'martyr':
@@ -186,7 +188,7 @@ export function stepProjectiles(sim: Sim) {
     const p = sim.projectiles[i];
     if (!p.alive) continue;
     const tower = sim.towerById(p.towerId);
-    const tier = tower ? tower.def.tiers[tower.tier] : null;
+    const tier = tower ? tierOf(tower) : null;
     if (--p.ttl <= 0 && p.kind !== 'splash') {
       finish(sim, p);
       continue;

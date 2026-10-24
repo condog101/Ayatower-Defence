@@ -65,7 +65,8 @@ export class TitleScene extends Phaser.Scene {
     this.layer.removeAll(true);
   }
 
-  private show(view: View) {
+  /** `act` picks the level-select page: 1 (levels 1-10) or 2 (11-20); by default the one you've reached. */
+  private show(view: View, act?: 1 | 2) {
     this.clear();
     const p = Save.progress;
     const who = Save.session ? `SWORN: ${Save.session.callsign}` : 'NO OATH SWORN (PROGRESS SAVED ON THIS DEVICE)';
@@ -76,7 +77,7 @@ export class TitleScene extends Phaser.Scene {
       this.layer.add(panel(this, MENU_X - 130, 20, 360, 280));
       this.currentMenu = menu(this, MENU_X + 50, 56, [
         { label: cont > 1 ? `CONTINUE - LEVEL ${cont}` : 'DEFEND THE STRAIT', action: () => this.start(cont) },
-        { label: 'THE STRAIT', action: () => this.show('levels') },
+        { label: 'THE CAMPAIGN', action: () => this.show('levels') },
         { label: 'THE ANNALS', action: () => this.scene.start('Leaderboard') },
         { label: Save.session ? 'BREAK THE OATH' : 'SWEAR THE OATH', action: () => this.auth() },
         { label: 'WAR COUNCIL', action: () => this.show('settings') },
@@ -94,8 +95,9 @@ export class TitleScene extends Phaser.Scene {
       );
     } else if (view === 'levels') {
       this.layer.add(panel(this, OX + 150, 40, 660, 440));
-      this.layer.add(text(this, CX, 66, 'THE STRAIT', 16, COLORS.gold));
-      const items = LEVELS.map((l) => {
+      const page = act ?? (p.highestLevel > 10 ? 2 : 1);
+      this.layer.add(text(this, CX, 66, page === 1 ? 'ACT I: THE STRAIT' : 'ACT II: THE GULF', 16, COLORS.gold));
+      const items = LEVELS.slice((page - 1) * 10, page * 10).map((l) => {
         const best = p.levelBest[String(l.n)];
         const unlocked = l.n <= p.highestLevel;
         return {
@@ -104,8 +106,15 @@ export class TitleScene extends Phaser.Scene {
           enabled: unlocked,
         };
       });
+      if (LEVELS.length > 10) {
+        items.push(
+          page === 1
+            ? { label: 'NEXT ACT', action: () => this.show('levels', 2), enabled: true }
+            : { label: 'PREVIOUS ACT', action: () => this.show('levels', 1), enabled: true },
+        );
+      }
       items.push({ label: 'BACK', action: () => this.show('main'), enabled: true });
-      this.currentMenu = menu(this, CX, 104, items, 32);
+      this.currentMenu = menu(this, CX, 100, items, 30);
     } else if (view === 'settings') {
       const s = p.settings;
       const vol = Math.round(s.sfx * 10);

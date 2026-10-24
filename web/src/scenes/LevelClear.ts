@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { LEVEL_COUNT } from '../../../shared/progress';
 import { CX, HEIGHT, OX, PX, WIDTH } from '../data/balance';
 import { LEVELS } from '../data/levels';
-import { ENDING } from '../data/story';
+import { ENDING, INTERLUDE } from '../data/story';
 import { syncProgress } from '../net/sync';
 import { Audio } from '../systems/Audio';
 import { byInput } from '../systems/Device';
@@ -69,6 +69,10 @@ export class LevelClearScene extends Phaser.Scene {
       () => {
         if (finished) {
           this.scene.start('Briefing', { cards: ENDING, next: 'GameOver', nextData: { run, victory: true } });
+        } else if (lvl === 10) {
+          // Between the acts: Sour-don's greatest retreat, then Act II's first briefing.
+          run.level++;
+          this.scene.start('Briefing', { cards: INTERLUDE, next: 'LevelIntro', nextData: { run } });
         } else {
           run.level++;
           this.scene.start('LevelIntro', { run });

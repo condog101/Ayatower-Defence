@@ -234,3 +234,65 @@ class B2:
     @classmethod
     def build(cls):
         return strip([cls.frame(0), cls.frame(1)])
+
+
+class F35:
+    """F-35 Lightning II: a faceted dark-grey single-seat jet, diamond wings with straight swept
+    edges, small canted twin tails, a red-glass canopy, Mordor-red seams on the wing leading edges
+    and an Eye roundel; one engine nozzle flickering."""
+
+    NAME = "f35"
+    FRAME = (16, 12)
+    FRAMES = 2
+
+    @staticmethod
+    def frame(f):
+        img = new(16, 12)
+        body, lit, dk = C["stone_dk"], C["stone"], C["iron"]
+        # diamond wings: long swept leading edge, straight trailing edge
+        poly(img, [(5, 5), (10, 5), (6, 1), (5, 1)], body)
+        poly(img, [(5, 6), (10, 6), (6, 10), (5, 10)], body)
+        # small canted tails
+        poly(img, [(2, 5), (4, 5), (3, 3), (2, 3)], body)
+        poly(img, [(2, 6), (4, 6), (3, 8), (2, 8)], body)
+        # wide blended fuselage tapering to a chined nose
+        rect(img, 2, 4, 10, 7, body)
+        rect(img, 11, 5, 13, 6, body)
+        px(img, 11, 4, body)
+        px(img, 11, 7, body)
+        px(img, 14, 5, body)
+        px(img, 14, 6, dk)
+        px(img, 15, 5, lit)
+        bevel(img, light=0.35, dark=-0.45)
+        # faceted spine: lit north half, dark south half
+        rect(img, 4, 5, 10, 5, lit)
+        rect(img, 4, 6, 10, 6, dk)
+        px(img, 3, 4, dk)
+        px(img, 3, 7, dk)
+        outline(img)
+        # Mordor-red seams on the leading edges, the Eye roundel and the canopy
+        for (x, y) in ((7, 2), (8, 3), (9, 4)):
+            px(img, x, y, C["maroon"])
+        for (x, y) in ((7, 9), (8, 8), (9, 7)):
+            px(img, x, y, C["maroon"])
+        px(img, 5, 2, C["tie"])
+        px(img, 5, 9, C["tie"])
+        px(img, 11, 5, C["maroon"])
+        px(img, 12, 5, C["fire_red"])
+        px(img, 11, 6, C["maroon"])
+        px(img, 12, 6, C["tie"])
+        # single engine nozzle
+        if f == 0:
+            px(img, 1, 5, C["fire_yellow"])
+            px(img, 1, 6, C["fire_orange"])
+            px(img, 0, 5, a(C["fire_orange"], 180))
+        else:
+            px(img, 1, 5, C["white"])
+            px(img, 1, 6, C["fire_yellow"])
+            px(img, 0, 5, C["fire_yellow"])
+            px(img, 0, 6, a(C["fire_orange"], 200))
+        return img
+
+    @classmethod
+    def build(cls):
+        return strip([cls.frame(0), cls.frame(1)])

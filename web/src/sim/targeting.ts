@@ -1,4 +1,5 @@
 import type { Enemy, TierDef, Tower } from './types';
+import { tierOf } from './tiers';
 
 /** Can this tier shoot at this enemy at all (ignoring range)? */
 export function canHit(tier: TierDef, e: Enemy): boolean {
@@ -9,7 +10,7 @@ export function canHit(tier: TierDef, e: Enemy): boolean {
 }
 
 export function eligible(t: Tower, e: Enemy): boolean {
-  const tier = t.def.tiers[t.tier];
+  const tier = tierOf(t);
   if (!canHit(tier, e)) return false;
   const r = tier.range * t.buff.range;
   return (e.x - t.x) ** 2 + (e.y - t.y) ** 2 <= r * r;

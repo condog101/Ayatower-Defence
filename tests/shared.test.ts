@@ -20,7 +20,7 @@ describe('sanitizeProgress', () => {
   it('clamps ranges and drops invalid level keys', () => {
     const p = sanitizeProgress({
       highestLevel: 99,
-      levelBest: { '1': 500, '0': 10, '11': 10, abc: 5, '2': -40, '3': 1.9 },
+      levelBest: { '1': 500, '0': 10, '21': 10, abc: 5, '2': -40, '3': 1.9 },
       bestRun: -5,
       endlessUnlocked: 'yes',
       settings: { sfx: 4, shake: false },
@@ -96,7 +96,7 @@ describe('scoring', () => {
     expect(isPlausibleRun({ ...base, score: 1.5 })).toBe(false);
     expect(isPlausibleRun({ ...base, startLevel: 0 })).toBe(false);
     expect(isPlausibleRun({ ...base, startLevel: 3 })).toBe(false); // levelReached < startLevel
-    expect(isPlausibleRun({ ...base, startLevel: 11, levelReached: 11 })).toBe(false);
+    expect(isPlausibleRun({ ...base, startLevel: 21, levelReached: 21 })).toBe(false);
     expect(isPlausibleRun({ ...base, durationMs: 7 * 60 * 60 * 1000 })).toBe(false);
   });
 });

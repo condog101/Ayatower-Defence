@@ -25,7 +25,7 @@ export interface ShopActions {
 /** One line about a tower for the hint strip. */
 export function towerTip(key: TowerKey): string {
   const d = TOWERS[key];
-  return `${d.name} ${d.tiers[0].cost}: + ${d.pro}. - ${d.con}.`;
+  return `${d.name} ${d.base.cost}: + ${d.pro}. - ${d.con}.`;
 }
 
 /** The shop in the right strip: a 2-column grid of tower cards (locked / unaffordable / ok). */
@@ -46,12 +46,12 @@ export class Shop {
       const frame = s.add.rectangle(0, 0, r.w, r.h, 0x1c1914, 1).setOrigin(0).setStrokeStyle(2, 0x3a362e);
       const items: Phaser.GameObjects.GameObject[] = [frame];
       const cost = s.add
-        .text(r.w / 2, r.h - 11, locked ? '' : String(def.tiers[0].cost), { fontFamily: FONT, fontSize: `${uiSize(8)}px`, color: COLORS.gold })
+        .text(r.w / 2, r.h - 11, locked ? '' : String(def.base.cost), { fontFamily: FONT, fontSize: `${uiSize(8)}px`, color: COLORS.gold })
         .setOrigin(0.5);
       if (locked) {
         items.push(s.add.text(r.w / 2, r.h / 2 - 4, `L${def.unlockLevel}`, { fontFamily: FONT, fontSize: `${uiSize(8)}px`, color: '#5a5448' }).setOrigin(0.5));
       } else {
-        const { base, turret } = TowerView.make(s, def, 0, r.w / 2, r.h / 2 - 8, 0, TOWER_PX);
+        const { base, turret } = TowerView.make(s, def, 0, 0, r.w / 2, r.h / 2 - 8, 0, TOWER_PX);
         items.push(base);
         if (turret) items.push(turret);
       }
@@ -81,7 +81,7 @@ export class Shop {
   update() {
     for (const c of this.cards) {
       if (c.locked) continue;
-      const ok = this.sim.cash >= TOWERS[c.key].tiers[0].cost;
+      const ok = this.sim.cash >= TOWERS[c.key].base.cost;
       c.cost.setColor(ok ? COLORS.gold : COLORS.red);
       c.root.setAlpha(ok ? 1 : 0.55);
       c.frame.setStrokeStyle(2, this.selected === c.key ? 0xffd84a : ok ? 0x5a5448 : 0x3a362e);

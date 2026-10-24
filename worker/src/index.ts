@@ -1,6 +1,6 @@
 // Ayatower Defence Worker: serves the static game (ASSETS) and the /api/* JSON routes.
 
-import { mergeProgress, sanitizeProgress } from '../../shared/progress';
+import { LEVEL_COUNT, mergeProgress, sanitizeProgress } from '../../shared/progress';
 import { isPlausibleRun, type RunSubmission } from '../../shared/scoring';
 import {
   bearerToken,
@@ -172,7 +172,7 @@ async function postRun(req: Request, env: Env, now: number): Promise<Response> {
   if (!isPlausibleRun(run)) return json({ error: 'Run rejected', accepted: false }, 400);
   await db.insertRun(env.DB, player.id, run, now);
   const progress = db.parseProgress(player.progress_json);
-  if (run.startLevel >= 11) progress.endlessBest = Math.max(progress.endlessBest, run.score);
+  if (run.startLevel > LEVEL_COUNT) progress.endlessBest = Math.max(progress.endlessBest, run.score);
   else progress.bestRun = Math.max(progress.bestRun, run.score);
   await db.saveProgress(env.DB, player.id, progress, now);
   return json({ accepted: true, rank: await db.rankForScore(env.DB, player.id, run.score) });

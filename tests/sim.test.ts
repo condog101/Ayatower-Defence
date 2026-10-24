@@ -5,6 +5,7 @@ import { rush, wave } from '../web/src/data/maps/recipes';
 import { damage, spawnEnemy } from '../web/src/sim/enemies';
 import { pickTarget } from '../web/src/sim/targeting';
 import { Sim } from '../web/src/sim/sim';
+import { tierOf } from '../web/src/sim/tiers';
 import type { EnemyKey, SimEvent, WaveDef } from '../web/src/sim/types';
 import { mini } from './fixtures/mini-level';
 
@@ -145,7 +146,7 @@ describe('layer, armour and stealth rules', () => {
     expect(aa.kills).toBe(1);
     sim.upgrade(aa);
     sim.upgrade(aa);
-    expect(aa.def.tiers[aa.tier].hitsSea).toBe(true);
+    expect(tierOf(aa).hitsSea).toBe(true);
     const sea = drop(sim, 'rhib', 200);
     run(sim, 120);
     expect(sea.alive).toBe(false);
@@ -214,7 +215,7 @@ describe('layer, armour and stealth rules', () => {
     const evs = run(sim, 120);
     const hits = evs.filter((e) => e.t === 'hit' && e.id === sub.id);
     expect(hits.length).toBeGreaterThan(0);
-    expect((hits[0] as { dmg: number }).dmg).toBe(g.def.tiers[0].damage * 2);
+    expect((hits[0] as { dmg: number }).dmg).toBe(g.def.base.damage * 2);
   });
 });
 
@@ -231,7 +232,7 @@ describe('support towers', () => {
     expect(rhib.d - d0).toBeCloseTo(((40 * ENEMIES.rhib.speed) / 60) * 0.6, 5);
     sim.upgrade(j);
     sim.upgrade(j);
-    j.stunAcc = j.def.tiers[2].stun!.every;
+    j.stunAcc = j.def.paths[0].tiers[1].stun!.every;
     const evs = run(sim, 2);
     expect(evs.some((e) => e.t === 'jam')).toBe(true);
     expect(rhib.stunTicks).toBeGreaterThan(0);
@@ -337,6 +338,61 @@ describe('children, mines, boats, abilities', () => {
   });
 });
 
+describe('upgrade paths', () => {
+  it('path B applies its own stats and the path locks after the first step', () => {
+    const sim = make();
+    const aa = sim.place('aa_gun', 8, 4)!;
+    expect(sim.upgradeCost(aa, 1)).toBe(aa.def.paths[1].tiers[0].cost);
+    expect(sim.upgrade(aa, 1)).toBe(true);
+    expect(aa.path).toBe(1);
+    expect(tierOf(aa).name).toBe('37MM FLAK');
+    expect(tierOf(aa).splash).toBeGreaterThan(0);
+    // asking for path A now follows the chosen path B
+    expect(sim.upgradeCost(aa, 0)).toBe(aa.def.paths[1].tiers[1].cost);
+    expect(sim.upgrade(aa, 0)).toBe(true);
+    expect(aa.path).toBe(1);
+    expect(tierOf(aa).name).toBe('RADAR FLAK');
+    expect(sim.upgradeCost(aa)).toBeNull();
+    expect(sim.upgrade(aa, 1)).toBe(false);
+  });
+
+  it('sells for a share of base plus both path B steps', () => {
+    const sim = make();
+    const m = sim.place('mines', 8, 6)!;
+    sim.upgrade(m, 1);
+    sim.upgrade(m, 1);
+    const paid = m.def.base.cost + m.def.paths[1].tiers[0].cost + m.def.paths[1].tiers[1].cost;
+    expect(m.spent).toBe(paid);
+    const cash = sim.cash;
+    expect(sim.sell(m)).toBe(true);
+    expect(sim.cash).toBe(cash + Math.floor(paid * 0.7));
+  });
+
+  it('the targeting jammer paints enemies for extra damage without revealing stealth', () => {
+    const sim = make();
+    const j = sim.place('jammer', 8, 4)!;
+    sim.upgrade(j, 1);
+    const frigate = drop(sim, 'frigate', 230);
+    const sub = drop(sim, 'sub', 230);
+    run(sim, 12);
+    expect(frigate.paintTicks).toBeGreaterThan(0);
+    expect(frigate.paintMult).toBeCloseTo(1.2);
+    expect(sub.revealed).toBe(false);
+    const hp = frigate.hp;
+    damage(sim, frigate, 10, 'explosive');
+    expect(hp - frigate.hp).toBeCloseTo(12);
+  });
+
+  it('emits the chosen path with the upgrade event', () => {
+    const sim = make();
+    const b = sim.place('boats', 6, 4)!;
+    sim.step();
+    sim.upgrade(b, 1);
+    const evs = sim.step();
+    expect(evs.some((e) => e.t === 'tower' && e.op === 'upgrade' && e.path === 1)).toBe(true);
+  });
+});
+
 describe('determinism', () => {
   const play = (seed: number) => {
     const sim = make([wave(50, rush('patrol', 10, 0.4), rush('reaper', 4, 1)), wave(50, rush('cyclone', 6, 0.8))], seed);
@@ -357,6 +413,25 @@ describe('determinism', () => {
 
   it('differs for a different seed', () => {
     expect(play(42)).not.toBe(play(43));
+  });
+
+  it('replays mixed-path upgrades identically', () => {
+    const mixed = () => {
+      const sim = make([wave(50, rush('patrol', 10, 0.4), rush('reaper', 6, 0.8)), wave(50, rush('frigate', 4, 1))], 9);
+      const b = sim.place('boats', 6, 4)!;
+      const aa = sim.place('aa_gun', 12, 4)!;
+      const j = sim.place('jammer', 9, 3)!;
+      sim.upgrade(b, 1);
+      sim.upgrade(aa, 0);
+      sim.upgrade(j, 1);
+      sim.startWave();
+      run(sim, 60 * 6);
+      sim.upgrade(b);
+      sim.startWave();
+      run(sim, 60 * 10);
+      return JSON.stringify(sim.snapshot());
+    };
+    expect(mixed()).toBe(mixed());
   });
 });
 
