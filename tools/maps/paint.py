@@ -105,13 +105,55 @@ def lane_dist(lanes, c, r):
     return best
 
 
-def thin(k, lanes, keep=(), target=0.40, min_land=14):
+def lane_samples(lane, step=8):
+    """Points every `step` px along the polyline through the lane's dense cell centres (the spline in
+    web/src/sim/path.ts strays only a few px from it, inside the PROTECT margins)."""
+    p = [(c * 32 + 16, r * 32 + 16) for c, r in dense(lane)]
+    out = [p[0]]
+    carry = 0.0
+    for (ax, ay), (bx, by) in zip(p, p[1:]):
+        L = ((bx - ax) ** 2 + (by - ay) ** 2) ** 0.5
+        d = step - carry
+        while d <= L:
+            out.append((ax + (bx - ax) * d / L, ay + (by - ay) * d / L))
+            d += step
+        carry = L - (d - step)
+    return out
+
+
+# Reach a protected cell must keep on its lane: the AA pit's tier-1 90 px less the 10 px lateral
+# drift of aircraft (sim/enemies.ts LATERAL); mines' tier-1 90 px for the shallows.
+AA_PROTECT = 80
+MINE_PROTECT = 90
+
+
+def thin(k, lanes, keep=(), target=0.40, min_land=14, air=None):
     """Scarce prime spots: turn buildable cells within 110 px of a lane into cliffs (and the odd
-    palm) until at most `target` of all buildable cells are in range, sparing the `keep` rects."""
+    palm) until at most `target` of all buildable cells are in range, sparing the `keep` rects and
+    any cell that is the last one covering some stretch of lane: land for the lanes aircraft fly
+    (all of them, or just `air`), shallows for the sea lanes (all but `air`).
+
+    Hand-placed cover goes in after finish(), then thin() again. Straight runs: two rows/cols off
+    the lane (64 px). Diagonals: a knight's move (+-2, +-1) on the outer side (68 px). Never one of
+    the eight neighbours of a lane cell (45 px, 22.6 px at a bend where the spline cuts the corner),
+    never row 0."""
     def kept(c, r):
         return any(x0 <= c <= x1 and y0 <= r <= y1 for x0, y0, x1, y1 in keep)
     cells = [(c, r) for r in range(1, ROWS) for c in range(COLS) if k.g[r][c] in '.,']
     prime = [(c, r) for c, r in cells if lane_dist(lanes, c, r) <= 110]
+    air_lanes = list(range(len(lanes))) if air is None else [air]
+    sea_lanes = [i for i in range(len(lanes)) if i != air]
+    samples = {i: lane_samples(l) for i, l in enumerate(lanes)}
+    covers = {}
+    count = {}
+    for c, r in prime:
+        land = k.g[r][c] == '.'
+        x, y = c * 32 + 16, r * 32 + 16
+        rng, ls = (AA_PROTECT, air_lanes) if land else (MINE_PROTECT, sea_lanes)
+        cov = [(land, li, si) for li in ls for si, (sx, sy) in enumerate(samples[li]) if (sx - x) ** 2 + (sy - y) ** 2 <= rng * rng]
+        covers[(c, r)] = cov
+        for key in cov:
+            count[key] = count.get(key, 0) + 1
     # thin the closest cells first, then the rest in a fixed scattered order
     # land goes before shallows (sea towers need somewhere); the marginal cells (70-110 px) go before
     # the close ones, so what's left is a few good spots; then a fixed scatter
@@ -128,6 +170,11 @@ def thin(k, lanes, keep=(), target=0.40, min_land=14):
         # always leave some land in range for the land towers
         if not water and land_left <= min_land:
             continue
+        # never strip the last cover off a stretch of lane
+        if any(count[key] <= 1 for key in covers[(c, r)]):
+            continue
+        for key in covers[(c, r)]:
+            count[key] -= 1
         if not water:
             land_left -= 1
         k.g[r][c] = '~' if water else ('P' if i % 6 == 5 else '#')
@@ -152,7 +199,7 @@ def finish(k, lanes, aya, air=None, keep=(), target=0.40):
     k.moat(lanes).lanes(lanes)
     clear_corners(k, lanes)
     k.put([aya], 'A')
-    thin(k, lanes, keep, target)
+    thin(k, lanes, keep, target, air=air)
     return k, lanes, air
 
 
@@ -170,6 +217,9 @@ def l1():
     k.put([(15, 1), (19, 9)], 'O')
     k, lanes, air = finish(k, lanes, (22, 13))
     k.rect(15, 3, 19, 3, ',').rect(14, 12, 20, 12, ',')
+    # sandbars round the bay, so the piers reach the whole sweep
+    k.put([(15, 6), (17, 6), (19, 6), (11, 4), (10, 5), (12, 9), (8, 9), (13, 10), (9, 12), (14, 11), (16, 11), (18, 11),
+           (15, 15), (18, 15), (21, 15)], '.')
     thin(k, lanes)
     return k, lanes, air
 
@@ -200,15 +250,20 @@ def l3():
     lanes = [[(-1, 2), (19, 2), (21, 4), (21, 11), (18, 14), (6, 14), (4, 12), (4, 7)]]
     k = Canvas()
     k.rect(6, 4, 19, 12, '#').rect(7, 4, 18, 4, '.').rect(7, 12, 18, 12, '.').rect(6, 5, 6, 11, '.').rect(19, 5, 19, 11, '.')
-    k.rect(9, 7, 16, 9, '.')
+    k.rect(8, 6, 17, 10, '.')
     k.rect(0, 4, 2, 15, '.').rect(23, 0, 24, 15, '.').rect(0, 0, 24, 0, '#')
     k.rect(2, 8, 2, 12, ',').rect(23, 5, 23, 10, ',')  # reefs off the west and east shores
     k.put([(8, 4), (17, 12), (1, 6), (1, 13), (24, 3), (24, 12), (12, 8)], 'P')
     k.put([(10, 7), (11, 7), (0, 9), (24, 8)], 'T')
     k.put([(15, 9)], 'M')
     k.put([(12, 0)], 'O')
-    k, lanes, air = finish(k, lanes, (4, 6), keep=[(7, 4, 18, 4), (7, 12, 18, 12)])
+    rims = [(7, 4, 18, 4), (7, 12, 18, 12)]
+    k, lanes, air = finish(k, lanes, (4, 6), keep=rims)
     k.rect(3, 4, 3, 5, '#')
+    # breakwaters and reefs so the AA pits and mines can reach every stretch of the loop
+    k.put([(1, 4), (4, 4), (23, 4), (23, 8), (23, 12), (17, 12), (6, 7), (6, 11)], '.')
+    k.put([(8, 15), (12, 15), (16, 15), (21, 14), (3, 3), (8, 3), (13, 3)], ',')
+    thin(k, lanes, rims, air=air)
     return k, lanes, air
 
 
@@ -224,6 +279,10 @@ def l4():
     k.put([(16, 5)], 'M')
     k.rect(0, 3, 4, 3, ',').rect(8, 15, 13, 15, ',').rect(22, 4, 22, 9, ',')  # reefs
     k, lanes, air = finish(k, lanes, (24, 3))
+    # land beside the entry run and the switchbacks, reefs off the diagonals
+    k.put([(2, 3), (5, 3), (7, 3), (12, 9), (10, 11), (12, 11), (17, 13), (19, 11)], '.')
+    k.put([(11, 1), (12, 2), (13, 3), (11, 10), (18, 12), (20, 10)], ',')
+    thin(k, lanes, air=air)
     return k, lanes, air
 
 
@@ -243,6 +302,9 @@ def l5():
     k.put([(3, 13)], 'M')
     k, lanes, air = finish(k, lanes, (23, 7))
     k.rect(23, 6, 24, 6, '#').rect(23, 8, 24, 8, '#').put([(24, 7)], '#')
+    # sandbanks along the northern creek, where the reapers fly
+    k.put([(1, 4), (11, 4), (12, 5), (16, 3), (18, 3), (20, 5), (22, 5), (20, 9), (12, 9)], '.')
+    thin(k, lanes, air=air)
     return k, lanes, air
 
 
@@ -262,6 +324,9 @@ def l6():
     k.put([(8, 0), (23, 3)], 'M')
     k, lanes, air = finish(k, lanes, (5, 4))
     k.rect(4, 3, 5, 3, '#').rect(4, 5, 5, 5, '#')
+    # a spit beside the south lane and a sandbar under the quay, in AA reach of both lanes
+    k.put([(7, 10), (7, 12), (7, 14), (11, 13), (11, 15), (13, 9), (14, 8), (10, 6), (16, 4), (6, 2), (8, 2), (10, 2), (12, 2)], '.')
+    thin(k, lanes, air=air)
     return k, lanes, air
 
 
@@ -280,6 +345,10 @@ def l7():
     k.put([(15, 7)], 'M')
     k.rect(17, 6, 17, 10, ',').rect(9, 10, 10, 11, ',')  # reefs inside the loops
     k, lanes, air = finish(k, lanes, (12, 14), air=1)
+    # islets and reefs round the knot; the air corridor stays the SAM's
+    k.put([(24, 5), (24, 9), (11, 3), (13, 3)], '.')
+    k.put([(4, 7), (5, 8), (19, 12), (20, 11), (13, 4), (12, 5), (11, 6), (10, 13)], ',')
+    thin(k, lanes, air=air)
     return k, lanes, air
 
 
@@ -302,6 +371,9 @@ def l8():
     k, lanes, air = finish(k, lanes, (12, 7))
     k.put([(12, 6), (13, 6), (11, 8), (12, 8)], '#')  # the tower's breakwater, around the two lane ends
     k.put([(10, 3)], '~')  # the bend at the cliff foot cuts this corner
+    k.put([(6, 1), (8, 1), (2, 11), (23, 4)], '.')
+    k.put([(6, 5), (6, 7), (16, 10), (18, 10), (15, 8)], ',')
+    thin(k, lanes, air=air)
     return k, lanes, air
 
 
@@ -320,6 +392,8 @@ def l9():
     k.put([(13, 3)], 'M')
     k.rect(11, 6, 13, 6, ',').rect(11, 10, 13, 10, ',')  # reefs off the middle islands
     k, lanes, air = finish(k, lanes, (21, 8))
+    k.put([(12, 6), (12, 10), (19, 2), (19, 14)], '.')
+    thin(k, lanes, air=air)
     return k, lanes, air
 
 
@@ -339,6 +413,8 @@ def l10():
     k.rect(5, 7, 6, 9, ',')  # a reef under the gate
     k, lanes, air = finish(k, lanes, (18, 8))
     k.rect(19, 7, 20, 9, '#')
+    k.put([(2, 6), (5, 6), (2, 10), (5, 10)], '.')  # islets in the outer bay for the AA pits
+    thin(k, lanes, air=air)
     return k, lanes, air
 
 

@@ -7,6 +7,7 @@ import { cellKind, isPlaceable, LEGEND, parseRows } from '../web/src/sim/grid';
 import { denseCells, Lane } from '../web/src/sim/path';
 import type { EnemyKey, LevelDef } from '../web/src/sim/types';
 import { BUILDS, runBuild } from './fixtures/builds';
+import { isBossWave, leadFloor, minCount } from './fixtures/wave-rules';
 
 /** Every enemy kind a level can field: wave groups plus children and boss launches. */
 function kindsIn(level: LevelDef): Set<EnemyKey> {
@@ -37,6 +38,33 @@ function threat(level: LevelDef): number {
 const LOSS_TARGET: Record<number, [number, number]> = {
   1: [5, 15], 2: [8, 20], 3: [12, 30], 4: [12, 30], 5: [15, 45], 6: [15, 45], 7: [15, 45], 8: [15, 45], 9: [15, 45], 10: [20, 60],
 };
+
+/** Lane coverage: a lane aircraft fly needs AA-capable land in reach along its length; sea lanes need shallows for the mines. */
+const AIR_RUN_MAX = 128;
+const AIR_UNCOVERED_MAX = 0.25;
+const AIR_PIT_UNCOVERED_MAX = 0.7;
+const SEA_RUN_MAX = 384;
+
+/** Share of `lane` (by length) with no cell of `cells` within `range`, and the longest such stretch in px. */
+function uncovered(lane: Lane, cells: [number, number][], range: number): { share: number; longest: number } {
+  const pts = cells.map(([c, r]) => [c * 32 + 16, r * 32 + 16]);
+  const r2 = range * range;
+  let bad = 0;
+  let run = 0;
+  let longest = 0;
+  for (let i = 1; i < lane.xs.length; i++) {
+    const step = lane.ds[i] - lane.ds[i - 1];
+    const x = (lane.xs[i] + lane.xs[i - 1]) / 2;
+    const y = (lane.ys[i] + lane.ys[i - 1]) / 2;
+    if (pts.some(([px, py]) => (px - x) ** 2 + (py - y) ** 2 <= r2)) run = 0;
+    else {
+      bad += step;
+      run += step;
+      longest = Math.max(longest, run);
+    }
+  }
+  return { share: bad / lane.length, longest };
+}
 
 describe('levels', () => {
   it('are the ten campaign levels, in order', () => {
@@ -108,6 +136,31 @@ describe('levels', () => {
         expect(prime / spots, `${prime}/${spots} spots within 110 px of a lane`).toBeLessThanOrEqual(0.45);
       });
 
+      it('leaves every lane in reach of the towers that can hit what flies it', () => {
+        const placeable = (p: 'land' | 'shallow') => {
+          const out: [number, number][] = [];
+          for (let r = 0; r < 16; r++) for (let c = 0; c < 25; c++) if (isPlaceable(grid, c, r, p)) out.push([c, r]);
+          return out;
+        };
+        const land = placeable('land');
+        const shallow = placeable('shallow');
+        const fliesAir = [...kindsIn(level)].some((k) => ENEMIES[k].layer === 'air');
+        if (fliesAir) {
+          const sam = level.towers.includes('sam');
+          const air = level.airLane === undefined ? lanes : [lanes[level.airLane]];
+          air.forEach((lane, li) => {
+            const u = uncovered(lane, land, sam ? 240 : 90);
+            expect(u.share, `air lane ${li} uncovered share`).toBeLessThanOrEqual(AIR_UNCOVERED_MAX);
+            expect(u.longest, `air lane ${li} longest uncovered run`).toBeLessThanOrEqual(AIR_RUN_MAX);
+            if (sam) expect(uncovered(lane, land, 90).share, `air lane ${li} out of AA pit reach`).toBeLessThanOrEqual(AIR_PIT_UNCOVERED_MAX);
+          });
+        }
+        lanes.forEach((lane, li) => {
+          if (li === level.airLane) return;
+          expect(uncovered(lane, shallow, 90).longest, `sea lane ${li} longest run out of mine reach`).toBeLessThanOrEqual(SEA_RUN_MAX);
+        });
+      });
+
       it('has at least 8 waves, bosses only on 5 and 10, and a start purse that buys a tower', () => {
         expect(level.waves.length).toBeGreaterThanOrEqual(8);
         const bossWaves = level.waves.filter((w) => w.boss || w.groups.some((g) => ENEMIES[g.kind].boss));
@@ -119,6 +172,22 @@ describe('levels', () => {
         for (const w of level.waves) expect(w.reward).toBeGreaterThan(0);
         const cheapest = Math.min(...level.towers.map((k) => TOWERS[k].tiers[0].cost));
         expect(level.startCash).toBeGreaterThanOrEqual(cheapest);
+      });
+
+      it('fields no token groups', () => {
+        level.waves.forEach((w, i) =>
+          w.groups.forEach((g) => {
+            if (!ENEMIES[g.kind].boss) expect(g.n, `wave ${i + 1} ${g.kind}`).toBeGreaterThanOrEqual(minCount(level, i, g.kind));
+          }),
+        );
+      });
+
+      it('sends waves that grow, kind by kind', () => {
+        level.waves.forEach((w, i) => {
+          if (isBossWave(w)) return;
+          const g = w.groups[0];
+          expect(g.n, `wave ${i + 1} leads with ${g.kind}`).toBeGreaterThanOrEqual(leadFloor(level, i, g.kind));
+        });
       });
 
       it('the canned build wins it losing a fair share of PATIENCE, and doing nothing loses it', () => {

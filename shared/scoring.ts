@@ -15,11 +15,11 @@ export function levelClearBonus(level: number, lives: number, leaked: boolean): 
 }
 
 /** Every kill (children and boss launches at their cap included) plus every wave reward, per level. */
-export const LEVEL_MAX_PLAY_SCORE = [9690, 14337, 23075, 58733, 110410, 110300, 255850, 275560, 672260, 1239170];
+export const LEVEL_MAX_PLAY_SCORE = [9690, 11937, 52045, 58733, 109020, 218050, 281310, 284860, 681590, 1249230];
 /** Every enemy a level can produce. */
-export const LEVEL_ENEMY_COUNT = [585, 644, 963, 2166, 3019, 3188, 6879, 6721, 16424, 29368];
+export const LEVEL_ENEMY_COUNT = [585, 544, 2250, 2166, 3033, 6238, 7580, 6958, 16661, 29622];
 /** Shortest possible level: all spawn spans back to back at 3x speed, minus 10%. */
-export const LEVEL_MIN_MS = [33855, 43095, 60300, 82560, 43644, 51870, 90840, 68745, 103950, 159120];
+export const LEVEL_MIN_MS = [33855, 38295, 139050, 82560, 50045, 97290, 99420, 72870, 106590, 159480];
 
 const levelsIn = (from: number, to: number): number[] => {
   const out: number[] = [];

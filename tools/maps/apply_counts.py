@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Apply tune.ts output (JSON on stdin) to the rush() counts in levels_src.py, then re-emit."""
+"""Apply tune.ts output (JSON on stdin) to the rush() counts and gaps in levels_src.py, then re-emit.
+Groups are {n, gap} objects, or bare counts (older output) that leave the gap alone."""
 import json
 import os
 import re
@@ -24,6 +25,11 @@ for n, entry in data.items():
     new = []
     for line, counts in zip(lines, waves):
         it = iter(counts)
-        new.append(re.sub(r"rush\('(\w+)', (\d+), ", lambda m: f"rush('{m.group(1)}', {next(it)}, ", line))
+
+        def sub(m):
+            g = next(it)
+            n, gap = (g['n'], g['gap']) if isinstance(g, dict) else (g, float(m.group(3)))
+            return f"rush('{m.group(1)}', {n}, {gap:g}"
+        new.append(re.sub(r"rush\('(\w+)', (\d+), ([\d.]+)", sub, line))
     s = s[:w0] + '\n'.join(new) + '\n' + s[w1:]
 open(p, 'w').write(s)

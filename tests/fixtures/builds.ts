@@ -67,7 +67,7 @@ export const BUILDS: Record<number, Action[]> = {
     U(7, 'aa_gun'), P(8, 'boats'), U(11, 'boats'),
   ],
   5: [
-    P(1, 'boats'), P(1, 'mines'), P(2, 'aa_gun'), U(3, 'boats'), P(4, 'martyr'), P(5, 'missile'),
+    P(1, 'boats'), P(1, 'boats'), P(1, 'mines'), P(2, 'aa_gun'), U(3, 'boats'), P(4, 'martyr'), P(5, 'missile'),
     U(6, 'mines'), U(7, 'aa_gun'), P(8, 'jammer'), U(9, 'missile'), P(10, 'shahed'), U(11, 'boats'),
     U(12, 'martyr'), P(13, 'missile'), U(14, 'shahed'), U(15, 'aa_gun'), U(16, 'mines'), U(17, 'missile'),
     P(12, 'missile'), U(12, 'missile'),
