@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { DEPTH, L, PX } from '../data/balance';
+import { DEPTH, L, TOWER_PX } from '../data/balance';
 import { TOWER_KEYS, TOWERS } from '../data/towers';
 import type { Sim } from '../sim/sim';
 import type { TowerKey } from '../sim/types';
@@ -51,7 +51,7 @@ export class Shop {
       if (locked) {
         items.push(s.add.text(r.w / 2, r.h / 2 - 4, `L${def.unlockLevel}`, { fontFamily: FONT, fontSize: `${uiSize(8)}px`, color: '#5a5448' }).setOrigin(0.5));
       } else {
-        const { base, turret } = TowerView.make(s, def, 0, r.w / 2, r.h / 2 - 8, 0, PX);
+        const { base, turret } = TowerView.make(s, def, 0, r.w / 2, r.h / 2 - 8, 0, TOWER_PX);
         items.push(base);
         if (turret) items.push(turret);
       }

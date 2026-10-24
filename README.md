@@ -91,7 +91,8 @@ python3 tools/sprites/gen.py --force towers       # regenerate one
 ```
 
 Pillow generators in `tools/sprites/sheets/`; existing PNGs are never overwritten without `--force`,
-so LibreSprite touch-ups survive. `test_gen.py` EXPECTED, `sheets/__init__.py` SHEETS and
+so LibreSprite touch-ups survive. Towers and turrets are 32x32 drawn at 1x (`TOWER_PX`), twice the
+density of the 16x16-at-2x tiles and ships, so they stay readable at phone size. `test_gen.py` EXPECTED, `sheets/__init__.py` SHEETS and
 `web/src/scenes/Boot.ts` SHEETS must change together.
 
 ## Deploy (Cloudflare Workers + D1)

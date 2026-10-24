@@ -37,6 +37,9 @@ export function setLayout(next: Layout) {
 /** Every sprite is drawn at this integer scale. */
 export const PX = 2;
 
+/** Tower and turret sheets are 32x32 drawn at 1x: twice the world's pixel density, so they stay legible small. */
+export const TOWER_PX = 1;
+
 export const POPUP = {
   minGapMs: 30_000,
   maxGapMs: 55_000,

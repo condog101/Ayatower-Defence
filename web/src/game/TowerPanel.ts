@@ -49,8 +49,8 @@ export class TowerPanel {
     const bg = s.add.rectangle(0, 0, side.w, side.h, 0x14110d, 1).setOrigin(0).setStrokeStyle(2, 0xb88c1e);
     this.name = txt(6, 8, COLORS.gold, wrap - L.game.close.w);
     this.tierText = txt(L.touch ? 56 : 40, 8, COLORS.text);
-    this.icon = s.add.container(side.w / 2, L.touch ? 136 : 104);
-    this.statsText = txt(L.touch ? 166 : 132, 8, COLORS.dim);
+    this.icon = s.add.container(side.w / 2, L.touch ? 140 : 108);
+    this.statsText = txt(L.touch ? 176 : 144, 8, COLORS.dim);
     const [b0, b1, b2] = L.game.sideButtons;
     this.upgradeBtn = rectButton(s, b0, '', () => this.tower && actions.upgrade(this.tower), 8, DEPTH.hud + 1);
     this.sellBtn = rectButton(s, b1, '', () => this.tower && actions.sell(this.tower), 8, DEPTH.hud + 1);
@@ -67,7 +67,7 @@ export class TowerPanel {
     for (const b of this.buttons) b.setVisible(!!t);
     if (!t) return;
     this.icon.removeAll(true);
-    const { base, turret } = TowerView.make(this.scene, t.def, t.tier, 0, 0, 0, 3);
+    const { base, turret } = TowerView.make(this.scene, t.def, t.tier, 0, 0, 0, 2);
     this.icon.add(base);
     if (turret) this.icon.add(turret);
     this.targetBtn.setVisible(t.def.role === 'attack' && t.def.tiers[t.tier].projectile !== 'mine');

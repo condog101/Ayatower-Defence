@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { DEPTH, MAP_X, MAP_Y, PX } from '../data/balance';
+import { DEPTH, MAP_X, MAP_Y, TOWER_PX } from '../data/balance';
 import type { Tower, TowerDef } from '../sim/types';
 
 /** Aimed towers in turrets.png order. */
@@ -32,7 +32,7 @@ export class TowerView {
   }
 
   /** Base and turret images for a tower def (also used by the shop and the placement ghost). */
-  static make(scene: Phaser.Scene, def: TowerDef, tier: number, x: number, y: number, depth: number, scale = PX) {
+  static make(scene: Phaser.Scene, def: TowerDef, tier: number, x: number, y: number, depth: number, scale = TOWER_PX) {
     const base = scene.add.image(x, y, 'towers', baseFrame(def, tier)).setScale(scale).setDepth(depth);
     const turret = def.aimed ? scene.add.image(x, y, 'turrets', turretFrame(def, tier, -Math.PI / 2)).setScale(scale).setDepth(depth + 0.1) : null;
     return { base, turret };
@@ -50,7 +50,7 @@ export class TowerView {
         const { base, turret } = TowerView.make(this.scene, t.def, t.tier, x, y, DEPTH.towers + t.r * 0.01);
         v = { base, turret, tier: t.tier };
         this.views.set(t.id, v);
-        this.scene.tweens.add({ targets: [base, turret].filter(Boolean), scale: { from: PX * 1.4, to: PX }, duration: 180, ease: 'Back.easeOut' });
+        this.scene.tweens.add({ targets: [base, turret].filter(Boolean), scale: { from: TOWER_PX * 1.4, to: TOWER_PX }, duration: 180, ease: 'Back.easeOut' });
       }
       if (v.tier !== t.tier) {
         v.tier = t.tier;
@@ -87,6 +87,6 @@ export class TowerView {
   pulse(id: number) {
     const v = this.views.get(id);
     if (!v) return;
-    this.scene.tweens.add({ targets: [v.base, v.turret].filter(Boolean), scale: { from: PX * 1.25, to: PX }, duration: 200 });
+    this.scene.tweens.add({ targets: [v.base, v.turret].filter(Boolean), scale: { from: TOWER_PX * 1.25, to: TOWER_PX }, duration: 200 });
   }
 }

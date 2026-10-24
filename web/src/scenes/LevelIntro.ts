@@ -40,8 +40,8 @@ export class LevelIntroScene extends Phaser.Scene {
       const sp = 150;
       const x0 = CX - ((newTowers.length - 1) * sp) / 2;
       newTowers.forEach((k, i) => {
-        TowerView.make(this, TOWERS[k], 0, x0 + i * sp, y + 36, 1, PX + 1);
-        text(this, x0 + i * sp, y + 72, TOWERS[k].name, 8, COLORS.text);
+        TowerView.make(this, TOWERS[k], 0, x0 + i * sp, y + 36, 1, 2);
+        text(this, x0 + i * sp, y + 76, TOWERS[k].name, 8, COLORS.text);
       });
       y += 100;
     }
